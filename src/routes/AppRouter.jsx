@@ -1,11 +1,11 @@
-import { Routes, Route, Navigate } from "react-router-dom";
+import { Route, Navigate } from "react-router-dom";
 
 import AppLayout from "../layout/AppLayout";
 import EventListingPage from "../pages/events/EventListingPage";
 import MerchandiseListingPage from "../pages/merchandise/MerchandiseListingPage";
 
 const AppRouter = () => (
-    <Routes>
+    <>
         <Route element={<AppLayout />}>
             {/* Events Routes */}
             <Route path="/events" element={<EventListingPage />} />
@@ -17,7 +17,7 @@ const AppRouter = () => (
         </Route>
 
         <Route path="*" element={<Navigate to="/events" />} />
-    </Routes>
+    </>
 );
 
 export default AppRouter;

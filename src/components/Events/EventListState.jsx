@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import {
     Box,
     Card,
@@ -6,19 +6,15 @@ import {
     CardContent,
     Typography,
     Grid,
-    Container,
-    Pagination,
     Stack,
     Chip,
-    useMediaQuery,
-    alpha,
-    useTheme,
-    CircularProgress,
-    Paper
 } from '@mui/material';
-import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
-import AccessTimeIcon from '@mui/icons-material/AccessTime';
-import { styled } from '@mui/material/styles';
+import {
+    CalendarToday as CalendarTodayIcon,
+    AccessTime as AccessTimeIcon,
+    LocationOn as LocationOnIcon,
+    EventNote as EventNoteIcon
+} from '@mui/icons-material';
 import { format } from 'date-fns';
 
 const EventListState = ({ events }) => {
@@ -33,117 +29,119 @@ const EventListState = ({ events }) => {
     return (
         <Grid
             container
-            spacing={{ xs: 2, sm: 3, md: 4 }}
-            justifyContent={{ xs: 'center', sm: 'center', lg: "flex-start" }}
+            width="100%"
+            spacing={{ xs: 2, sm: 3, md: 5 }}
+            justifyContent='center'
             alignItems="center"
         >
-            {events.map((event) => (
-                <Grid key={event.id}>
-                    <Card
-                        elevation={0}
-                        sx={{
-                            height: { xs: 'auto', sm: 'auto' },
-                            width: '100%',
-                            minWidth: { xs: 325, sm: 450, md: 450, lg: 450 },
-                            display: 'flex',
-                            flexDirection: 'column',
-                            borderRadius: 2,
-                            overflow: 'hidden',
-                            border: '1px solid',
-                            borderColor: 'divider',
-                            transition: 'transform 0.2s ease, box-shadow 0.2s ease',
-                            '&:hover': {
-                                transform: { xs: 'none', sm: 'translateY(-4px)' },
-                                boxShadow: { xs: 'none', sm: '0 8px 16px rgba(0,0,0,0.08)' },
-                                cursor: 'pointer'
-                            }
-                        }}
-                    >
-                        <Box sx={{ position: 'relative', height: { xs: 140, sm: 160, md: 180 } }}>
-                            <CardMedia
-                                component="img"
-                                sx={{
-                                    height: '100%',
-                                    width: '100%',
-                                    objectFit: 'cover',
-                                    transition: 'transform 0.3s ease',
-                                    '&:hover': {
-                                        transform: { xs: 'none', sm: 'scale(1.05)' },
-                                    }
-                                }}
-                                image={`data:image/png;base64,${event.imagesData[0]}`}
-                                alt={event.eventName}
-                            />
-                            <Chip
-                                label={event.status}
-                                size="small"
-                                color={
-                                    event.status === 'Upcoming' ? 'primary' :
-                                        event.status === 'Ongoing' ? 'success' :
-                                            event.status === 'Cancelled' ? 'error' :
-                                                event.status === 'Completed' ? 'info' : 'default'
+            {events.map((event) => {
+                return (
+                    <Grid key={event.id} xs={9} sm={6} md={4} lg={3}>
+                        <Card
+                            elevation={0}
+                            sx={{
+                                height: '100%',
+                                width: { xs: 325, sm: 450, md: 500, lg: 500 },
+                                display: 'flex',
+                                flexDirection: 'column',
+                                borderRadius: 3,
+                                overflow: 'hidden',
+                                border: '1px solid',
+                                borderColor: 'divider',
+                                transition: 'all 0.3s ease',
+                                position: 'relative',
+                                background: 'linear-gradient(to bottom, #ffffff, #f8f9fa)',
+                                '&:hover': {
+                                    transform: { xs: 'none', sm: 'translateY(-4px)' },
+                                    boxShadow: { xs: 'none', sm: '0 8px 16px rgba(0,0,0,0.08)' },
+                                    cursor: 'pointer',
+                                    borderColor: 'primary.light'
                                 }
-                                sx={{
-                                    position: 'absolute',
-                                    top: 12,
-                                    right: 12,
-                                    fontWeight: 600,
-                                    fontSize: { xs: '0.65rem', sm: '0.7rem' },
-                                    textTransform: 'uppercase',
-                                    letterSpacing: '0.5px',
-                                    boxShadow: '0 2px 6px rgba(0,0,0,0.15)'
-                                }}
-                            />
-                        </Box>
-
-                        <CardContent sx={{
-                            p: { xs: 1.5, sm: 2, md: 2.5 },
-                            mb: { xs: 1, sm: 2 },
-                            flexGrow: 1,
-                            display: 'flex',
-                            flexDirection: 'column',
-                            justifyContent: 'space-between'
-                        }}>
-                            <Box>
-                                <Typography
-                                    variant="h6"
-                                    component="h2"
-                                    fontWeight="600"
+                            }}
+                        >
+                            <Box sx={{ position: 'relative', height: { xs: 180, sm: 200, md: 240 } }}>
+                                <CardMedia
+                                    component="img"
                                     sx={{
-                                        overflow: 'hidden',
-                                        textOverflow: 'ellipsis',
-                                        display: '-webkit-box',
-                                        WebkitLineClamp: 2,
-                                        WebkitBoxOrient: 'vertical',
-                                        lineHeight: 1.3,
-                                        fontSize: { xs: '0.95rem', sm: '1.1rem', md: '1.25rem' }
+                                        height: '100%',
+                                        width: '100%',
+                                        objectFit: 'cover',
+                                        transition: 'transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
+                                        '&:hover': {
+                                            transform: { xs: 'none', sm: 'scale(1.08)' },
+                                        }
                                     }}
-                                >
-                                    {event.eventName}
-                                </Typography>
+                                    image={`data:image/png;base64,${event.imagesData[0]}`}
+                                    alt={event.eventName}
+                                />
+                                <Chip
+                                    label={event.status}
+                                    size="small"
+                                    color={
+                                        event.status === 'Upcoming' ? 'primary' :
+                                            event.status === 'Ongoing' ? 'success' :
+                                                event.status === 'Cancelled' ? 'error' :
+                                                    event.status === 'Completed' ? 'info' : 'default'
+                                    }
+                                    sx={{
+                                        position: 'absolute',
+                                        top: 12,
+                                        right: 12,
+                                        fontWeight: 600,
+                                        fontSize: { xs: '0.65rem', sm: '0.7rem' },
+                                        textTransform: 'uppercase',
+                                        letterSpacing: '0.5px',
+                                        boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
+                                    }}
+                                />
+                            </Box>
 
-                                <Box sx={{ mt: { xs: 1, sm: 2 } }}>
-                                    <Stack spacing={{ xs: 1, sm: 1.5 }}>
-                                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                                            <CalendarTodayIcon
-                                                sx={{ color: 'primary.main', fontSize: { xs: 16, sm: 18 } }}
-                                            />
-                                            <Typography
-                                                variant="body2"
-                                                sx={{
-                                                    ml: { xs: 1, sm: 1.5 },
-                                                    color: 'text.primary',
-                                                    fontWeight: 500,
-                                                    fontSize: { xs: '0.75rem', sm: '0.875rem' }
-                                                }}
-                                            >
-                                                {formatTimestamp(event.eventStartDateTime)}
-                                            </Typography>
-                                        </Box>
+                            <CardContent sx={{
+                                p: { xs: 2, sm: 2.5, md: 3 },
+                                flexGrow: 1,
+                                display: 'flex',
+                                flexDirection: 'column',
+                                justifyContent: 'space-between',
+                                background: 'transparent'
+                            }}>
+                                <Box>
+                                    <Typography
+                                        variant="h6"
+                                        component="h2"
+                                        fontWeight="600"
+                                        sx={{
+                                            overflow: 'hidden',
+                                            textOverflow: 'ellipsis',
+                                            display: '-webkit-box',
+                                            WebkitLineClamp: 2,
+                                            WebkitBoxOrient: 'vertical',
+                                            lineHeight: 1.4,
+                                            fontSize: { xs: '1rem', sm: '1.15rem', md: '1.25rem' },
+                                            mb: 1
+                                        }}
+                                    >
+                                        {event.eventName}
+                                    </Typography>
 
-                                        {event.eventEndDateTime && (
+                                    <Grid>
+                                        <Stack>
+                                            <Box>
+                                                <Box
+                                                    sx={{
+                                                        bgcolor: 'primary.lighter',
+                                                        borderRadius: 1.5
+                                                    }}
+                                                >
+
+                                                </Box>
+                                            </Box>
+                                        </Stack>
+                                    </Grid>
+
+                                    {/* <Box sx={{ mt: { xs: 1, sm: 2 } }}>
+                                        <Stack spacing={{ xs: 1, sm: 1.5 }}>
                                             <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                                                <AccessTimeIcon
+                                                <CalendarTodayIcon
                                                     sx={{ color: 'primary.main', fontSize: { xs: 16, sm: 18 } }}
                                                 />
                                                 <Typography
@@ -155,17 +153,36 @@ const EventListState = ({ events }) => {
                                                         fontSize: { xs: '0.75rem', sm: '0.875rem' }
                                                     }}
                                                 >
-                                                    To: {formatTimestamp(event.eventEndDateTime)}
+                                                    {formatTimestamp(event.eventStartDateTime)}
                                                 </Typography>
                                             </Box>
-                                        )}
-                                    </Stack>
+
+                                            {event.eventEndDateTime && (
+                                                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                                    <AccessTimeIcon
+                                                        sx={{ color: 'primary.main', fontSize: { xs: 16, sm: 18 } }}
+                                                    />
+                                                    <Typography
+                                                        variant="body2"
+                                                        sx={{
+                                                            ml: { xs: 1, sm: 1.5 },
+                                                            color: 'text.primary',
+                                                            fontWeight: 500,
+                                                            fontSize: { xs: '0.75rem', sm: '0.875rem' }
+                                                        }}
+                                                    >
+                                                        To: {formatTimestamp(event.eventEndDateTime)}
+                                                    </Typography>
+                                                </Box>
+                                            )}
+                                        </Stack>
+                                    </Box> */}
                                 </Box>
-                            </Box>
-                        </CardContent>
-                    </Card>
-                </Grid>
-            ))}
+                            </CardContent>
+                        </Card>
+                    </Grid>
+                )
+            })}
         </Grid>
     )
 }
