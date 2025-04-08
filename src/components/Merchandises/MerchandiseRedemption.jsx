@@ -1,6 +1,4 @@
-import { collection, query, where, orderBy, onSnapshot, doc, getDoc, updateDoc } from 'firebase/firestore';
 import React, { useEffect, useState } from 'react'
-import { db } from '../../utils/firebaseConfig';
 import {
     Box,
     Typography,
@@ -12,6 +10,7 @@ import {
     Avatar
 } from '@mui/material';
 import { DataGrid } from '@mui/x-data-grid';
+
 import NumbersIcon from '@mui/icons-material/Numbers';
 import BadgeIcon from '@mui/icons-material/Badge';
 import LocalOfferIcon from '@mui/icons-material/LocalOffer';
@@ -20,7 +19,11 @@ import StraightenIcon from '@mui/icons-material/Straighten';
 import PendingIcon from '@mui/icons-material/Pending';
 import UndoIcon from '@mui/icons-material/Undo';
 import InventoryIcon from '@mui/icons-material/Inventory';
+
 import Loader from '../General/Loader';
+
+import { db } from '../../utils/firebaseConfig';
+import { collection, query, where, orderBy, onSnapshot, doc, getDoc, updateDoc } from 'firebase/firestore';
 
 const MerchandiseRedemption = ({ merchandiseID }) => {
     const theme = useTheme();
@@ -116,7 +119,6 @@ const MerchandiseRedemption = ({ merchandiseID }) => {
     }
 
     const fetchStudentData = async (studentID) => {
-        // console.log(studentID);
         const studentRef = doc(db, "user", studentID);
 
         const studentSnap = await getDoc(studentRef);
@@ -550,10 +552,10 @@ const MerchandiseRedemption = ({ merchandiseID }) => {
                     </Box>
                 </Box>
             </Box>
-            <CardContent sx={{ p: 0, '&:last-child': { pb: 0 } }}>
+            <CardContent sx={{ px: 3, '&:last-child': { pb: 0 } }}>
                 <Box
                     sx={{
-                        height: 700,
+                        height: 600,
                         width: '100%',
                         '& .MuiDataGrid-root': {
                             border: 'none',
@@ -634,12 +636,6 @@ const MerchandiseRedemption = ({ merchandiseID }) => {
                                 cursor: 'pointer',
                             },
                         },
-                        '& .MuiDataGrid-virtualScroller::-webkit-scrollbar-corner': {
-                            // backgroundColor: 'transparent',
-                        },
-                        '& .MuiDataGrid-topContainer': {
-                            // backgroundColor: 'transparent'
-                        },
                         '& .MuiTablePagination-root': {
                             fontSize: '0.95rem',
                         },
@@ -665,7 +661,7 @@ const MerchandiseRedemption = ({ merchandiseID }) => {
                         getRowClassName={(params) =>
                             params.row.collected ? 'collected-row' : 'not-collected-row'
                         }
-                        getRowHeight={() => 55} // Ensure consistent row height
+                        getRowHeight={() => 55}
                         sx={{
                             '& .MuiCircularProgress-root': {
                                 color: theme.palette.primary.main,
@@ -683,4 +679,4 @@ const MerchandiseRedemption = ({ merchandiseID }) => {
     );
 };
 
-export default MerchandiseRedemption
+export default MerchandiseRedemption;

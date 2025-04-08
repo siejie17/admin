@@ -3,7 +3,8 @@ import { Route, BrowserRouter as Router, Routes, Navigate } from 'react-router-d
 
 import AppLayout from "./layout/AppLayout";
 import EventListingPage from "./pages/events/EventListingPage";
-import EventCreationPage from './pages/events/EventCreationPage.jsx';
+import EventCreationTabs from './pages/events/EventCreationTabs.jsx';
+import EventTabs from './pages/events/EventTabs.jsx';
 import MerchandiseListingPage from "./pages/merchandise/MerchandiseListingPage";
 
 import LoginPage from './pages/auth/LoginPage';
@@ -12,12 +13,13 @@ import PasswordResetPage from "./pages/auth/PasswordResetPage";
 import { useAuth } from './contexts/AuthContext.jsx';
 import MerchandiseCreationPage from './pages/merchandise/MerchandiseCreationPage.jsx';
 import MerchandiseTabs from './pages/merchandise/MerchandiseTabs.jsx';
+import Loader from './components/General/Loader.jsx';
 
 function App() {
   const { user, loading } = useAuth();
 
   if (loading) {
-    return <div>Loading...</div>; // Or any loading component
+    return <Loader />;
   }
 
   return (
@@ -28,8 +30,8 @@ function App() {
             <Route element={<AppLayout />}>
               {/* Events Routes */}
               <Route path="/event" element={<EventListingPage />} />
-              <Route path="/event/create-event" element={<EventCreationPage />} />
-              {/* <Route path="/events/details" element={<EventDetailPage />} /> */}
+              <Route path="/event/create-event" element={<EventCreationTabs />} />
+              <Route path="/event/details" element={<EventTabs />} />
 
               {/* Merchandise Routes */}
               <Route path="/merchandise" element={<MerchandiseListingPage />} />

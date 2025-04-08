@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import {
   Box,
   Tabs,
@@ -82,14 +82,8 @@ const MerchandiseTabs = () => {
           borderRadius: { xs: 0, md: 3 },
           overflow: 'hidden',
           backgroundColor: '#ffffff',
-          // transition: 'all 0.3s ease-in-out',
-          // '&:hover': {
-          //   boxShadow: '0 10px 30px rgba(0, 0, 0, 0.12)'
-          // },
           width: '100%',
           height: '100%',
-          // mb: 4,
-          // border: '1px solid rgba(0, 0, 0, 0.06)'
         }}
       >
         {/* Header with back button and title */}
@@ -185,7 +179,7 @@ const MerchandiseTabs = () => {
           hidden={activeTab !== 0}
           id={`merchandise-tabpanel-0`}
           aria-labelledby={`merchandise-tab-0`}
-          sx={{ p: 3, height: '100%', overflow: 'auto', marginBottom: '180px' }}
+          sx={{ p: 3, height: '100%', overflow: 'auto', marginBottom: '100px' }}
         >
           {activeTab === 0 && (
             /* Tab Component */

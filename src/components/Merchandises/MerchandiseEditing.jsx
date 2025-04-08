@@ -265,7 +265,7 @@ const MerchandiseEditing = ({ merchandiseID }) => {
     }
 
     return (
-        <Box component="form" onSubmit={handleSubmit} noValidate sx={{ width: '100%', paddingBottom: "280px" }}>
+        <Box component="form" onSubmit={handleSubmit} noValidate sx={{ width: '100%' }}>
             {/* Product Information Section */}
             <Box sx={{ width: '100%', mb: 2 }}>
                 <Typography variant="h6" sx={{ fontWeight: 550 }}>

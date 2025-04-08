@@ -158,14 +158,15 @@ const Merchandise = () => {
   };
 
   return (
-    <Container maxWidth="100%" sx={{ mt: 4, mb: 6 }}>
+    <Container maxWidth="100%" sx={{ py: 4 }}>
       {/* Header Section */}
       <Box
         sx={{
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          mb: 3
+          mb: 3,
+          px: 1
         }}
       >
         <Box sx={{ display: 'flex', alignItems: 'center' }}>

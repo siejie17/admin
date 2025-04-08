@@ -9,10 +9,13 @@ import {
   Typography,
   Button,
   Paper,
-  Link
+  Link,
+  Chip,
+  Divider
 } from '@mui/material';
 import {
-  Add as AddIcon
+  Add as AddIcon,
+  Event as EventIcon
 } from '@mui/icons-material';
 import { collection, getDocs, query, orderBy, limit, startAfter, where } from 'firebase/firestore';
 import EmptyEventState from '../../components/Events/EmptyEventState';
@@ -122,62 +125,94 @@ const EventListingPage = () => {
   };
 
   return (
-    <Container maxWidth="100%" sx={{ mt: 2, ml: 2 }}>
-      {/* Header Section with Title and Create Button */}
+    <Container maxWidth="100%" sx={{ py: 4 }}>
+      {/* Header Section */}
       <Box
         sx={{
           display: 'flex',
           justifyContent: 'space-between',
-          // alignItems: 'center',
-          width: '100%',
-          mb: 4,
-          pb: 4,
-          borderBottom: '1px solid',
-          borderColor: 'divider'
+          alignItems: 'center',
+          mb: 3,
+          px: 1
         }}
       >
-        <Typography
-          variant="h4"
-          component="h1"
-          fontWeight="700"
-          sx={{
-            color: 'text.primary',
-            fontSize: { xs: '1.5rem', sm: '2rem' }
-          }}
-        >
-          My Events
-        </Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+          <EventIcon
+            color="primary"
+            sx={{
+              fontSize: { xs: 28, sm: 36 },
+              mr: 1.5,
+              opacity: 0.9
+            }}
+          />
+          <Typography
+            variant="h4"
+            component="h1"
+            fontWeight="800"
+            sx={{
+              color: theme.palette.text.primary,
+              fontSize: { xs: '1.5rem', sm: '1.75rem', md: '2rem' },
+              lineHeight: 1.2,
+              letterSpacing: '-0.01em'
+            }}
+          >
+            My Events
+          </Typography>
+          <Chip
+            label={events?.length || 0}
+            size="small"
+            color="primary"
+            variant="outlined"
+            sx={{
+              ml: 2,
+              fontWeight: 600,
+              height: 24,
+              borderRadius: 1.5
+            }}
+          />
+        </Box>
 
         <Link
           component={RouterLink}
           to="/event/create-event"
           variant="body2"
-          underline="hover"
+          underline="none"
           sx={{
-            fontWeight: 500,
-            transition: 'all 0.2s',
+            transition: 'all 0.3s',
+            order: { xs: -1, sm: 0 },
+            width: { xs: '100%', sm: 'auto' },
+            display: { xs: 'flex', sm: 'inline-flex' },
+            justifyContent: { xs: 'flex-end', sm: 'center' }
           }}
         >
           <Button
             variant="contained"
             color="primary"
-            startIcon={<AddIcon />}
+            startIcon={<AddIcon sx={{ fontSize: { xs: 18, sm: 20 } }} />}
             sx={{
-              borderRadius: 2,
-              px: 3,
-              py: 1,
+              borderRadius: 2.5,
+              px: { xs: 2, sm: 3 },
+              py: { xs: 1, sm: 1.25 },
               textTransform: 'none',
               fontWeight: 600,
-              boxShadow: 2,
+              fontSize: { xs: '0.9rem', sm: '0.95rem' },
+              boxShadow: '0 4px 12px rgba(25, 118, 210, 0.2)',
+              background: 'linear-gradient(45deg, #1976d2, #2196f3)',
+              transition: 'all 0.3s ease',
               '&:hover': {
-                boxShadow: 4
-              }
+                boxShadow: '0 6px 16px rgba(25, 118, 210, 0.3)',
+                transform: 'translateY(-2px)',
+                background: 'linear-gradient(45deg, #1565c0, #1976d2)'
+              },
+              width: { xs: 'auto', sm: 'auto' }
             }}
           >
             Create Event
           </Button>
         </Link>
       </Box>
+
+      <Divider sx={{ mb: 4, opacity: 0.6 }} />
 
       {/* Content Section */}
       {loading ? (
@@ -208,7 +243,7 @@ const EventListingPage = () => {
         <EmptyEventState />
       ) : (
         <>
-          <Box sx={{ mb: 4 }}>
+          <Box sx={{ mb: 1 }}>
             <EventListState events={events} />
           </Box>
 

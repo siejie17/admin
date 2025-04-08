@@ -20,26 +20,29 @@ const MerchandiseListState = ({ merchandises }) => {
         <Grid
             container
             width="100%"
-            spacing={{ xs: 2, sm: 3, md: 5 }}
-            justifyContent="center"
+            spacing={{ xs: 2, sm: 3, md: 8 }}
             alignItems="center"
+            sx={{
+                px: 5,
+                justifyContent: { xs: 'center', lg: 'flex-start' }
+            }}
         >
             {merchandises.map((merch) => {
                 const encryptedID = CryptoJS.AES.encrypt(merch.id, "UniEXP_Admin").toString();
 
                 return (
-                    <Grid item key={merch.id} xs={9} sm={6} md={4} lg={3}>
+                    <Grid item key={merch.id}>
                         <Link
                             component={RouterLink}
                             to={`/merchandise/details?id=${encodeURIComponent(encryptedID)}&name=${encodeURIComponent(merch.name)}&tab=details`}
                             underline="none"
-                            sx={{ display: 'block', height: '100%' }}
+                            sx={{ display: 'block' }}
                         >
                             <Card
                                 elevation={0}
                                 sx={{
                                     height: '100%',
-                                    width: { xs: 325, sm: 450, md: 500, lg: 500 },
+                                    width: { xs: 325, sm: 425, md: 450 },
                                     display: 'flex',
                                     flexDirection: 'column',
                                     borderRadius: 3,
@@ -80,7 +83,7 @@ const MerchandiseListState = ({ merchandises }) => {
                                     </Typography>
                                 </Box>
 
-                                <Box sx={{ position: 'relative', height: { xs: 180, sm: 200, md: 240 } }}>
+                                <Box sx={{ position: 'relative', height: { xs: 100, sm: 125, md: 175 } }}>
                                     <CardMedia
                                         component="img"
                                         sx={{
@@ -95,21 +98,10 @@ const MerchandiseListState = ({ merchandises }) => {
                                         image={`data:image/png;base64,${merch.images[0]}`}
                                         alt={merch.name}
                                     />
-                                    {/* Gradient overlay */}
-                                    <Box
-                                        sx={{
-                                            position: 'absolute',
-                                            bottom: 0,
-                                            left: 0,
-                                            right: 0,
-                                            height: '30%',
-                                            background: 'linear-gradient(to top, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0) 100%)',
-                                        }}
-                                    />
                                 </Box>
 
                                 <CardContent sx={{
-                                    p: { xs: 2, sm: 2.5, md: 3 },
+                                    p: { xs: 1, sm: 1.5, md: 2 },
                                     flexGrow: 1,
                                     display: 'flex',
                                     flexDirection: 'column',
@@ -136,7 +128,50 @@ const MerchandiseListState = ({ merchandises }) => {
                                             {merch.name}
                                         </Typography>
 
-                                        <Typography
+                                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                            <Box
+                                                sx={{
+                                                    bgcolor: 'primary.lighter',
+                                                    borderRadius: 1.5,
+                                                    px: 1,
+                                                    display: 'flex',
+                                                    justifyContent: 'center',
+                                                    alignItems: 'center',
+                                                }}
+                                            >
+                                                <LocationOnIcon
+                                                    sx={{
+                                                        color: 'primary.main',
+                                                        fontSize: { xs: 18, sm: 20 }
+                                                    }}
+                                                />
+                                            </Box>
+                                            <Box sx={{ ml: 2, display: 'flex', alignItems: 'center', flexWrap: 'wrap' }}>
+                                                <Box>
+                                                    <Typography
+                                                        variant='caption'
+                                                        sx={{
+                                                            color: 'text.secondary',
+                                                            display: 'block'
+                                                        }}
+                                                    >
+                                                        Pickup Location
+                                                    </Typography>
+                                                    <Typography
+                                                        variant='body2'
+                                                        sx={{
+                                                            color: 'text.primary',
+                                                            fontWeight: 600,
+                                                            fontSize: { xs: '0.7rem', sm: '0.8rem' }
+                                                        }}
+                                                    >
+                                                        {merch.collectionLocationName}
+                                                    </Typography>
+                                                </Box>
+                                            </Box>
+                                        </Box>
+
+                                        {/* <Typography
                                             variant="body2"
                                             color="text.secondary"
                                             sx={{
@@ -148,7 +183,7 @@ const MerchandiseListState = ({ merchandises }) => {
                                         >
                                             <LocationOnIcon fontSize="small" />
                                             Pickup Location: {merch.collectionLocationName}
-                                        </Typography>
+                                        </Typography> */}
                                     </Box>
                                 </CardContent>
                             </Card>
