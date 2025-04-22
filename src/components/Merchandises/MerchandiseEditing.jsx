@@ -124,7 +124,7 @@ const MerchandiseEditing = ({ merchandiseID }) => {
         console.log(files);
 
         if (formData.images.length + files.length > 4) {
-            // setErrors({ ...errors, images: 'Maximum 4 images allowed' });
+            setErrors({ ...errors, images: 'Maximum 4 images allowed' });
             return;
         }
 

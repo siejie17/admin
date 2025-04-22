@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import CryptoJS from 'crypto-js';
-import { Box, Tabs, Tab, Typography, IconButton, Tooltip, Card } from '@mui/material';
+import { Box, Tabs, Tab, Typography, IconButton, Tooltip, Card, Button } from '@mui/material';
 
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
@@ -11,15 +11,16 @@ import SportsEsportsOutlinedIcon from '@mui/icons-material/SportsEsportsOutlined
 import FeedOutlinedIcon from '@mui/icons-material/FeedOutlined';
 
 import EventDetailsManager from '../../components/Events/EventDetailsManager';
-import EventQuestManager from '../../components/Events/EventQuestManager';
+import QuestManager from '../../components/Events/QuestManager';
 import ParticipantManager from '../../components/Events/ParticipantManager';
 import AttendanceManager from '../../components/Events/AttendanceManager';
 import FeedbackManager from '../../components/Events/FeedbackManager';
+import { QrCode } from '@mui/icons-material';
 
 const EventTabs = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  
+
   const getTabFromUrl = () => {
     const params = new URLSearchParams(location.search);
     const tab = params.get('tab');
@@ -34,6 +35,11 @@ const EventTabs = () => {
     }
   };
 
+  const getEncryptedID = () => {
+    const params = new URLSearchParams(location.search);
+    return params.get('id');
+  }
+
   const getDecryptedID = () => {
     const params = new URLSearchParams(location.search);
     let id = params.get('id');
@@ -44,48 +50,40 @@ const EventTabs = () => {
     const params = new URLSearchParams(location.search);
     return params.get('name');
   }
-  
+
   const [activeTab, setActiveTab] = useState(getTabFromUrl());
+  const [encryptedID, setEncryptedID] = useState(getEncryptedID());
   const [eventID, setEventID] = useState(getDecryptedID());
   const [eventName, setEventName] = useState(getNameFromUrl());
 
   useEffect(() => {
-    let tab = 1;
-
-    switch (activeTab) {
-      case 'details':
-        tab = 0;
-        break;
-      case 'quests':
-        tab = 1;
-        break;
-      case 'participant':
-        tab = 2;
-        break;
-      case 'attendance':
-        tab = 3;
-        break;
-      case 'feedback':
-        tab = 4;
-        break;
-      default:
-        tab = 0;
-    }
+    const tabLabels = ['details', 'quests', 'participant', 'attendance', 'feedback'];
+    const currentTab = tabLabels[activeTab] ?? 'details';
 
     const searchParams = new URLSearchParams(location.search);
-    searchParams.set('tab', tab);
-
-    navigate({
-      pathname: location.pathname,
-      search: searchParams.toString()
-    }, { replace: true });
+    if (searchParams.get('tab') !== currentTab) {
+      searchParams.set('tab', currentTab);
+      navigate({
+        pathname: location.pathname,
+        search: searchParams.toString()
+      }, { replace: true });
+    }
   }, [activeTab, location.pathname, navigate]);
 
   useEffect(() => {
-    setActiveTab(getTabFromUrl());
-    setEventID(getDecryptedID());
-    setEventName(getNameFromUrl())
+    const newTab = getTabFromUrl();
+    if (newTab !== activeTab) setActiveTab(newTab);
+
+    const newEncryptedID = getEncryptedID();
+    if (newEncryptedID !== encryptedID) setEncryptedID(newEncryptedID);
+
+    const newEventID = getDecryptedID();
+    if (newEventID !== eventID) setEventID(newEventID);
+
+    const newName = getNameFromUrl();
+    if (newName !== eventName) setEventName(newName);
   }, [location.search]);
+
 
   const handleTabChange = (event, newValue) => {
     setActiveTab(newValue);
@@ -101,11 +99,14 @@ const EventTabs = () => {
     >
       <Card
         sx={{
+          display: 'flex',
+          flexDirection: 'column',
           borderRadius: { xs: 0, md: 3 },
           overflow: 'hidden',
           backgroundColor: '#ffffff',
           width: '100%',
           height: '100%',
+          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.05)',
         }}
       >
         {/* Header with back button and title */}
@@ -118,15 +119,17 @@ const EventTabs = () => {
             borderBottom: '1px solid rgba(0, 0, 0, 0.06)'
           }}
         >
-          <Tooltip title="Back to Events">
+          <Tooltip title="Back to Events" arrow>
             <IconButton
               edge="start"
               onClick={() => navigate('/event')}
               sx={{
                 mr: 1.5,
                 color: 'text.primary',
+                transition: 'all 0.2s ease',
                 '&:hover': {
-                  bgcolor: 'rgba(25, 118, 210, 0.08)'
+                  bgcolor: 'rgba(25, 118, 210, 0.08)',
+                  transform: 'translateX(-2px)',
                 }
               }}
               aria-label="back to events"
@@ -146,6 +149,31 @@ const EventTabs = () => {
           >
             {eventName}
           </Typography>
+
+          <Button
+            variant="contained"
+            startIcon={<QrCode />}
+            onClick={() => window.open(`/event/attendance_QR?id=${encodeURIComponent(encryptedID)}&name=${encodeURIComponent(eventName)}`, '_blank')}
+            sx={{
+              borderRadius: 2,
+              textTransform: 'none',
+              fontWeight: 600,
+              px: 1.5,
+              py: 1,
+              boxShadow: 2,
+              fontSize: { xs: 8, md: 13 },
+              backgroundColor: 'primary.main',
+              '&:hover': {
+                backgroundColor: 'primary.dark',
+                boxShadow: 3,
+                transform: 'translateY(-1px)',
+                transition: 'all 0.2s ease',
+              },
+            }}
+            aria-label="show event QR code"
+          >
+            Show Event QR
+          </Button>
         </Box>
 
         {/* Tabs section */}
@@ -158,18 +186,20 @@ const EventTabs = () => {
             sx={{
               '& .MuiTabs-indicator': {
                 backgroundColor: 'primary.main',
-                height: 2
+                height: 3,
+                borderRadius: '3px 3px 0 0',
               },
               minHeight: '55px',
               borderBottom: '1px solid rgba(169, 169, 169, 0.3)',
               '& .MuiButtonBase-root': {
                 minHeight: '55px',
                 py: 0.5,
+                transition: 'all 0.2s ease',
               }
             }}
           >
             <Tab
-              icon={<InfoOutlinedIcon sx={{ fontSize: 20, mr: 1 }} />}
+              icon={<InfoOutlinedIcon sx={{ fontSize: 22, mr: 0.5 }} />}
               iconPosition="start"
               label="Details"
               sx={{
@@ -177,9 +207,15 @@ const EventTabs = () => {
                 fontWeight: 550,
                 color: 'text.secondary',
                 borderRight: '1px solid rgba(169, 169, 169, 0.3)',
+                fontSize: '0.9rem',
                 '&.Mui-selected': {
                   color: 'primary.main',
-                  fontWeight: 700
+                  fontWeight: 600,
+                  backgroundColor: 'rgba(25, 118, 210, 0.04)',
+                },
+                '&:hover': {
+                  backgroundColor: 'rgba(0, 0, 0, 0.03)',
+                  color: 'primary.dark',
                 }
               }}
             />
@@ -192,9 +228,15 @@ const EventTabs = () => {
                 fontWeight: 550,
                 color: 'text.secondary',
                 borderRight: '1px solid rgba(169, 169, 169, 0.3)',
+                fontSize: '0.9rem',
                 '&.Mui-selected': {
                   color: 'primary.main',
-                  fontWeight: 700
+                  fontWeight: 600,
+                  backgroundColor: 'rgba(25, 118, 210, 0.04)',
+                },
+                '&:hover': {
+                  backgroundColor: 'rgba(0, 0, 0, 0.03)',
+                  color: 'primary.dark',
                 }
               }}
             />
@@ -207,9 +249,15 @@ const EventTabs = () => {
                 fontWeight: 550,
                 color: 'text.secondary',
                 borderRight: '1px solid rgba(169, 169, 169, 0.3)',
+                fontSize: '0.9rem',
                 '&.Mui-selected': {
                   color: 'primary.main',
-                  fontWeight: 700
+                  fontWeight: 600,
+                  backgroundColor: 'rgba(25, 118, 210, 0.04)',
+                },
+                '&:hover': {
+                  backgroundColor: 'rgba(0, 0, 0, 0.03)',
+                  color: 'primary.dark',
                 }
               }}
             />
@@ -222,9 +270,15 @@ const EventTabs = () => {
                 fontWeight: 550,
                 color: 'text.secondary',
                 borderRight: '1px solid rgba(169, 169, 169, 0.3)',
+                fontSize: '0.9rem',
                 '&.Mui-selected': {
                   color: 'primary.main',
-                  fontWeight: 700
+                  fontWeight: 600,
+                  backgroundColor: 'rgba(25, 118, 210, 0.04)',
+                },
+                '&:hover': {
+                  backgroundColor: 'rgba(0, 0, 0, 0.03)',
+                  color: 'primary.dark',
                 }
               }}
             />
@@ -236,63 +290,71 @@ const EventTabs = () => {
                 textTransform: 'none',
                 fontWeight: 550,
                 color: 'text.secondary',
+                fontSize: '0.9rem',
                 '&.Mui-selected': {
                   color: 'primary.main',
-                  fontWeight: 700
+                  fontWeight: 600,
+                  backgroundColor: 'rgba(25, 118, 210, 0.04)',
+                },
+                '&:hover': {
+                  backgroundColor: 'rgba(0, 0, 0, 0.03)',
+                  color: 'primary.dark',
                 }
               }}
             />
           </Tabs>
         </Box>
 
-        <Box
-          role="tabpanel"
-          hidden={activeTab !== 0}
-          id={`event-tabpanel-0`}
-          aria-labelledby={`merchandise-tab-0`}
-          sx={{ p: 3, height: '100%', overflow: 'auto', marginBottom: '100px' }}
-        >
-          {activeTab === 0 && <EventDetailsManager eventID={eventID} />}
-        </Box>
+        <Box sx={{ flexGrow: 1, overflow: 'auto' }}>
+          <Box
+            role="tabpanel"
+            hidden={activeTab !== 0}
+            id={`event-tabpanel-0`}
+            aria-labelledby={`merchandise-tab-0`}
+            sx={{ p: 3, maxHeight: '100%', overflow: 'auto', marginBottom: '100px' }}
+          >
+            {activeTab === 0 && <EventDetailsManager eventID={eventID} />}
+          </Box>
 
-        <Box
-          role="tabpanel"
-          hidden={activeTab !== 1}
-          id={`event-tabpanel-1`}
-          aria-labelledby={`merchandise-tab-1`}
-          sx={{ p: 3, height: '100%', overflow: 'auto', marginBottom: '100px' }}
-        >
-          {activeTab === 1 && <EventQuestManager eventID={eventID} />}
-        </Box>
+          <Box
+            role="tabpanel"
+            hidden={activeTab !== 1}
+            id={`event-tabpanel-1`}
+            aria-labelledby={`event-tab-1`}
+            sx={{ px: 3, minHeight: '100%', height: '100%', overflowY: 'auto' }}
+          >
+            {activeTab === 1 && <QuestManager eventID={eventID} eventName={eventName} />}
+          </Box>
 
-        <Box
-          role="tabpanel"
-          hidden={activeTab !== 2}
-          id={`event-tabpanel-2`}
-          aria-labelledby={`merchandise-tab-2`}
-          sx={{ p: 3 }}
-        >
-          {activeTab === 2 && <ParticipantManager eventID={eventID} />}
-        </Box>
+          <Box
+            role="tabpanel"
+            hidden={activeTab !== 2}
+            id={`event-tabpanel-2`}
+            aria-labelledby={`event-tab-2`}
+            sx={{ p: 3 }}
+          >
+            {activeTab === 2 && <ParticipantManager eventID={eventID} />}
+          </Box>
 
-        <Box
-          role="tabpanel"
-          hidden={activeTab !== 3}
-          id={`event-tabpanel-3`}
-          aria-labelledby={`merchandise-tab-3`}
-          sx={{ p: 3 }}
-        >
-          {activeTab === 3 && <AttendanceManager eventID={eventID} />}
-        </Box>
+          <Box
+            role="tabpanel"
+            hidden={activeTab !== 3}
+            id={`event-tabpanel-3`}
+            aria-labelledby={`event-tab-3`}
+            sx={{ px: 3, minHeight: '100%', height: '100%', overflowY: 'auto' }}
+          >
+            {activeTab === 3 && <AttendanceManager eventID={eventID} />}
+          </Box>
 
-        <Box
-          role="tabpanel"
-          hidden={activeTab !== 4}
-          id={`event-tabpanel-4`}
-          aria-labelledby={`merchandise-tab-4`}
-          sx={{ p: 3 }}
-        >
-          {activeTab === 4 && <FeedbackManager eventID={eventID} />}
+          <Box
+            role="tabpanel"
+            hidden={activeTab !== 4}
+            id={`event-tabpanel-4`}
+            aria-labelledby={`event-tab-4`}
+            sx={{ px: 3, minHeight: '100%', height: '100%', overflowY: 'auto' }}
+          >
+            {activeTab === 4 && <FeedbackManager eventID={eventID} eventName={eventName} />}
+          </Box>
         </Box>
       </Card>
     </Box>

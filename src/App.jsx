@@ -14,6 +14,8 @@ import { useAuth } from './contexts/AuthContext.jsx';
 import MerchandiseCreationPage from './pages/merchandise/MerchandiseCreationPage.jsx';
 import MerchandiseTabs from './pages/merchandise/MerchandiseTabs.jsx';
 import Loader from './components/General/Loader.jsx';
+import AttendanceQR from './components/Events/Attendance/AttendanceQR.jsx';
+import QuestDetails from './components/Events/Quest/QuestDetails.jsx';
 
 function App() {
   const { user, loading } = useAuth();
@@ -32,6 +34,7 @@ function App() {
               <Route path="/event" element={<EventListingPage />} />
               <Route path="/event/create-event" element={<EventCreationTabs />} />
               <Route path="/event/details" element={<EventTabs />} />
+              <Route path="/event/details/quest" element={<QuestDetails />} />
 
               {/* Merchandise Routes */}
               <Route path="/merchandise" element={<MerchandiseListingPage />} />
@@ -39,6 +42,7 @@ function App() {
               <Route path="/merchandise/details" element={<MerchandiseTabs />} />
             </Route>
 
+            <Route path="/event/attendance_QR" element={<AttendanceQR />} />
             <Route path="*" element={<Navigate to="/event" />} />
           </>
         ) : (

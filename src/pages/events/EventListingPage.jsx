@@ -11,7 +11,8 @@ import {
   Paper,
   Link,
   Chip,
-  Divider
+  Divider,
+  alpha
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -125,26 +126,42 @@ const EventListingPage = () => {
   };
 
   return (
-    <Container maxWidth="100%" sx={{ py: 4 }}>
+    <Box
+      sx={{
+        maxWidth: "100%",
+        py: 5,
+        px: { xs: 2, sm: 4 },
+      }}
+    >
       {/* Header Section */}
       <Box
         sx={{
           display: 'flex',
+          flexDirection: { xs: 'column', sm: 'row' },
           justifyContent: 'space-between',
-          alignItems: 'center',
-          mb: 3,
-          px: 1
+          alignItems: { xs: 'flex-start', sm: 'center' },
+          mb: 4,
+          gap: { xs: 3, sm: 0 }
         }}
       >
         <Box sx={{ display: 'flex', alignItems: 'center' }}>
-          <EventIcon
-            color="primary"
+          <Box
             sx={{
-              fontSize: { xs: 28, sm: 36 },
-              mr: 1.5,
-              opacity: 0.9
+              backgroundColor: alpha(theme.palette.primary.main, 0.1),
+              borderRadius: 2,
+              p: 1.5,
+              mr: 2,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
             }}
-          />
+          >
+            <EventIcon
+              color="primary"
+              sx={{ fontSize: { xs: 24, sm: 28 } }}
+            />
+          </Box>
+
           <Typography
             variant="h4"
             component="h1"
@@ -164,55 +181,40 @@ const EventListingPage = () => {
             color="primary"
             variant="outlined"
             sx={{
-              ml: 2,
               fontWeight: 600,
               height: 24,
-              borderRadius: 1.5
+              borderRadius: 1,
+              ml: 1.5
             }}
           />
         </Box>
 
-        <Link
+        <Button
           component={RouterLink}
           to="/event/create-event"
-          variant="body2"
-          underline="none"
+          variant="contained"
+          color="primary"
+          startIcon={<AddIcon />}
           sx={{
-            transition: 'all 0.3s',
-            order: { xs: -1, sm: 0 },
-            width: { xs: '100%', sm: 'auto' },
-            display: { xs: 'flex', sm: 'inline-flex' },
-            justifyContent: { xs: 'flex-end', sm: 'center' }
+            borderRadius: 2,
+            px: 3,
+            py: 1.25,
+            textTransform: 'none',
+            fontWeight: 600,
+            boxShadow: 'none',
+            bgcolor: theme.palette.primary.main,
+            '&:hover': {
+              boxShadow: `0 8px 16px ${alpha(theme.palette.primary.main, 0.25)}`,
+              bgcolor: theme.palette.primary.dark,
+            },
+            transition: 'all 0.2s ease',
+            alignSelf: { xs: 'stretch', sm: 'auto' },
+            width: { xs: '100%', sm: 'auto' }
           }}
         >
-          <Button
-            variant="contained"
-            color="primary"
-            startIcon={<AddIcon sx={{ fontSize: { xs: 18, sm: 20 } }} />}
-            sx={{
-              borderRadius: 2.5,
-              px: { xs: 2, sm: 3 },
-              py: { xs: 1, sm: 1.25 },
-              textTransform: 'none',
-              fontWeight: 600,
-              fontSize: { xs: '0.9rem', sm: '0.95rem' },
-              boxShadow: '0 4px 12px rgba(25, 118, 210, 0.2)',
-              background: 'linear-gradient(45deg, #1976d2, #2196f3)',
-              transition: 'all 0.3s ease',
-              '&:hover': {
-                boxShadow: '0 6px 16px rgba(25, 118, 210, 0.3)',
-                transform: 'translateY(-2px)',
-                background: 'linear-gradient(45deg, #1565c0, #1976d2)'
-              },
-              width: { xs: 'auto', sm: 'auto' }
-            }}
-          >
-            Create Event
-          </Button>
-        </Link>
+          Create Event
+        </Button>
       </Box>
-
-      <Divider sx={{ mb: 4, opacity: 0.6 }} />
 
       {/* Content Section */}
       {loading ? (
@@ -222,17 +224,39 @@ const EventListingPage = () => {
             justifyContent: 'center',
             alignItems: 'center',
             flexDirection: 'column',
-            py: 10
+            py: 10,
+            bgcolor: alpha(theme.palette.background.paper, 0.6),
+            borderRadius: 3,
+            backdropFilter: 'blur(8px)',
           }}
         >
-          <CircularProgress
-            size={48}
-            thickness={3}
-            sx={{ color: 'primary.main' }}
-          />
+          <Box sx={{ position: 'relative' }}>
+            <CircularProgress
+              size={48}
+              thickness={4}
+              sx={{
+                color: 'primary.main',
+                opacity: 0.3
+              }}
+            />
+            <CircularProgress
+              size={48}
+              thickness={4}
+              sx={{
+                color: 'primary.main',
+                position: 'absolute',
+                left: 0,
+                animationDuration: '1s'
+              }}
+            />
+          </Box>
           <Typography
             variant="body1"
-            sx={{ mt: 2, color: 'text.secondary' }}
+            sx={{
+              mt: 3,
+              color: 'text.primary',
+              fontWeight: 500
+            }}
           >
             Loading your events...
           </Typography>
@@ -243,22 +267,22 @@ const EventListingPage = () => {
         <EmptyEventState />
       ) : (
         <>
-          <Box sx={{ mb: 1 }}>
-            <EventListState events={events} />
-          </Box>
+          <EventListState events={events} />
 
           <Box sx={{
             display: 'flex',
             justifyContent: 'center',
-            mt: { xs: 4, sm: 5, md: 6 }
+            mt: 3
           }}>
             <Paper
               elevation={0}
               sx={{
-                py: 1.5,
-                px: 2,
-                borderRadius: 2,
-                backgroundColor: 'background.paper'
+                py: 1,
+                px: 1.5,
+                borderRadius: 3,
+                backgroundColor: theme.palette.background.paper,
+                border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+                backdropFilter: 'blur(8px)',
               }}
             >
               <Pagination
@@ -271,14 +295,18 @@ const EventListingPage = () => {
                 showLastButton
                 sx={{
                   '& .MuiPaginationItem-root': {
-                    borderRadius: 2,
+                    color: 'black',
+                    borderRadius: 1.5,
                     mx: { xs: 0.2, sm: 0.5 },
                     fontWeight: 500,
-                    fontSize: { xs: '0.875rem', sm: '1rem' }
+                    fontSize: { xs: '0.875rem', sm: '0.9rem' }
                   },
                   '& .Mui-selected': {
                     fontWeight: 700,
-                    boxShadow: '0px 2px 4px rgba(0,0,0,0.1)'
+                    backgroundColor: alpha(theme.palette.primary.main, 0.1),
+                    '&:hover': {
+                      backgroundColor: alpha(theme.palette.primary.main, 0.2),
+                    }
                   }
                 }}
               />
@@ -286,7 +314,7 @@ const EventListingPage = () => {
           </Box>
         </>
       )}
-    </Container>
+    </Box>
   );
 };
 

@@ -8,7 +8,9 @@ import {
     Grid,
     Stack,
     Chip,
-    Link
+    Link,
+    alpha,
+    useTheme
 } from '@mui/material';
 import {
     CalendarToday as CalendarTodayIcon,
@@ -21,6 +23,8 @@ import { Link as RouterLink } from 'react-router-dom';
 import { format } from 'date-fns';
 
 const EventListState = ({ events }) => {
+    const theme = useTheme();
+
     // Format Firebase timestamp to readable date
     const formatTimestamp = (timestamp) => {
         if (!timestamp) return 'TBA';
@@ -33,10 +37,9 @@ const EventListState = ({ events }) => {
         <Grid
             container
             width="100%"
-            spacing={{ xs: 2, sm: 3, md: 8 }}
-            alignItems="center"
+            spacing={{ xs: 2, sm: 3, md: 5, lg: 8 }}
             sx={{
-                px: 5,
+                px: { xs: 2, sm: 4 },
                 justifyContent: { xs: 'center', lg: 'flex-start' }
             }}
         >
@@ -61,28 +64,28 @@ const EventListState = ({ events }) => {
                                     borderRadius: 3,
                                     overflow: 'hidden',
                                     border: '1px solid',
-                                    borderColor: 'divider',
-                                    transition: 'all 0.3s ease',
+                                    borderColor: alpha(theme.palette.divider, 0.1),
+                                    transition: 'all 0.25s ease',
                                     position: 'relative',
-                                    background: 'linear-gradient(to bottom, #ffffff, #f8f9fa)',
+                                    background: theme.palette.background.paper,
                                     '&:hover': {
                                         transform: { xs: 'none', sm: 'translateY(-4px)' },
-                                        boxShadow: { xs: 'none', sm: '0 8px 16px rgba(0,0,0,0.08)' },
+                                        boxShadow: { xs: 'none', sm: '0 12px 20px rgba(0,0,0,0.06)' },
+                                        borderColor: alpha(theme.palette.primary.main, 0.3),
                                         cursor: 'pointer',
-                                        borderColor: 'primary.light'
                                     }
                                 }}
                             >
-                                <Box sx={{ position: 'relative', height: { xs: 100, sm: 125, md: 175 } }}>
+                                <Box sx={{ position: 'relative', height: { xs: 150, sm: 175 } }}>
                                     <CardMedia
                                         component="img"
                                         sx={{
                                             height: '100%',
                                             width: '100%',
                                             objectFit: 'cover',
-                                            transition: 'transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
+                                            transition: 'transform 0.5s ease',
                                             '&:hover': {
-                                                transform: { xs: 'none', sm: 'scale(1.08)' },
+                                                transform: { xs: 'none', sm: 'scale(1.05)' },
                                             }
                                         }}
                                         image={`data:image/png;base64,${event.imagesData[0]}`}
@@ -91,150 +94,108 @@ const EventListState = ({ events }) => {
                                     <Chip
                                         label={event.status}
                                         size="small"
-                                        color={
-                                            event.status === 'Upcoming' ? 'primary' :
-                                                event.status === 'Ongoing' ? 'success' :
-                                                    event.status === 'Cancelled' ? 'error' :
-                                                        event.status === 'Completed' ? 'info' : 'default'
-                                        }
                                         sx={{
                                             position: 'absolute',
-                                            top: 12,
-                                            right: 12,
+                                            top: 10,
+                                            right: 10,
                                             fontWeight: 600,
-                                            fontSize: { xs: '0.65rem', sm: '0.7rem' },
+                                            fontSize: '0.65rem',
                                             textTransform: 'uppercase',
                                             letterSpacing: '0.5px',
-                                            backgroundColor: 'primary.main',
+                                            backgroundColor:
+                                                event.status === 'Upcoming' ? alpha(theme.palette.primary.main, 0.95) :
+                                                    event.status === 'Ongoing' ? alpha(theme.palette.success.main, 0.95) :
+                                                        event.status === 'Cancelled' ? alpha(theme.palette.error.main, 0.95) :
+                                                            event.status === 'Completed' ? alpha(theme.palette.info.main, 0.95) :
+                                                                alpha(theme.palette.primary.main, 0.95),
                                             color: "#fff",
-                                            boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
+                                            height: 22,
+                                            borderRadius: 1,
+                                            boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+                                            px: 1
                                         }}
                                     />
                                 </Box>
 
-                                <CardContent sx={{
-                                    p: { xs: 1, sm: 1.5, md: 2 },
-                                    flexGrow: 1,
-                                    display: 'flex',
-                                    flexDirection: 'column',
-                                    justifyContent: 'space-between',
-                                    background: 'transparent'
-                                }}>
-                                    <Box>
-                                        <Box>
-                                            <Typography
-                                                variant="h5"
-                                                component="h1"
-                                                fontWeight="600"
-                                                sx={{
-                                                    overflow: 'hidden',
-                                                    textOverflow: 'ellipsis',
-                                                    display: '-webkit-box',
-                                                    WebkitLineClamp: 2,
-                                                    WebkitBoxOrient: 'vertical',
-                                                    lineHeight: 1.4,
-                                                    fontSize: { xs: '1rem', sm: '1.15rem', md: '1.25rem' },
-                                                    mb: 1
-                                                }}
-                                            >
-                                                {event.eventName}
-                                            </Typography>
-                                        </Box>
+                                <CardContent
+                                    sx={{
+                                        p: 2,
+                                        pt: 1.5,
+                                        pb: "16px !important",
+                                        flexGrow: 1,
+                                        display: 'flex',
+                                        flexDirection: 'column'
+                                    }}
+                                >
+                                    <Typography
+                                        variant="h6"
+                                        component="h2"
+                                        fontWeight="650"
+                                        sx={{
+                                            overflow: 'hidden',
+                                            textOverflow: 'ellipsis',
+                                            display: '-webkit-box',
+                                            WebkitLineClamp: 2,
+                                            WebkitBoxOrient: 'vertical',
+                                            lineHeight: 1.3,
+                                            fontSize: { xs: '0.95rem', sm: '1rem' },
+                                            color: theme.palette.text.primary,
+                                            height: '2em'
+                                        }}
+                                    >
+                                        {event.eventName}
+                                    </Typography>
 
-                                        <Stack spacing={2}>
-                                            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                                                <Box
+                                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                        <Box
+                                            sx={{
+                                                bgcolor: 'primary.lighter',
+                                                borderRadius: 1.5,
+                                                px: 1,
+                                                display: 'flex',
+                                                justifyContent: 'center',
+                                                alignItems: 'center',
+                                            }}
+                                        >
+                                            <CalendarTodayIcon
+                                                sx={{
+                                                    color: 'primary.main',
+                                                    fontSize: { xs: 18, sm: 20 }
+                                                }}
+                                            />
+                                        </Box>
+                                        <Box sx={{ ml: 2, display: 'flex', alignItems: 'center', flexWrap: 'wrap' }}>
+                                            <Box>
+                                                <Typography
+                                                    variant='caption'
                                                     sx={{
-                                                        bgcolor: 'primary.lighter',
-                                                        borderRadius: 1.5,
-                                                        px: 1,
-                                                        display: 'flex',
-                                                        justifyContent: 'center',
-                                                        alignItems: 'center',
+                                                        color: 'text.secondary',
+                                                        display: 'block'
                                                     }}
                                                 >
-                                                    <CalendarTodayIcon
-                                                        sx={{
-                                                            color: 'primary.main',
-                                                            fontSize: { xs: 18, sm: 20 }
-                                                        }}
-                                                    />
-                                                </Box>
-                                                <Box sx={{ ml: 2, display: 'flex', alignItems: 'center', flexWrap: 'wrap' }}>
-                                                    <Box>
-                                                        <Typography
-                                                            variant='caption'
-                                                            sx={{
-                                                                color: 'text.secondary',
-                                                                display: 'block'
-                                                            }}
-                                                        >
-                                                            Starts
-                                                        </Typography>
-                                                        <Typography
-                                                            variant='body2'
-                                                            sx={{
-                                                                color: 'text.primary',
-                                                                fontWeight: 600,
-                                                                fontSize: { xs: '0.7rem', sm: '0.8rem' }
-                                                            }}
-                                                        >
-                                                            {formatTimestamp(event.eventStartDateTime)}
-                                                        </Typography>
-                                                    </Box>
-
-                                                    <>
-                                                        <ArrowRightAltIcon
-                                                            sx={{
-                                                                mx: { xs: 1, sm: 2 },
-                                                                color: 'text.secondary',
-                                                                fontSize: { xs: 20, sm: 24 }
-                                                            }}
-                                                        />
-                                                        <Box>
-                                                            <Typography
-                                                                variant='caption'
-                                                                sx={{
-                                                                    color: 'text.secondary',
-                                                                    display: 'block'
-                                                                }}
-                                                            >
-                                                                Ends
-                                                            </Typography>
-                                                            <Typography
-                                                                variant='body2'
-                                                                sx={{
-                                                                    color: 'text.primary',
-                                                                    fontWeight: 600,
-                                                                    fontSize: { xs: '0.7rem', sm: '0.8rem' }
-                                                                }}
-                                                            >
-                                                                {formatTimestamp(event.eventEndDateTime)}
-                                                            </Typography>
-                                                        </Box>
-                                                    </>
-                                                </Box>
+                                                    Starts
+                                                </Typography>
+                                                <Typography
+                                                    variant='body2'
+                                                    sx={{
+                                                        color: 'text.primary',
+                                                        fontWeight: 600,
+                                                        fontSize: { xs: '0.7rem', sm: '0.8rem' }
+                                                    }}
+                                                >
+                                                    {formatTimestamp(event.eventStartDateTime)}
+                                                </Typography>
                                             </Box>
 
-                                            <Box sx={{ display: 'flex', alignItems: 'center', mt: "12px" }}>
-                                                <Box
+                                            <>
+                                                <ArrowRightAltIcon
                                                     sx={{
-                                                        bgcolor: 'primary.lighter',
-                                                        borderRadius: 1.5,
-                                                        px: 1,
-                                                        display: 'flex',
-                                                        justifyContent: 'center',
-                                                        alignItems: 'center'
+                                                        mx: { xs: 1, sm: 2 },
+                                                        color: 'text.secondary',
+                                                        fontSize: { xs: 20, sm: 24 }
                                                     }}
-                                                >
-                                                    <LocationOnIcon
-                                                        sx={{
-                                                            color: 'primary.main',
-                                                            fontSize: { xs: 18, sm: 20 }
-                                                        }}
-                                                    />
-                                                </Box>
-                                                <Box sx={{ ml: 2 }}>
+                                                />
+                                                <Box>
                                                     <Typography
                                                         variant='caption'
                                                         sx={{
@@ -242,7 +203,7 @@ const EventListState = ({ events }) => {
                                                             display: 'block'
                                                         }}
                                                     >
-                                                        Location
+                                                        Ends
                                                     </Typography>
                                                     <Typography
                                                         variant='body2'
@@ -252,11 +213,52 @@ const EventListState = ({ events }) => {
                                                             fontSize: { xs: '0.7rem', sm: '0.8rem' }
                                                         }}
                                                     >
-                                                        {event.locationName || 'No location speacified'}
+                                                        {formatTimestamp(event.eventEndDateTime)}
                                                     </Typography>
                                                 </Box>
-                                            </Box>
-                                        </Stack>
+                                            </>
+                                        </Box>
+                                    </Box>
+
+                                    <Box sx={{ display: 'flex', alignItems: 'center', mt: "12px" }}>
+                                        <Box
+                                            sx={{
+                                                bgcolor: 'primary.lighter',
+                                                borderRadius: 1.5,
+                                                px: 1,
+                                                display: 'flex',
+                                                justifyContent: 'center',
+                                                alignItems: 'center'
+                                            }}
+                                        >
+                                            <LocationOnIcon
+                                                sx={{
+                                                    color: 'primary.main',
+                                                    fontSize: { xs: 18, sm: 20 }
+                                                }}
+                                            />
+                                        </Box>
+                                        <Box sx={{ ml: 2 }}>
+                                            <Typography
+                                                variant='caption'
+                                                sx={{
+                                                    color: 'text.secondary',
+                                                    display: 'block'
+                                                }}
+                                            >
+                                                Location
+                                            </Typography>
+                                            <Typography
+                                                variant='body2'
+                                                sx={{
+                                                    color: 'text.primary',
+                                                    fontWeight: 600,
+                                                    fontSize: { xs: '0.7rem', sm: '0.8rem' }
+                                                }}
+                                            >
+                                                {event.locationName || 'No location speacified'}
+                                            </Typography>
+                                        </Box>
                                     </Box>
                                 </CardContent>
                             </Card>
