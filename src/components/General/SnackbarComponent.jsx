@@ -1,7 +1,11 @@
 import { Alert, Snackbar } from '@mui/material';
-import React from 'react';
+import React, { useEffect } from 'react';
 
 const SnackbarComponent = ({ snackbarOpen, setSnackbarOpen, snackbarContent }) => {
+    useEffect(() => {
+        console.log(snackbarContent);
+    }, [snackbarContent])
+    
     return (
         <Snackbar
             anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}

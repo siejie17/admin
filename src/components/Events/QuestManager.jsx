@@ -1,22 +1,35 @@
-import { collection, doc, getDocs, onSnapshot, query, where } from 'firebase/firestore';
 import React, { useEffect, useState } from 'react';
-import { db } from '../../utils/firebaseConfig';
+
 import { Box, Grid, Paper, Typography, useTheme } from '@mui/material';
 import { NumbersOutlined as NumbersOutlinedIcon, Task as TaskIcon } from '@mui/icons-material';
+
+import { db } from '../../utils/firebaseConfig';
+import { collection, getDocs, onSnapshot, query, where } from 'firebase/firestore';
+
 import MetricCard from '../General/MetricCard';
-import QuestList from './Quest/QuestList';
 import Loader from '../General/Loader';
+
+import QuestList from './Quest/QuestList';
 import QuestAddButton from './Quest/QuestAddButton';
+import QuestAdditionForm from './Quest/QuestAdditionForm';
 
 const QuestManager = ({ eventID, eventName }) => {
     const [quests, setQuests] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
-    const [questExist, setQuestExist] = useState({
-        earlyBird: false,
-        networking: false
-    });
+
+    const [questAdditionFormOpen, setQuestAdditionFormOpen] = useState(false);
+    const [questExist, setQuestExist] = useState({ earlyBird: false, networking: false });
+    const [qaIndex, setQAIndex] = useState(0);
 
     const theme = useTheme();
+
+    const QUEST_COLOR = {
+        "attendance": "rgba(76, 175, 80, 0.7)", // Green
+        "earlyBird": "rgba(33, 150, 243, 0.7)", // Blue
+        "q&a": "rgba(255, 152, 0, 0.7)", // Orange
+        "networking": "rgba(156, 39, 176, 0.7)", // Purple
+        "feedback": "rgba(244, 67, 54, 0.7)", // Red
+    };
 
     useEffect(() => {
         let unsubscribe = () => { };
@@ -36,7 +49,7 @@ const QuestManager = ({ eventID, eventName }) => {
 
     const fetchQuestProgress = async () => {
         try {
-            let eventQuests = [];
+            let unsubscribes = [];
 
             const questsQuery = query(collection(db, "quest"), where("eventID", "==", eventID));
             const questsSnapshot = await getDocs(questsQuery);
@@ -47,58 +60,78 @@ const QuestManager = ({ eventID, eventName }) => {
             const questsID = questsDoc.id;
 
             const questListRef = collection(db, "quest", questsID, "questList");
-            const questListSnapshot = await getDocs(questListRef);
 
-            if (questListSnapshot.empty) return [];
+            const unsubscribeEventQuests = onSnapshot(questListRef, async (questListSnapshot) => {
+                setQuests([]);
+                let eventQuests = [];
+                
+                if (questListSnapshot.empty) return [];
 
-            for (const quest of questListSnapshot.docs) {
-                eventQuests.push({
-                    id: quest.id,
-                    ...quest.data(),
-                    totalCompleted: 0
-                });
-            }
+                for (const quest of questListSnapshot.docs) {
+                    eventQuests.push({
+                        id: quest.id,
+                        ...quest.data(),
+                        totalCompleted: 0
+                    });
+                }
 
-            const questTypes = eventQuests.map(quest => quest.questType);
+                const questTypes = eventQuests.map(quest => quest.questType);
 
-            setQuestExist({
-                earlyBird: questTypes.includes("earlyBird"),
-                networking: questTypes.includes("networking")
-            })
+                setQuestExist({ earlyBird: questTypes.includes("earlyBird"), networking: questTypes.includes("networking") })
+                setQAIndex(questTypes.filter(type => type === "q&a").length);
 
-            const questsProgressQuery = query(collection(db, "questProgress"), where("eventID", "==", eventID));
-            const questsProgressSnapshot = await getDocs(questsProgressQuery);
+                const questsProgressQuery = query(collection(db, "questProgress"), where("eventID", "==", eventID));
+                const questsProgressSnapshot = await getDocs(questsProgressQuery);
 
-            let unsubscribes = [];
+                for (const questsProgressDoc of questsProgressSnapshot.docs) {
+                    const id = questsProgressDoc.id;
+                    const userQuestProgressRef = collection(db, "questProgress", id, "questProgressList");
 
-            for (const questsProgressDoc of questsProgressSnapshot.docs) {
-                const id = questsProgressDoc.id;
-                const userQuestProgressRef = collection(db, "questProgress", id, "questProgressList");
+                    const unsubscribeUserQuestProgress = onSnapshot(userQuestProgressRef, userQuestProgressSnapshot => {
+                        for (const userQuestProgress of userQuestProgressSnapshot.docs) {
+                            const userQuestData = userQuestProgress.data();
+                            const index = eventQuests.findIndex(e => e.id === userQuestData.questID);
 
-                const unsubscribeUserQuestProgress = onSnapshot(userQuestProgressRef, userQuestProgressSnapshot => {
-                    for (const userQuestProgress of userQuestProgressSnapshot.docs) {
-                        const userQuestData = userQuestProgress.data();
-                        const index = eventQuests.findIndex(e => e.id === userQuestData.questID);
+                            if (index !== -1 && userQuestData.isCompleted) {
+                                const updatedQuest = {
+                                    ...eventQuests[index],
+                                    totalCompleted: eventQuests[index].totalCompleted + 1
+                                };
 
-                        if (index !== -1 && userQuestData.isCompleted) {
-                            const updatedQuest = {
-                                ...eventQuests[index],
-                                totalCompleted: eventQuests[index].totalCompleted + 1
-                            };
-
-                            eventQuests = [
-                                ...eventQuests.slice(0, index),
-                                updatedQuest,
-                                ...eventQuests.slice(index + 1)
-                            ];
+                                eventQuests = [
+                                    ...eventQuests.slice(0, index),
+                                    updatedQuest,
+                                    ...eventQuests.slice(index + 1)
+                                ];
+                            }
                         }
-                    }
 
-                    setQuests(eventQuests);
-                });
+                        eventQuests.sort((a, b) => {
+                            const order = ["attendance", "earlyBird", "q&a", "networking", "feedback"];
+                            const aIndex = order.indexOf(a.questType);
+                            const bIndex = order.indexOf(b.questType);
+                        
+                            if (aIndex !== bIndex) return aIndex - bIndex;
+                        
+                            // If both are "q&a", sort by the number in the title
+                            if (a.questType === "q&a" && b.questType === "q&a") {
+                                const getNumber = (name) => {
+                                    const match = name.match(/\[#(\d+)\]/);
+                                    return match ? parseInt(match[1], 10) : 0;
+                                };
+                                return getNumber(a.questName) - getNumber(b.questName);
+                            }
+                        
+                            return 0; // keep original order if not specifically sorted
+                        });                        
 
-                unsubscribes.push(unsubscribeUserQuestProgress);
-            }
+                        setQuests(eventQuests);
+                    });
+
+                    unsubscribes.push(unsubscribeUserQuestProgress);
+                }
+                unsubscribes.push(unsubscribeEventQuests);
+            })
 
             return unsubscribes;
         } catch (err) {
@@ -114,12 +147,12 @@ const QuestManager = ({ eventID, eventName }) => {
     }
 
     return (
-        <Box sx={{ px: 1, minHeight: '100vh' }}>
+        <Box sx={{ px: 1, py: 2.5 }}>
             <Paper
                 elevation={0}
                 sx={{
-                    pb: 2,
-                    mb: 2,
+                    pb: 1.5,
+                    mb: 1.5,
                     borderRadius: 2,
                     display: 'flex',
                     flexDirection: { xs: 'column', sm: 'row' },
@@ -133,30 +166,32 @@ const QuestManager = ({ eventID, eventName }) => {
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            borderRadius: 1.5,
-                            width: 40,
-                            height: 40,
-                            mr: 3,
+                            borderRadius: 2,
+                            width: 30,
+                            height: 30,
+                            mr: 2,
                             background: `linear-gradient(135deg, ${theme.palette.primary.light}, ${theme.palette.primary.main})`,
                             color: 'white',
+                            boxShadow: '0 4px 10px rgba(0, 0, 0, 0.15)',
                         }}
                     >
-                        <NumbersOutlinedIcon />
+                        <NumbersOutlinedIcon fontSize="small" />
                     </Box>
-                    <Typography variant='h5' fontWeight="700" sx={{ lineHeight: 1.5 }}>
+                    <Typography variant='h5' fontWeight="700" sx={{ lineHeight: 1.5, fontSize: "18px" }}>
                         Overview
                     </Typography>
                 </Box>
             </Paper>
 
-            <Grid container spacing={{ xs: 2, lg: 5 }}>
-                {quests.map((quest, index) => (
+            <Grid container spacing={{ xs: 2 }}>
+                {quests.map(quest => (
                     <Grid key={quest.id}>
                         <MetricCard
-                            title={`Total Participants Completed Quest ${index + 1}`}
+                            title={"Number of Participants Completed"}
+                            subtitle={quest.questName}
                             value={quest.totalCompleted.toLocaleString()}
                             icon={<TaskIcon />}
-                            color={theme.palette.primary.main}
+                            color={QUEST_COLOR[quest.questType]}
                         />
                     </Grid>
                 ))}
@@ -174,22 +209,25 @@ const QuestManager = ({ eventID, eventName }) => {
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            borderRadius: 1.5,
-                            width: 40,
-                            height: 40,
-                            mr: 3,
+                            borderRadius: 2,
+                            width: 30,
+                            height: 30,
+                            mr: 2,
                             background: `linear-gradient(135deg, ${theme.palette.primary.light}, ${theme.palette.primary.main})`,
                             color: 'white',
+                            boxShadow: '0 4px 10px rgba(0, 0, 0, 0.15)',
                         }}
                     >
-                        <TaskIcon />
+                        <TaskIcon fontSize="small" />
                     </Box>
-                    <Typography variant='h5' fontWeight="700" sx={{ lineHeight: 1.1 }}>
+                    <Typography variant='h5' fontWeight="700" sx={{ lineHeight: 1.5, fontSize: "18px" }}>
                         Event Quest List
                     </Typography>
                 </Box>
-                <QuestAddButton />
+                <QuestAddButton handleFormOpen={() => setQuestAdditionFormOpen(true)} />
             </Box>
+
+            <QuestAdditionForm questAdditionFormOpen={questAdditionFormOpen} setQuestAdditionFormOpen={setQuestAdditionFormOpen} questExist={questExist} qaIndex={qaIndex} eventID={eventID} />
 
             <Box sx={{ mt: 3 }}>
                 {quests.map((quest, index) => (

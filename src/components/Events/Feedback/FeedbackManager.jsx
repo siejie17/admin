@@ -1,15 +1,16 @@
 import { collection, doc, getDoc, onSnapshot, query, where } from 'firebase/firestore';
 import React, { useEffect, useState } from 'react';
-import { Box, Grid, Paper, Typography, useTheme } from '@mui/material';
-import { NumbersOutlined, Assignment } from '@mui/icons-material';
+import { alpha, Box, Grid, Paper, Typography, useTheme } from '@mui/material';
+import { NumbersOutlined, Assignment, InfoOutlined as InfoOutlinedIcon, SentimentDissatisfiedOutlined, SentimentVeryDissatisfiedOutlined, SentimentNeutralOutlined, SentimentSatisfiedOutlined, SentimentVerySatisfiedOutlined } from '@mui/icons-material';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 
-import { db } from '../../utils/firebaseConfig';
+import { db } from '../../../utils/firebaseConfig';
 
-import MetricCard from '../General/MetricCard';
-import ExcelExportButton from '../General/ExcelExportButton';
-import FeedbackListTable from './Feedback/FeedbackListTable';
+import MetricCard from '../../General/MetricCard';
+import ExcelExportButton from '../../General/ExcelExportButton';
+import FeedbackListTable from './FeedbackListTable';
+import LikertScaleItem from './LikertScaleItem';
 
 const FeedbackManager = ({ eventID, eventName }) => {
   const [feedbackList, setFeedbackList] = useState([]);
@@ -17,6 +18,39 @@ const FeedbackManager = ({ eventID, eventName }) => {
   const [isLoading, setIsLoading] = useState(true);
 
   const theme = useTheme();
+
+  const scaleItems = [
+    {
+      value: 1,
+      label: "Strongly Disagreed",
+      icon: <SentimentVeryDissatisfiedOutlined sx={{ fontSize: 'small' }} />,
+      color: theme.palette.error.main
+    },
+    {
+      value: 2,
+      label: "Disagreed",
+      icon: <SentimentDissatisfiedOutlined sx={{ fontSize: 'small' }} />,
+      color: theme.palette.error.light
+    },
+    {
+      value: 3,
+      label: "Neutral",
+      icon: <SentimentNeutralOutlined sx={{ fontSize: 'small' }} />,
+      color: theme.palette.warning.main
+    },
+    {
+      value: 4,
+      label: "Agreed",
+      icon: <SentimentSatisfiedOutlined sx={{ fontSize: 'small' }} />,
+      color: theme.palette.success.light
+    },
+    {
+      value: 5,
+      label: "Strongly Agreed",
+      icon: <SentimentVerySatisfiedOutlined sx={{ fontSize: 'small' }} />,
+      color: theme.palette.success.main
+    }
+  ];
 
   const LIKERT_SCALE = {
     "1": "Strongly Disagreed",
@@ -65,8 +99,8 @@ const FeedbackManager = ({ eventID, eventName }) => {
               id: docSnap.id,
               participantName: studentData.firstName + " " + studentData.lastName,
               profilePicture: studentData.profilePicture,
-              eventSatisfaction: LIKERT_SCALE[data.eventFeedback],
-              gamificationSatisfaction: LIKERT_SCALE[data.gamificationFeedback],
+              eventSatisfaction: data.eventFeedback,
+              gamificationSatisfaction: data.gamificationFeedback,
               improvement: data.overallImprovement
             }
 
@@ -164,17 +198,18 @@ const FeedbackManager = ({ eventID, eventName }) => {
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              borderRadius: 1.5,
-              width: 40,
-              height: 40,
+              borderRadius: 2,
+              width: 30,
+              height: 30,
               mr: 2,
               background: `linear-gradient(135deg, ${theme.palette.primary.light}, ${theme.palette.primary.main})`,
               color: 'white',
+              boxShadow: '0 4px 10px rgba(0, 0, 0, 0.15)',
             }}
           >
-            <NumbersOutlined />
+            <NumbersOutlined fontSize="small" />
           </Box>
-          <Typography variant='h5' fontWeight="700" sx={{ lineHeight: 1.1 }}>
+          <Typography variant='h5' fontWeight="700" sx={{ lineHeight: 1.5, fontSize: "18px" }}>
             Overview
           </Typography>
         </Box>
@@ -183,37 +218,85 @@ const FeedbackManager = ({ eventID, eventName }) => {
       <Grid container spacing={3}>
         <Grid>
           <MetricCard
-            title="Total Participants Submitted"
+            title="Total Participants Who Submitted"
+            subtitle="Feedback Form"
             value={feedbackNumber.toLocaleString()}
             icon={<Assignment />}
-            color={theme.palette.primary.main}
+            color={alpha(theme.palette.primary.main, 0.75)}
           />
         </Grid>
       </Grid>
 
-      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', my: 5 }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', py: 3 }}>
         <Box sx={{ display: 'flex', alignItems: 'center' }}>
           <Box
             sx={{
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              borderRadius: 1.5,
-              width: 40,
-              height: 40,
+              borderRadius: 2,
+              width: 30,
+              height: 30,
               mr: 2,
               background: `linear-gradient(135deg, ${theme.palette.primary.light}, ${theme.palette.primary.main})`,
               color: 'white',
+              boxShadow: '0 4px 10px rgba(0, 0, 0, 0.15)',
             }}
           >
-            <Assignment />
+            <Assignment fontSize="small" />
           </Box>
-          <Typography variant='h5' fontWeight="700" sx={{ lineHeight: 1.1 }}>
+          <Typography variant='h5' fontWeight="700" sx={{ lineHeight: 1.5, fontSize: "18px" }}>
             Feedback List
           </Typography>
         </Box>
         <ExcelExportButton handleExport={handleExport} />
       </Box>
+
+      <Paper
+        elevation={1}
+        sx={{
+          borderRadius: 3,
+          overflow: 'hidden',
+          mb: 4,
+          border: `1px solid ${theme.palette.divider}`,
+          transition: 'box-shadow 0.3s ease',
+          '&:hover': {
+            boxShadow: theme.shadows[2]
+          }
+        }}
+      >
+        <Box
+          sx={{
+            px: 3,
+            py: 2,
+            bgcolor: theme.palette.mode === 'dark'
+              ? 'rgba(41, 98, 255, 0.1)'
+              : 'rgba(41, 98, 255, 0.05)',
+            borderBottom: `1px solid ${theme.palette.divider}`
+          }}
+        >
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            <InfoOutlinedIcon sx={{ color: theme.palette.info.main, mr: 1, fontSize: '1.5rem' }} />
+            <Typography variant="h6" fontWeight="600" color="info.main" sx={{ fontSize: "1rem" }}>
+              Feedback Rating Scale
+            </Typography>
+          </Box>
+
+          <Box sx={{ px: 3, py: 1 }}>
+            <Grid
+              container
+              spacing={3}
+              justifyContent="space-between"
+            >
+              {scaleItems.map((item) => (
+                <Grid item xs={6} sm={4} md={2.4} key={item.value}>
+                  <LikertScaleItem {...item} />
+                </Grid>
+              ))}
+            </Grid>
+          </Box>
+        </Box>
+      </Paper>
 
       <FeedbackListTable feedbackList={feedbackList} isLoading={isLoading} />
     </Box>

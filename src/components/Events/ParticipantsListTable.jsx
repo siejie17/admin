@@ -1,5 +1,5 @@
 import { Close, Numbers as NumbersIcon, TaskAlt as TaskAltIcon, Visibility } from '@mui/icons-material';
-import { Alert, alpha, Avatar, Box, Button, Dialog, DialogContent, DialogTitle, IconButton, Snackbar, Typography, useTheme } from '@mui/material';
+import { Alert, alpha, Avatar, Box, Button, Chip, Dialog, DialogContent, DialogTitle, IconButton, Snackbar, Typography, useTheme } from '@mui/material';
 import { DataGrid } from '@mui/x-data-grid';
 import { doc, updateDoc } from 'firebase/firestore';
 import React, { useState } from 'react'
@@ -31,7 +31,7 @@ const ParticipantsListTable = ({ participants, isLoading }) => {
     };
 
     const commonHeaderStyle = {
-        height: '40px',
+        height: '30px',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -68,7 +68,42 @@ const ParticipantsListTable = ({ participants, isLoading }) => {
         }
     }
 
-    const getColumns = () => {
+    const participantColumns = () => {
+        // Common theme colors for consistent styling
+        const primaryLight = alpha(theme.palette.primary.main, 0.08);
+        const primaryMedium = alpha(theme.palette.primary.main, 0.15);
+        const primaryBorder = alpha(theme.palette.primary.main, 0.25);
+
+        // Enhanced header style with more refined appearance
+        const enhancedHeaderStyle = {
+            ...commonHeaderStyle,
+            justifyContent: 'center',
+            position: 'relative',
+            // py: 1.5,
+            '&::after': {
+                content: '""',
+                position: 'absolute',
+                bottom: -8,
+                left: '50%',
+                transform: 'translateX(-50%)',
+                width: 40,
+                backgroundColor: theme.palette.primary.main,
+                borderRadius: '10px',
+                boxShadow: `0 1px 3px ${primaryMedium}`
+            }
+        };
+
+        // Typography style for header text
+        const headerTypographyStyle = {
+            variant: "subtitle1",
+            fontWeight: "700",
+            color: "text.primary",
+            sx: {
+                letterSpacing: '0.02em',
+                fontSize: '0.8rem'
+            }
+        };
+
         const columns = [
             {
                 field: 'bil',
@@ -80,54 +115,59 @@ const ParticipantsListTable = ({ participants, isLoading }) => {
                         <NumbersIcon
                             fontSize="small"
                             sx={{
-                                opacity: 0.7
+                                opacity: 0.8,
+                                color: theme.palette.primary.main
                             }}
                         />
                     </Box>
                 ),
                 renderCell: (params) => (
-                    <Box
-                        sx={{
-                            height: '32px',
-                            width: '32px',
-                            borderRadius: '8px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            backgroundColor: alpha(theme.palette.primary.main, 0.08),
-                            transition: 'all 0.2s ease',
-                            '&:hover': {
-                                backgroundColor: alpha(theme.palette.primary.main, 0.12),
-                                transform: 'scale(1.05)',
-                            }
-                        }}
-                    >
-                        <Typography
-                            variant="body2"
-                            fontWeight="700"
-                            color={alpha(theme.palette.text.primary, 0.9)}
-                            fontSize="0.8rem"
+                    <Box sx={{
+                        height: '100%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                    }}>
+                        <Box
+                            sx={{
+                                height: 25,
+                                width: 25,
+                                borderRadius: '8px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                backgroundColor: primaryLight,
+                                border: `1px solid ${primaryBorder}`,
+                                boxShadow: `0 2px 4px ${alpha(theme.palette.common.black, 0.05)}`,
+                                transition: 'all 0.2s ease',
+                                '&:hover': {
+                                    backgroundColor: primaryMedium,
+                                    transform: 'scale(1.05)',
+                                    boxShadow: `0 3px 6px ${alpha(theme.palette.common.black, 0.1)}`
+                                }
+                            }}
                         >
-                            {params.value}
-                        </Typography>
+                            <Typography
+                                variant="body2"
+                                fontWeight="700"
+                                color={theme.palette.primary.main}
+                                fontSize="0.65rem"
+                            >
+                                {params.value}
+                            </Typography>
+                        </Box>
                     </Box>
                 )
             },
             {
                 field: 'fullName',
-                headerName: 'Participant',
+                headerName: 'Student',
                 flex: 1,
-                minWidth: 200,
+                headerAlign: 'center',
+                minWidth: 220,
                 renderHeader: () => (
-                    <Box sx={commonHeaderStyle}>
-                        <Typography
-                            variant="subtitle2"
-                            fontWeight="600"
-                            fontSize="0.85rem"
-                            letterSpacing="0.03em"
-                            textTransform="uppercase"
-                            color={theme.palette.text.secondary}
-                        >
+                    <Box sx={enhancedHeaderStyle}>
+                        <Typography {...headerTypographyStyle}>
                             Participant
                         </Typography>
                     </Box>
@@ -141,38 +181,66 @@ const ParticipantsListTable = ({ participants, isLoading }) => {
                             display: 'flex',
                             alignItems: 'center',
                             width: '100%',
-                            gap: 1.25,
+                            py: 1.5,
+                            pl: 1,
+                            gap: 1.5,
+                            transition: 'all 0.2s ease',
                             '&:hover': {
-                                transform: 'translateX(2px)',
+                                transform: 'translateX(4px)',
                             }
                         }}>
                             <Avatar
                                 sx={{
-                                    width: 30,
-                                    height: 30,
-                                    bgcolor: alpha(theme.palette.primary.main, 0.12),
+                                    width: 25,
+                                    height: 25,
+                                    bgcolor: primaryMedium,
                                     color: theme.palette.primary.dark,
                                     fontWeight: 600,
-                                    fontSize: '0.85rem',
-                                    boxShadow: `0 2px 8px ${alpha(theme.palette.primary.main, 0.15)}`
+                                    fontSize: '0.65rem',
+                                    border: `2px solid ${alpha(theme.palette.background.paper, 0.9)}`,
+                                    boxShadow: `0 2px 8px ${alpha(theme.palette.primary.main, 0.2)}`,
+                                    transition: 'transform 0.2s ease',
+                                    '&:hover': {
+                                        transform: 'scale(1.1)'
+                                    }
                                 }}
                             >
                                 <Box
                                     component="img"
                                     src={`data:image/jpeg;base64,${profilePicture}`}
-                                    alt="Student Profile Picture"
+                                    alt="Student Profile"
                                     sx={{
                                         position: 'absolute',
                                         top: 0,
                                         left: 0,
                                         width: '100%',
                                         height: '100%',
-                                        objectFit: 'contain',
+                                        objectFit: 'cover',
                                     }}
                                 />
                             </Avatar>
-                            <Box sx={{ flexGrow: 1 }}>
-                                <Typography variant="body1" fontWeight="600" color="text.primary" sx={{ lineHeight: 1.2 }}>
+                            <Box sx={{
+                                flexGrow: 1,
+                                borderLeft: `3px solid ${alpha(theme.palette.primary.main, 0)}`,
+                                pl: 1,
+                                transition: 'all 0.2s ease',
+                                '&:hover': {
+                                    borderLeft: `3px solid ${alpha(theme.palette.primary.main, 0.6)}`,
+                                }
+                            }}>
+                                <Typography
+                                    variant="body1"
+                                    fontWeight="600"
+                                    color="text.primary"
+                                    sx={{
+                                        lineHeight: 1.2,
+                                        fontSize: '0.75rem',
+                                        overflow: 'hidden',
+                                        textOverflow: 'ellipsis',
+                                        whiteSpace: 'nowrap',
+                                        maxWidth: '90%'
+                                    }}
+                                >
                                     {fullName}
                                 </Typography>
                             </Box>
@@ -187,15 +255,8 @@ const ParticipantsListTable = ({ participants, isLoading }) => {
                 headerAlign: 'center',
                 align: 'center',
                 renderHeader: () => (
-                    <Box sx={{ ...commonHeaderStyle, justifyContent: 'center' }}>
-                        <Typography
-                            variant="subtitle1"
-                            fontWeight="600"
-                            fontSize="0.85rem"
-                            letterSpacing="0.03em"
-                            textTransform="uppercase"
-                            color={theme.palette.text.secondary}
-                        >
+                    <Box sx={enhancedHeaderStyle}>
+                        <Typography {...headerTypographyStyle}>
                             Year of Study
                         </Typography>
                     </Box>
@@ -204,8 +265,7 @@ const ParticipantsListTable = ({ participants, isLoading }) => {
                     <Box
                         sx={{
                             width: '100%',
-                            py: 0.8,
-                            px: 1.5,
+                            height: '100%',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
@@ -216,6 +276,7 @@ const ParticipantsListTable = ({ participants, isLoading }) => {
                         <Typography
                             variant="body1"
                             fontWeight="600"
+                            fontSize="0.85rem"
                         >
                             {params.value}
                         </Typography>
@@ -225,19 +286,12 @@ const ParticipantsListTable = ({ participants, isLoading }) => {
             {
                 field: 'facultyID',
                 headerName: 'Faculty',
-                width: 100,
+                width: 120,
                 headerAlign: 'center',
                 align: 'center',
                 renderHeader: () => (
-                    <Box sx={{ ...commonHeaderStyle, justifyContent: 'center' }}>
-                        <Typography
-                            variant="subtitle2"
-                            fontWeight="600"
-                            fontSize="0.85rem"
-                            letterSpacing="0.03em"
-                            textTransform="uppercase"
-                            color={theme.palette.text.secondary}
-                        >
+                    <Box sx={enhancedHeaderStyle}>
+                        <Typography {...headerTypographyStyle}>
                             Faculty
                         </Typography>
                     </Box>
@@ -246,16 +300,29 @@ const ParticipantsListTable = ({ participants, isLoading }) => {
                     <Box
                         sx={{
                             width: '100%',
-                            py: 0.8,
-                            px: 1.5,
+                            height: '100%',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
                         }}
                     >
-                        <Typography variant="body1" fontWeight="700" color="text.primary">
-                            {FACULTY_MAPPING[params.value]}
-                        </Typography>
+                        <Chip
+                            label={FACULTY_MAPPING[params.value]}
+                            variant="outlined"
+                            size="small"
+                            sx={{
+                                fontWeight: 600,
+                                fontSize: '0.75rem',
+                                borderRadius: '6px',
+                                backgroundColor: alpha(theme.palette.info.light, 0.1),
+                                borderColor: alpha(theme.palette.info.main, 0.3),
+                                color: theme.palette.info.dark,
+                                '&:hover': {
+                                    backgroundColor: alpha(theme.palette.info.light, 0.2),
+                                },
+                                transition: 'all 0.2s ease'
+                            }}
+                        />
                     </Box>
                 )
             },
@@ -266,15 +333,8 @@ const ParticipantsListTable = ({ participants, isLoading }) => {
                 headerAlign: 'center',
                 align: 'center',
                 renderHeader: () => (
-                    <Box sx={{ ...commonHeaderStyle, justifyContent: 'center' }}>
-                        <Typography
-                            variant="subtitle2"
-                            fontWeight="600"
-                            fontSize="0.85rem"
-                            letterSpacing="0.03em"
-                            textTransform="uppercase"
-                            color={theme.palette.text.secondary}
-                        >
+                    <Box sx={enhancedHeaderStyle}>
+                        <Typography {...headerTypographyStyle}>
                             Email
                         </Typography>
                     </Box>
@@ -282,14 +342,20 @@ const ParticipantsListTable = ({ participants, isLoading }) => {
                 renderCell: (params) => (
                     <Box
                         sx={{
-                            py: 1.2,
-                            px: 2,
+                            width: '100%',
+                            height: '100%',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
+                            borderRadius: '6px',
+                            transition: 'all 0.2s ease',
                         }}
                     >
-                        <Typography variant="body1" fontWeight="700" color="text.primary">
+                        <Typography
+                            variant="body1"
+                            fontWeight="600"
+                            fontSize="0.85rem"
+                        >
                             {params.value}
                         </Typography>
                     </Box>
@@ -308,34 +374,14 @@ const ParticipantsListTable = ({ participants, isLoading }) => {
                 sortable: false,
                 filterable: false,
                 renderHeader: () => (
-                    <Box sx={{
-                        ...commonHeaderStyle,
-                        justifyContent: 'center',
-                        position: 'relative',
-                        '&::after': {
-                            content: '""',
-                            position: 'absolute',
-                            bottom: -8,
-                            left: '50%',
-                            transform: 'translateX(-50%)',
-                            width: 40,
-                            height: 3,
-                            backgroundColor: theme.palette.primary.main,
-                            borderRadius: '10px'
-                        }
-                    }}>
-                        <Typography
-                            variant="subtitle1"
-                            fontWeight="700"
-                            color="text.primary"
-                            sx={{ letterSpacing: '0.02em' }}
-                        >
-                            Action
+                    <Box sx={enhancedHeaderStyle}>
+                        <Typography {...headerTypographyStyle}>
+                            Actions
                         </Typography>
                     </Box>
                 ),
                 renderCell: (params) => (
-                    <Box sx={{ display: 'flex', gap: 1 }}>
+                    <Box sx={{ display: 'flex', justifyContent: "center", alignItems: "center", gap: 1 }}>
                         <Button
                             variant="contained"
                             color="info"
@@ -354,7 +400,7 @@ const ParticipantsListTable = ({ participants, isLoading }) => {
                                 fontWeight: '600',
                                 whiteSpace: 'nowrap',
                                 minWidth: 'auto',
-                                maxHeight: 40,
+                                maxHeight: 30,
                                 py: 1,
                                 px: 2,
                                 borderRadius: '12px',
@@ -372,7 +418,7 @@ const ParticipantsListTable = ({ participants, isLoading }) => {
                         >
                             <Typography sx={{
                                 fontWeight: 600,
-                                fontSize: '0.875rem',
+                                fontSize: '0.75rem',
                                 letterSpacing: '0.01em'
                             }}>
                                 View Proof
@@ -401,7 +447,7 @@ const ParticipantsListTable = ({ participants, isLoading }) => {
                                 fontWeight: '600',
                                 whiteSpace: 'nowrap',
                                 minWidth: 'auto',
-                                maxHeight: 40,
+                                maxHeight: 30,
                                 py: 1,
                                 px: 2,
                                 borderRadius: '12px',
@@ -419,7 +465,7 @@ const ParticipantsListTable = ({ participants, isLoading }) => {
                         >
                             <Typography sx={{
                                 fontWeight: 600,
-                                fontSize: '0.875rem',
+                                fontSize: '0.75rem',
                                 letterSpacing: '0.01em'
                             }}>
                                 Verify
@@ -437,136 +483,272 @@ const ParticipantsListTable = ({ participants, isLoading }) => {
         <Box
             sx={{
                 width: '100%',
-                display: 'flex',
-                alignItems: 'center',
+                borderRadius: '20px',
                 overflow: 'hidden',
-                boxShadow: (theme) => `0 2px 12px ${alpha(theme.palette.common.black, 0.05)}`,
-                borderBottom: `1px solid ${alpha(theme.palette.divider, 0.12)}`,
-                borderRadius: '8px 8px 0 0',
+                boxShadow: (theme) => `0 20px 40px ${alpha(theme.palette.common.black, 0.08)}`,
+                background: (theme) => `linear-gradient(145deg, 
+                    ${alpha(theme.palette.background.paper, 0.98)}, 
+                    ${alpha(theme.palette.background.paper, 1)} 50%,
+                    ${alpha(theme.palette.primary.light, 0.07)} 130%)`,
+                border: (theme) => `1px solid ${alpha(theme.palette.divider, 0.05)}`,
+                backdropFilter: 'blur(16px)',
+                position: 'relative',
+                '&::before': {
+                    content: '""',
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    height: '3px',
+                    background: (theme) => `linear-gradient(90deg, 
+                                            ${alpha(theme.palette.primary.main, 0.2)}, 
+                                            ${alpha(theme.palette.primary.light, 0.9)} 50%, 
+                                            ${alpha(theme.palette.background.paper, 0.6)})`,
+                    zIndex: 5
+                }
             }}
         >
             <Box
                 sx={{
-                    height: 340,
+                    height: 300,
                     width: '100%',
                     position: 'relative',
                     '& .MuiDataGrid-root': {
                         border: 'none',
-                        borderRadius: '12px',
+                        borderRadius: '20px',
                         overflow: 'hidden',
-                        boxShadow: '0 4px 20px rgba(0, 0, 0, 0.05)',
-                        backgroundColor: theme.palette.background.paper,
+                        boxShadow: 'none',
+                        backgroundColor: 'transparent',
                         '--DataGrid-rowBorderColor': 'transparent',
+                        '&::after': {
+                            content: '""',
+                            position: 'absolute',
+                            bottom: 60, // Height of footer
+                            left: 0,
+                            right: 0,
+                            height: '20px',
+                            background: (theme) => `linear-gradient(to top, 
+                                ${alpha(theme.palette.background.paper, 1)}, 
+                                ${alpha(theme.palette.background.paper, 0)})`,
+                            pointerEvents: 'none',
+                            zIndex: 3
+                        }
                     },
                     '& .MuiDataGrid-cell': {
                         pb: 2,
                         fontSize: '0.95rem',
-                        fontWeight: 400,
+                        fontWeight: 500,
                         justifyContent: "flex-start",
-                        borderBottom: `none`,
-                        color: theme.palette.text.primary,
-                        padding: '16px 12px',
+                        borderBottom: 'none',
+                        color: (theme) => theme.palette.text.primary,
+                        padding: '18px 16px',
+                        transition: 'color 0.2s ease',
                     },
                     '& .MuiDataGrid-columnHeaders': {
                         borderBottom: 'none',
-                        backgroundColor: alpha(theme.palette.background.default, 0.4),
-                        backdropFilter: 'blur(8px)',
-                        height: 60,
+                        backgroundColor: (theme) => alpha(theme.palette.background.default, 0.6),
+                        backdropFilter: 'blur(14px)',
+                        height: 50,
+                        position: 'relative',
+                        '&::after': {
+                            content: '""',
+                            position: 'absolute',
+                            bottom: 0,
+                            left: '6px',
+                            right: '6px',
+                            height: '1px',
+                            background: (theme) => `linear-gradient(90deg, 
+                                ${alpha(theme.palette.divider, 0)}, 
+                                ${alpha(theme.palette.divider, 0.25)} 20%, 
+                                ${alpha(theme.palette.divider, 0.25)} 80%, 
+                                ${alpha(theme.palette.divider, 0)})`,
+                        }
                     },
                     '& .MuiDataGrid-columnHeaderTitle': {
                         fontWeight: 600,
                         fontSize: '0.85rem',
                         textTransform: 'uppercase',
-                        letterSpacing: '0.05em',
-                        color: theme.palette.text.secondary,
+                        letterSpacing: '0.06em',
+                        color: (theme) => alpha(theme.palette.text.secondary, 0.85),
                     },
                     '& .MuiDataGrid-columnSeparator': {
                         display: 'none',
                     },
                     '& .MuiDataGrid-footerContainer': {
                         borderTop: 'none',
-                        backgroundColor: alpha(theme.palette.background.default, 0.4),
-                        backdropFilter: 'blur(8px)',
-                        borderRadius: '0 0 12px 12px',
+                        backgroundColor: (theme) => alpha(theme.palette.background.default, 0.6),
+                        borderRadius: '0 0 20px 20px',
+                        position: 'relative',
+                        height: 60,
                     },
                     '& .MuiDataGrid-row': {
-                        transition: 'transform 0.2s ease, background-color 0.2s ease',
+                        transition: 'all 0.28s cubic-bezier(0.4, 0, 0.2, 1)',
                         display: 'flex',
                         justifyContent: 'center',
+                        position: 'relative',
                         '&:hover': {
-                            backgroundColor: alpha(theme.palette.primary.main, 0.04),
-                            transform: 'translateY(-1px)',
+                            backgroundColor: (theme) => alpha(theme.palette.primary.main, 0.05),
+                            transform: 'translateY(-1px) scale(1.005)',
+                            boxShadow: (theme) => `0 8px 20px ${alpha(theme.palette.common.black, 0.05)}`,
+                            zIndex: 2,
+                            '&::after': {
+                                opacity: 1,
+                                transform: 'scaleX(0.98)',
+                            }
+                        },
+                        '&::after': {
+                            content: '""',
+                            position: 'absolute',
+                            bottom: 0,
+                            left: '2%',
+                            width: '96%',
+                            height: '1px',
+                            background: (theme) => `linear-gradient(90deg, 
+                                ${alpha(theme.palette.divider, 0)}, 
+                                ${alpha(theme.palette.divider, 0.12)} 20%, 
+                                ${alpha(theme.palette.divider, 0.12)} 80%, 
+                                ${alpha(theme.palette.divider, 0)})`,
+                            opacity: 0.6,
+                            transition: 'all 0.3s ease',
+                            transform: 'scaleX(0.8)',
                         },
                         '&:nth-of-type(even)': {
-                            backgroundColor: alpha(theme.palette.background.default, 0.3),
+                            backgroundColor: (theme) => alpha(theme.palette.background.default, 0.45),
                         },
-                    },
-                    '& .MuiDataGrid-scrollbar': {
-                        '&::-webkit-scrollbar': {
-                            width: '10px',
-                            height: '10px',
-                        },
-                        '&::-webkit-scrollbar-track': {
-                            backgroundColor: 'transparent',
-                        },
-                        '&::-webkit-scrollbar-thumb': {
-                            backgroundColor: alpha(theme.palette.primary.main, 0.2),
-                            borderRadius: '10px',
-                            border: `2px solid ${alpha(theme.palette.background.paper, 0.8)}`,
+                        '&.Mui-selected': {
+                            backgroundColor: (theme) => alpha(theme.palette.primary.main, 0.1),
                             '&:hover': {
-                                backgroundColor: alpha(theme.palette.primary.main, 0.3),
-                            },
+                                backgroundColor: (theme) => alpha(theme.palette.primary.main, 0.15),
+                            }
                         },
+                        '&:last-child': {
+                            '&::after': {
+                                display: 'none'
+                            }
+                        }
                     },
-                    '& .MuiDataGrid-virtualScroller::-webkit-scrollbar': {
+                    // Enhanced scrollbar styling
+                    '& ::-webkit-scrollbar': {
                         width: '10px',
                         height: '10px',
                     },
-                    '& *::-webkit-scrollbar-track': {
+                    '& ::-webkit-scrollbar-track': {
                         backgroundColor: 'transparent',
-                        margin: 2,
-                    },
-                    '& *::-webkit-scrollbar-thumb': {
-                        backgroundColor: alpha(theme.palette.primary.main, 0.2),
                         borderRadius: '10px',
+                        margin: '6px',
+                    },
+                    '& ::-webkit-scrollbar-thumb': {
+                        backgroundColor: (theme) => alpha(theme.palette.primary.main, 0.2),
+                        borderRadius: '10px',
+                        border: (theme) => `2px solid transparent`,
+                        backgroundClip: 'content-box',
+                        transition: 'all 0.2s ease',
                         '&:hover': {
-                            backgroundColor: alpha(theme.palette.primary.main, 0.3),
+                            backgroundColor: (theme) => alpha(theme.palette.primary.main, 0.4),
                             cursor: 'pointer',
                         },
                     },
+                    // Enhanced pagination styling
                     '& .MuiTablePagination-root': {
                         fontSize: '0.85rem',
+                        color: (theme) => alpha(theme.palette.text.primary, 0.85),
                     },
                     '& .MuiTablePagination-selectLabel, & .MuiTablePagination-displayedRows': {
                         fontSize: '0.85rem',
-                        color: 'text.secondary'
+                        color: (theme) => alpha(theme.palette.text.secondary, 0.85),
+                        fontWeight: 500,
                     },
                     '& .MuiTablePagination-select': {
-                        borderRadius: '8px',
+                        borderRadius: '10px',
                         marginRight: '8px',
-                        padding: '4px 8px',
-                        backgroundColor: alpha(theme.palette.background.default, 0.6),
+                        padding: '6px 12px',
+                        backgroundColor: (theme) => alpha(theme.palette.background.default, 0.7),
+                        transition: 'all 0.25s ease',
+                        '&:hover': {
+                            backgroundColor: (theme) => alpha(theme.palette.action.hover, 0.15),
+                            borderColor: (theme) => alpha(theme.palette.primary.main, 0.3),
+                        }
                     },
                     '& .MuiTablePagination-actions': {
                         '& .MuiIconButton-root': {
-                            padding: '4px',
-                            borderRadius: '8px',
-                            color: theme.palette.primary.main,
+                            padding: '8px',
+                            borderRadius: '10px',
+                            color: (theme) => theme.palette.primary.main,
+                            backgroundColor: (theme) => alpha(theme.palette.primary.main, 0.06),
+                            transition: 'all 0.25s ease',
+                            margin: '0 3px',
                             '&:hover': {
-                                backgroundColor: alpha(theme.palette.primary.main, 0.1),
+                                backgroundColor: (theme) => alpha(theme.palette.primary.main, 0.15),
+                                transform: 'translateY(-1px)',
+                                boxShadow: (theme) => `0 4px 12px ${alpha(theme.palette.primary.main, 0.2)}`,
                             },
                             '&.Mui-disabled': {
-                                color: alpha(theme.palette.text.disabled, 0.4),
+                                color: (theme) => alpha(theme.palette.text.disabled, 0.4),
+                                backgroundColor: 'transparent',
                             },
                         },
+                    },
+                    // Enhanced loading overlay
+                    '& .MuiDataGrid-overlay': {
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        backgroundColor: (theme) => alpha(theme.palette.background.paper, 0.75),
+                        backdropFilter: 'blur(8px)',
+                        borderRadius: '16px',
+                        padding: '28px',
+                        height: '100%',
+                        '& .MuiCircularProgress-root': {
+                            color: (theme) => theme.palette.primary.main,
+                        }
+                    },
+                    // Better focus outline
+                    '& .MuiDataGrid-cell:focus, & .MuiDataGrid-cell:focus-within': {
+                        outline: 'none',
+                    },
+                    '& .MuiDataGrid-cell:focus-within': {
+                        position: 'relative',
+                        '&::after': {
+                            content: '""',
+                            position: 'absolute',
+                            left: '5%',
+                            right: '5%',
+                            bottom: 0,
+                            height: '2px',
+                            backgroundColor: (theme) => alpha(theme.palette.primary.main, 0.6),
+                            borderRadius: '2px',
+                        }
+                    },
+                    // Empty rows styling
+                    '& .MuiDataGrid-virtualScroller': {
+                        backgroundColor: 'transparent',
+                    },
+                    // Better sort icons
+                    '& .MuiDataGrid-iconButtonContainer': {
+                        '& .MuiIconButton-root': {
+                            padding: '4px',
+                            color: (theme) => alpha(theme.palette.text.secondary, 0.7),
+                            transition: 'all 0.2s ease',
+                            '&:hover': {
+                                backgroundColor: (theme) => alpha(theme.palette.action.hover, 0.15),
+                                color: (theme) => theme.palette.primary.main,
+                                transform: 'scale(1.1)',
+                            }
+                        }
+                    },
+                    '& .MuiDataGrid-sortIcon': {
+                        opacity: 0.8,
+                        fontSize: '0.9rem',
                     },
                 }}
             >
                 <DataGrid
                     rows={participants}
-                    columns={getColumns()}
+                    columns={participantColumns()}
                     loading={isLoading}
                     disableRowSelectionOnClick
+                    disableColumnResize={true}
                     autoHeight={false}
                     initialState={{
                         pagination: {
@@ -575,15 +757,51 @@ const ParticipantsListTable = ({ participants, isLoading }) => {
                     }}
                     pageSizeOptions={[5, 10, 25, 50]}
                     getRowId={(row) => row.id}
-                    getRowHeight={() => 55}
+                    getRowHeight={() => 50}
                     sx={{
                         '& .MuiCircularProgress-root': {
-                            color: theme.palette.primary.main,
-                            size: '2rem'
+                            color: (theme) => theme.palette.primary.main,
                         },
                         '& .MuiDataGrid-main': {
                             borderRadius: 4,
                             overflow: 'hidden',
+                        },
+                        // Add shimmer effect during loading
+                        '& .MuiDataGrid-loadingOverlay': {
+                            '&::after': {
+                                content: '""',
+                                position: 'absolute',
+                                top: 0,
+                                left: 0,
+                                width: '200%',
+                                height: '100%',
+                                background: (theme) => `linear-gradient(90deg, 
+                            transparent, 
+                            ${alpha(theme.palette.background.paper, 0.2)}, 
+                            transparent)`,
+                                animation: 'shimmer 2s infinite',
+                                '@keyframes shimmer': {
+                                    '0%': {
+                                        transform: 'translateX(-100%)',
+                                    },
+                                    '100%': {
+                                        transform: 'translateX(50%)',
+                                    },
+                                },
+                            },
+                        },
+                        // No results overlay styling
+                        '& .MuiDataGrid-overlay': {
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: 2,
+                            '& svg': {
+                                fontSize: '2.5rem',
+                                color: (theme) => alpha(theme.palette.text.secondary, 0.5),
+                                marginBottom: 1,
+                            },
                         }
                     }}
                 />

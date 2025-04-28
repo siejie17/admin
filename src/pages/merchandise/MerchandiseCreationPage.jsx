@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
     Box,
     Typography,
@@ -13,13 +13,27 @@ import {
     IconButton,
     FormHelperText,
     Stack,
-    Snackbar,
-    Alert
+    useMediaQuery,
+    useTheme,
+    Tooltip,
+    Card,
+    Paper,
+    Zoom,
 } from '@mui/material';
-import AddIcon from '@mui/icons-material/Add';
-import ImageIcon from '@mui/icons-material/Image';
-import DeleteIcon from '@mui/icons-material/Delete';
-import EditIcon from '@mui/icons-material/Edit';
+import {
+    Add as AddIcon,
+    ArrowBack as ArrowBackIcon,
+    Checkroom as CheckroomIcon,
+    ChevronLeft as ChevronLeftIcon,
+    ChevronRight as ChevronRightIcon,
+    Delete as DeleteIcon,
+    Edit as EditIcon,
+    Image as ImageIcon,
+    Inventory2 as Inventory2Icon,
+    Publish as PublishIcon
+} from '@mui/icons-material';
+
+import SnackbarComponent from '../../components/General/SnackbarComponent';
 
 import Diamond from '../../assets/icons/diamond.png';
 import RequiredAsterisk from '../../components/General/RequiredAsterisk';
@@ -41,11 +55,18 @@ const MerchandiseCreationPage = () => {
     const [images, setImages] = useState([]);
     const [errors, setErrors] = useState({});
 
+    const [currentImageIndex, setCurrentImageIndex] = useState(0);
+    const [hoveredIndex, setHoveredIndex] = useState(null);
+
     // Snackbar
-    const [successOpen, setSuccessOpen] = useState(false);
+    const [snackbarOpen, setSnackbarOpen] = useState(false);
+    const [snackbarContent, setSnackbarContent] = useState({ msg: '', type: '' });
 
     // Navigation
     const navigate = useNavigate();
+
+    const theme = useTheme();
+    const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
     // Handlers
     const handleAddSize = () => {
@@ -177,7 +198,8 @@ const MerchandiseCreationPage = () => {
 
                 await addDoc(merchandiseRef, merchMergedData);
 
-                setSuccessOpen(true);
+                setSnackbarOpen(true);
+                setSnackbarContent({ msg: 'Merchandise created successfully!', type: 'success' });
                 setTimeout(() => {
                     navigate("/merchandise");
                 }, 1500)
@@ -195,436 +217,1061 @@ const MerchandiseCreationPage = () => {
         setSuccessOpen(false);
     };
 
+    // Navigation handlers
+    const handlePrevImage = () => {
+        setCurrentImageIndex((prev) => (prev > 0 ? prev - 1 : images.length - 1));
+    };
+
+    const handleNextImage = () => {
+        setCurrentImageIndex((prev) => (prev < images.length - 1 ? prev + 1 : 0));
+    };
+
+    const hasAllFieldsFilled = useMemo(() => {
+        const fieldsFilled = name && description && category && locationName && images.length > 0;
+        const sizeValid = (category !== "Clothing") || (sizes.length > 0);
+    
+        return fieldsFilled && sizeValid;
+    }, [name, description, category, locationName, images, sizes]);    
+
     return (
-        <Box sx={{ py: 4, px: 6 }}>
-            <Typography
-                variant="h4"
-                component="h1"
+        <Box
+            sx={{
+                width: '100%',
+                height: '100%',
+            }}
+        >
+            <Card
                 sx={{
-                    mb: 4,
-                    fontWeight: 700,
-                    background: 'linear-gradient(45deg, #2196F3 30%, #21CBF3 90%)',
-                    backgroundClip: 'text',
-                    textFillColor: 'transparent',
-                    WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent'
+                    borderRadius: { xs: 0, md: 3 },
+                    backgroundColor: '#ffffff',
+                    width: '100%',
+                    height: '100%',
+                    boxShadow: '0 4px 20px rgba(0, 0, 0, 0.05)',
+                    display: 'flex',
+                    flexDirection: 'column',
                 }}
             >
-                Create New Merchandise
-            </Typography>
-
-            <Box component="form" onSubmit={handleSubmit} noValidate sx={{ width: '100%', paddingBottom: '80px' }}>
-                {/* Product Information Section */}
-                <Box sx={{ width: '100%', mb: 2 }}>
-                    <Typography variant="h6" sx={{ fontWeight: 550 }}>
-                        Merchandise Name <RequiredAsterisk />
-                    </Typography>
-                </Box>
-
-                {/* Name Field - Full width row */}
-                <Box sx={{ width: '100%', mb: 3 }}>
-                    <TextField
-                        fullWidth
-                        placeholder="Enter merchandise name"
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        error={!!errors.name}
-                        helperText={errors.name}
-                        required
-                        variant="outlined"
-                        InputProps={{
-                            sx: { borderRadius: 2 }
-                        }}
-                    />
-                </Box>
-
-                <Box sx={{ width: '100%', mb: 2 }}>
-                    <Typography variant="h6" sx={{ fontWeight: 550 }}>
-                        Merchandise Description <RequiredAsterisk />
-                    </Typography>
-                </Box>
-
-                {/* Description Field - Full width row */}
-                <Box sx={{ width: '100%', mb: 3 }}>
-                    <TextField
-                        fullWidth
-                        placeholder="Enter merchandise details"
-                        value={description}
-                        onChange={(e) => setDescription(e.target.value)}
-                        error={!!errors.description}
-                        helperText={errors.description}
-                        multiline
-                        rows={3}
-                        required
-                        variant="outlined"
-                        InputProps={{
-                            sx: { borderRadius: 2 }
-                        }}
-                    />
-                </Box>
-
-                <Box sx={{ width: '100%', mb: 2 }}>
-                    <Typography variant="h6" sx={{ fontWeight: 550 }}>
-                        Merchandise Category <RequiredAsterisk />
-                    </Typography>
-                </Box>
-
-                {/* Category Field - Full width row */}
-                <Box sx={{ width: '100%', mb: 2 }}>
-                    <FormControl fullWidth error={!!errors.category} required>
-                        <Select
-                            displayEmpty
-                            renderValue={(selected) => {
-                                if (selected.length === 0) {
-                                    return <div style={{ color: '#a9a9a9' }}>Select a category</div>
-                                }
-
-                                return selected;
-                            }}
-                            value={category}
-                            onChange={(e) => setCategory(e.target.value)}
-                            sx={{ borderRadius: 2 }}
-                        >
-                            <MenuItem value="Clothing">Clothing</MenuItem>
-                            <MenuItem value="Non-Clothing">Non-Clothing</MenuItem>
-                        </Select>
-                        {errors.category && <FormHelperText>{errors.category}</FormHelperText>}
-                    </FormControl>
-                </Box>
-
-                {/* Sizes Field - Only shown for Clothing category - Full width row */}
-                {category === 'Clothing' && (
-                    <>
-                        <Box sx={{ width: '100%', mb: 2 }}>
-                            <Typography variant="h6" sx={{ fontWeight: 550 }}>
-                                Merchandise Sizes (S, M, L, XL, Free Size, etc.) <RequiredAsterisk />
-                            </Typography>
-                        </Box>
-                        <Box sx={{ width: '100%', mb: 2 }}>
-                            <FormControl fullWidth error={!!errors.sizes}>
-                                <TextField
-                                    fullWidth
-                                    value={size}
-                                    onChange={(e) => setSize(e.target.value)}
-                                    placeholder="Type a size and click add"
-                                    error={!!errors.sizes}
-                                    helperText={errors.sizes}
-                                    InputProps={{
-                                        endAdornment: (
-                                            <InputAdornment position="end">
-                                                <IconButton
-                                                    onClick={handleAddSize}
-                                                    edge="end"
-                                                    color="primary"
-                                                >
-                                                    <AddIcon />
-                                                </IconButton>
-                                            </InputAdornment>
-                                        ),
-                                        sx: { borderRadius: 2 }
-                                    }}
-                                />
-                            </FormControl>
-
-                            {/* Sizes Preview */}
-                            {sizes.length > 0 && (
-                                <Box sx={{ mt: 2, display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                                    {sizes.map((s, index) => (
-                                        <Chip
-                                            key={index}
-                                            label={s}
-                                            onDelete={() => handleRemoveSize(s)}
-                                            color="primary"
-                                            sx={{ borderRadius: 2, fontWeight: 500 }}
-                                        />
-                                    ))}
-                                </Box>
-                            )}
-                        </Box>
-                    </>
-                )}
-
-                <Box sx={{ width: '100%', mb: 2 }}>
-                    <Typography variant="h6" sx={{ fontWeight: 550 }}>
-                        Diamonds Cost <RequiredAsterisk />
-                    </Typography>
-                </Box>
-
-                {/* Diamonds Needed Field - Full width row */}
-                <Box sx={{ width: '100%', mb: 3 }}>
-                    <TextField
-                        fullWidth
-                        placeholder="Enter diamonds required"
-                        value={diamondsNeeded}
-                        onChange={(e) => setDiamondsNeeded(e.target.value.replace(/[^0-9]/g, ''))}
-                        error={!!errors.diamondsNeeded}
-                        helperText={errors.diamondsNeeded}
-                        type="number"
-                        InputProps={{
-                            startAdornment: (
-                                <InputAdornment position="start" sx={{ marginRight: 2 }}>
-                                    <img src={Diamond} style={{ height: 24, width: 24 }} />
-                                </InputAdornment>
-                            ),
-                            sx: {
-                                borderRadius: 2,
-                                '& input::-webkit-outer-spin-button, & input::-webkit-inner-spin-button': {
-                                    display: 'none'
-                                },
-                                '& input[type=number]': {
-                                    MozAppearance: 'textfield'
-                                },
-                            },
-                        }}
-                        required
-                    />
-                </Box>
-
-                <Box sx={{ width: '100%', mb: 2 }}>
-                    <Typography variant="h6" sx={{ fontWeight: 550 }}>
-                        Pickup Location <RequiredAsterisk />
-                    </Typography>
-
-                </Box>
-
-                {/* Collection Location Field - Full width row */}
-                <Box sx={{ width: '100%', mb: 3 }}>
-                    <TextField
-                        fullWidth
-                        placeholder='Enter pickup location'
-                        value={locationName}
-                        onChange={(e) => setLocationName(e.target.value)}
-                        error={!!errors.locationName}
-                        helperText={errors.locationName}
-                        required
-                        variant="outlined"
-                        InputProps={{
-                            sx: { borderRadius: 2 }
-                        }}
-                    />
-                </Box>
-
-                {/* Media Section */}
-                <Box sx={{ width: '100%' }}>
-                    <Typography variant="h6" sx={{ fontWeight: 550 }}>
-                        Merchandise Images <RequiredAsterisk />
-                    </Typography>
-                </Box>
-
-                {/* Merchandise Images Field - Full width row */}
-                <Box sx={{ width: '100%', mb: 2 }}>
-                    <Typography variant="subtitle1" gutterBottom sx={{ mb: 2 }}>
-                        Upload up to 4 merchandise images (max 50KB each)
-                    </Typography>
-
-                    <Button
-                        variant="outlined"
-                        component="label"
-                        startIcon={<ImageIcon />}
-                        sx={{
-                            width: '100%',
-                            mb: 2,
-                            borderRadius: 2,
-                            py: 1,
-                            px: 3,
-                            borderWidth: 2,
-                            '&:hover': {
-                                borderWidth: 2
-                            }
-                        }}
-                        disabled={images.length >= 4}
-                        color="primary"
-                    >
-                        {images.length > 0 ? 'Add Another Image' : 'Upload Product Images'}
-                        <input
-                            type="file"
-                            accept="image/*"
-                            hidden
-                            onChange={handleImageChange}
-                        />
-                    </Button>
-
-                    {errors.images && (
-                        <FormHelperText error>{errors.images}</FormHelperText>
-                    )}
-
-                    {/* Images Preview - This can be multi-column */}
-                    {images.length > 0 && (
-                        <Box sx={{ mt: 3, width: '100%' }}>
-                            <Grid container spacing={3}>
-                                {images.map((img, index) => (
-                                    <Grid item xs={12} sm={6} md={3} key={index}>
-                                        <Box
-                                            sx={{
-                                                position: 'relative',
-                                                height: "300px",
-                                                width: "250px",
-                                                borderRadius: 3,
-                                                overflow: 'hidden',
-                                                boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-                                                transition: 'transform 0.3s ease',
-                                                '&:hover': {
-                                                    transform: 'translateY(-4px)'
-                                                }
-                                            }}
-                                        >
-                                            <Box
-                                                sx={{
-                                                    position: 'relative',
-                                                    pt: '100%', // 1:1 Aspect Ratio
-                                                    overflow: 'hidden',
-                                                    bgcolor: '#f5f5f5'
-                                                }}
-                                            >
-                                                <Box
-                                                    component="img"
-                                                    src={`data:image/jpeg;base64,${img.preview}`}
-                                                    alt={`Merchandise ${index + 1}`}
-                                                    sx={{
-                                                        position: 'absolute',
-                                                        top: 0,
-                                                        left: 0,
-                                                        width: '100%',
-                                                        height: '100%',
-                                                        objectFit: 'contain',
-                                                    }}
-                                                />
-                                            </Box>
-                                            <Box
-                                                sx={{
-                                                    position: 'absolute',
-                                                    top: 8,
-                                                    right: 8,
-                                                    display: 'flex',
-                                                    gap: 1
-                                                }}
-                                            >
-                                                <IconButton
-                                                    size="small"
-                                                    onClick={() => handleRemoveImage(index)}
-                                                    sx={{
-                                                        bgcolor: 'error.main',
-                                                        color: 'white',
-                                                        '&:hover': {
-                                                            bgcolor: 'error.dark'
-                                                        }
-                                                    }}
-                                                >
-                                                    <DeleteIcon fontSize="small" />
-                                                </IconButton>
-                                                <IconButton
-                                                    size="small"
-                                                    component="label"
-                                                    sx={{
-                                                        bgcolor: 'info.main',
-                                                        color: 'white',
-                                                        '&:hover': {
-                                                            bgcolor: 'info.dark'
-                                                        }
-                                                    }}
-                                                >
-                                                    <EditIcon fontSize="small" />
-                                                    <input
-                                                        type="file"
-                                                        accept="image/*"
-                                                        hidden
-                                                        onChange={(e) => handleReplaceImage(index, e)}
-                                                    />
-                                                </IconButton>
-                                            </Box>
-                                            <Box sx={{ p: 2, bgcolor: 'white' }}>
-                                                <Typography
-                                                    variant="body2"
-                                                    noWrap
-                                                    sx={{
-                                                        color: 'text.secondary',
-                                                        fontSize: '0.75rem'
-                                                    }}
-                                                >
-                                                    {img.name}
-                                                </Typography>
-                                            </Box>
-                                        </Box>
-                                    </Grid>
-                                ))}
-                            </Grid>
-                        </Box>
-                    )}
-                </Box>
-
-                {/* Action Buttons - Full width row */}
                 <Box
                     sx={{
-                        position: 'fixed',
-                        bottom: 0,
-                        left: 0,
-                        right: 0,
-                        padding: 3,
-                        backgroundColor: 'transparent',
                         display: 'flex',
-                        justifyContent: 'flex-end',
-                        zIndex: 1100, // To ensure buttons appear above other content
+                        flexDirection: { xs: 'column', sm: 'row' },
+                        alignItems: 'flex-start',
+                        py: { xs: 1, sm: 1.5 },
+                        px: { xs: 2, sm: 3.5 },
+                        gap: { xs: 2, sm: 0 },
+                        borderBottom: '1px solid rgba(0, 0, 0, 0.06)'
                     }}
                 >
-                    <Stack
-                        direction={{ xs: 'column', sm: 'row' }}
-                        spacing={2}
-                        paddingRight={6}
+                    {/* Header with Back Button */}
+                    <Box
+                        sx={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            flexGrow: 1,
+                            minWidth: 0,
+                        }}
                     >
+                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                            <Tooltip title="Back to Merchandises" arrow>
+                                <IconButton
+                                    edge="start"
+                                    onClick={() => navigate('/merchandise')}
+                                    sx={{
+                                        mr: 1.5,
+                                        color: 'text.primary',
+                                        transition: 'all 0.2s ease',
+                                        '&:hover': {
+                                            bgcolor: 'rgba(25, 118, 210, 0.08)',
+                                            transform: 'translateX(-1px)',
+                                        }
+                                    }}
+                                    aria-label="back to merchandises"
+                                >
+                                    <ArrowBackIcon fontSize={isMobile ? "small" : "medium"} />
+                                </IconButton>
+                            </Tooltip>
+
+                            <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+                                <Typography
+                                    variant="h6"
+                                    component="h1"
+                                    sx={{
+                                        flexGrow: 1,
+                                        fontWeight: 600,
+                                        fontSize: { xs: '0.9rem', sm: '1rem', md: '1.1rem' },
+                                        overflow: 'hidden',
+                                        textOverflow: 'ellipsis',
+                                        whiteSpace: 'nowrap',
+                                        maxWidth: { xs: '200px', sm: '250px', md: '100%' }
+                                    }}
+                                >
+                                    Create Your Own Merchandise
+                                </Typography>
+                                <Typography
+                                    variant="subtitle2"
+                                    sx={{
+                                        flexGrow: 1,
+                                        fontSize: { xs: '8px', sm: '10px', md: '12px' },
+                                        overflow: 'hidden',
+                                        textOverflow: 'ellipsis',
+                                        whiteSpace: 'nowrap',
+                                        maxWidth: { xs: '200px', sm: '500px', md: '100%' }
+                                    }}
+                                >
+                                    Drop cool merch for students to redeem with their hard-earned diamonds!
+                                </Typography>
+                            </Box>
+                        </Box>
+                    </Box>
+                </Box>
+
+                <Box component="form" onSubmit={handleSubmit} noValidate sx={{ width: 'auto', minHeight: '500px', px: { xs: 2, md: 4 }, pt: { xs: 3, md: 5 }, pb: { xs: 8, sm: 10 } }}>
+                    <Box sx={{ width: '100%', mb: 1 }}>
+                        {images.length > 0 && (
+                            <Box sx={{ width: '100%', mb: 1 }}>
+                                <Box sx={{ width: '100%', position: 'relative' }}>
+                                    <Paper
+                                        elevation={2}
+                                        sx={{
+                                            p: 1.5,
+                                            borderRadius: 3,
+                                            overflow: 'hidden',
+                                            position: 'relative',
+                                            height: 300,
+                                            display: 'flex',
+                                            justifyContent: 'center',
+                                            background: `linear-gradient(135deg, rgba(250, 250, 250, 0.5), ${theme.palette.common.white})`
+                                        }}
+                                    >
+                                        <Box
+                                            component="img"
+                                            src={`data:image/jpeg;base64,${images[currentImageIndex].preview}`}
+                                            alt={`Merchandise Image ${currentImageIndex + 1}`}
+                                            sx={{
+                                                maxWidth: '100%',
+                                                maxHeight: '90%',
+                                                objectFit: 'contain',
+                                                borderRadius: '10px'
+                                            }}
+                                        />
+
+                                        {currentImageIndex !== 0 && (
+                                            <IconButton
+                                                sx={{
+                                                    position: 'absolute',
+                                                    left: 10,
+                                                    top: '50%',
+                                                    transform: 'translateY(-50%)',
+                                                    bgcolor: 'background.paper',
+                                                    boxShadow: 2,
+                                                    '&:hover': { bgcolor: 'background.paper', opacity: 0.9 }
+                                                }}
+                                                onClick={handlePrevImage}
+                                            >
+                                                <ChevronLeftIcon />
+                                            </IconButton>
+                                        )}
+
+                                        {(images.length !== 1 && currentImageIndex !== images.length - 1) && (
+                                            <IconButton
+                                                sx={{
+                                                    position: 'absolute',
+                                                    right: 10,
+                                                    top: '50%',
+                                                    transform: 'translateY(-50%)',
+                                                    bgcolor: 'background.paper',
+                                                    boxShadow: 2,
+                                                    '&:hover': { bgcolor: 'background.paper', opacity: 0.9 }
+                                                }}
+                                                onClick={handleNextImage}
+                                            >
+                                                <ChevronRightIcon />
+                                            </IconButton>
+                                        )}
+
+                                        <Box
+                                            sx={{
+                                                position: 'absolute',
+                                                top: 10,
+                                                right: 15,
+                                                display: 'flex',
+                                                gap: 1,
+                                            }}
+                                        >
+                                            <IconButton
+                                                size="small"
+                                                onClick={() => handleRemoveImage(currentImageIndex)}
+                                                sx={{
+                                                    bgcolor: 'error.main',
+                                                    color: 'white',
+                                                    '&:hover': {
+                                                        bgcolor: 'error.dark'
+                                                    }
+                                                }}
+                                            >
+                                                <DeleteIcon fontSize="small" />
+                                            </IconButton>
+                                            <IconButton
+                                                size="small"
+                                                component="label"
+                                                sx={{
+                                                    bgcolor: 'info.main',
+                                                    color: 'white',
+                                                    '&:hover': {
+                                                        bgcolor: 'info.dark'
+                                                    }
+                                                }}
+                                            >
+                                                <EditIcon fontSize="small" />
+                                                <input
+                                                    type="file"
+                                                    accept="image/*"
+                                                    hidden
+                                                    onChange={(e) => handleReplaceImage(currentImageIndex, e)}
+                                                />
+                                            </IconButton>
+                                        </Box>
+
+                                        <Box
+                                            sx={{
+                                                position: 'absolute',
+                                                bottom: 16,
+                                                left: '50%',
+                                                transform: 'translateX(-50%)',
+                                                display: 'flex',
+                                                gap: 1
+                                            }}
+                                        >
+                                            {images.length !== 1 && images.map((_, index) => (
+                                                <Box
+                                                    key={index}
+                                                    sx={{
+                                                        width: 7,
+                                                        height: 7,
+                                                        borderRadius: '50%',
+                                                        bgcolor: index === currentImageIndex ? 'primary.main' : 'grey.300',
+                                                        cursor: 'pointer',
+                                                        transition: 'all 0.2s',
+                                                        '&:hover': {
+                                                            transform: 'scale(1.2)',
+                                                            bgcolor: index === currentImageIndex ? 'primary.dark' : 'grey.400'
+                                                        }
+                                                    }}
+                                                    onClick={() => setCurrentImageIndex(index)}
+                                                />
+                                            ))}
+                                        </Box>
+                                    </Paper>
+
+                                    <Typography
+                                        variant="body2"
+                                        sx={{
+                                            fontSize: "12px",
+                                            textAlign: 'center',
+                                            mt: 2,
+                                            color: 'text.secondary',
+                                            fontStyle: 'italic'
+                                        }}
+                                    >
+                                        Image {currentImageIndex + 1} of {images.length}
+                                    </Typography>
+                                </Box>
+                            </Box>
+                        )}
+
+                        <Box sx={{ width: '100%', mb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <Box>
+                                <Typography variant="h5" sx={{
+                                    fontSize: "16px",
+                                    fontWeight: 600,
+                                    display: 'flex',
+                                    alignItems: 'center'
+                                }}>
+                                    📸 Merchandise Image <RequiredAsterisk />
+                                </Typography>
+                                <Typography variant="body2" color='text.secondary' fontSize="12px" mt={0.5}>
+                                    ⚠️ Upload up to 4 images (max 50KB each). The first uploaded image will be used as the thumbnail.
+                                </Typography>
+                            </Box>
+                        </Box>
+                    </Box>
+
+                    <Box sx={{ width: '100%', mb: 2 }}>
                         <Button
-                            onClick={() => navigate('/merchandise')}
-                            variant="outlined"
-                            color="inherit"
+                            variant="contained"
+                            component="label"
+                            startIcon={<ImageIcon />}
                             sx={{
-                                borderRadius: 2,
+                                width: '100%',
+                                mb: 1.5,
+                                borderRadius: 3,
                                 py: 1.5,
                                 px: 4,
-                                borderWidth: 2,
+                                background: 'linear-gradient(90deg, #3a7bd5, #3a6073)',
+                                boxShadow: '0 4px 10px rgba(58, 123, 213, 0.2)',
+                                transition: 'all 0.3s ease',
+                                fontWeight: 500,
+                                textTransform: 'none',
+                                fontSize: '0.875rem',
                                 '&:hover': {
-                                    borderWidth: 2,
-                                    bgcolor: 'rgba(0,0,0,0.04)'
+                                    background: 'linear-gradient(90deg, #3a7bd5, #4a7b93)',
+                                    transform: 'translateY(-1px)',
+                                    boxShadow: '0 8px 15px rgba(58, 123, 213, 0.3)',
+                                },
+                                '&:disabled': {
+                                    background: '#e0e0e0',
+                                    color: '#9e9e9e',
+                                    boxShadow: 'none',
                                 }
                             }}
+                            disabled={images.length >= 4}
+                            color="primary"
                         >
-                            Cancel
+                            {images.length > 0 ? 'Add Another Image' : 'Upload Image'}
+                            <input
+                                type="file"
+                                accept="image/*"
+                                hidden
+                                onChange={handleImageChange}
+                            />
                         </Button>
+
+                        {errors.images && (
+                            <FormHelperText error sx={{ ml: 1 }}>{errors.images}</FormHelperText>
+                        )}
+                    </Box>
+
+                    <Grid container spacing={2.5}>
+                        <Grid width="100%">
+                            <Box sx={{ mb: 1 }}>
+                                <Typography variant="h6" sx={{
+                                    fontSize: "16px",
+                                    fontWeight: 600,
+                                    display: 'flex',
+                                    alignItems: 'center'
+                                }}>
+                                    🛍️ Merchandise Name <RequiredAsterisk />
+                                </Typography>
+                            </Box>
+                            <TextField
+                                fullWidth
+                                placeholder="Enter a merchandise name for the reward catalog..."
+                                value={name}
+                                onChange={(e) => setName(e.target.value)}
+                                error={!!errors.name}
+                                helperText={errors.name}
+                                required
+                                variant="outlined"
+                                InputProps={{
+                                    sx: { borderRadius: 2, fontSize: "13px" }
+                                }}
+                            />
+                        </Grid>
+
+                        <Grid width="100%">
+                            <Box sx={{ mb: 1 }}>
+                                <Typography variant="h6" sx={{
+                                    fontSize: "16px",
+                                    fontWeight: 600,
+                                    display: 'flex',
+                                    alignItems: 'center'
+                                }}>
+                                    📝 Description <RequiredAsterisk />
+                                </Typography>
+                            </Box>
+                            <TextField
+                                fullWidth
+                                placeholder="Enter an informative description for this merchandise item..."
+                                value={description}
+                                onChange={(e) => setDescription(e.target.value)}
+                                error={!!errors.description}
+                                helperText={errors.description}
+                                multiline
+                                rows={3}
+                                required
+                                variant="outlined"
+                                InputProps={{
+                                    sx: { borderRadius: 2, fontSize: "13px" }
+                                }}
+                            />
+                        </Grid>
+
+                        <Grid width="100%">
+                            <Box sx={{ mb: 1 }}>
+                                <Typography variant="h6" sx={{
+                                    fontSize: "16px",
+                                    fontWeight: 600,
+                                    display: 'flex',
+                                    alignItems: 'center'
+                                }}>
+                                    📦 Merchandise Category <RequiredAsterisk />
+                                </Typography>
+                            </Box>
+                            <FormControl fullWidth error={Boolean(errors.category)} required>
+                                <Select
+                                    displayEmpty
+                                    renderValue={(selected) => {
+                                        if (selected.length === 0) {
+                                            return <div style={{ color: '#a9a9a9', fontSize: '13px' }}>Select a merchandise category</div>
+                                        }
+
+                                        if (selected === "Non-Clothing" && sizes.length > 0) {
+                                            setSizes([]);
+                                        }
+
+                                        return (
+                                            <div style={{ display: 'flex', alignItems: 'center' }}>
+                                                {selected === "Clothing" && <CheckroomIcon sx={{ mr: 1, fontSize: 16 }} />}
+                                                {selected === "Non-Clothing" && <Inventory2Icon sx={{ mr: 1, fontSize: 16 }} />}
+                                                {selected}
+                                            </div>
+                                        );
+                                    }}
+                                    value={category}
+                                    onChange={(e) => setCategory(e.target.value)}
+                                    sx={{
+                                        borderRadius: 2,
+                                        fontSize: "14px",
+                                        '& .MuiOutlinedInput-notchedOutline': {
+                                            borderColor: '#e0e0e0',
+                                        },
+                                        '&:hover .MuiOutlinedInput-notchedOutline': {
+                                            borderColor: '#bdbdbd',
+                                        },
+                                        '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                                            borderColor: '#3f51b5',
+                                            borderWidth: '2px',
+                                        },
+                                        boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+                                        transition: 'all 0.2s ease-in-out',
+                                    }}
+                                    MenuProps={{
+                                        PaperProps: {
+                                            sx: {
+                                                borderRadius: 2,
+                                                boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
+                                                mt: 0.5,
+                                            }
+                                        }
+                                    }}
+                                >
+                                    <MenuItem disabled value="" sx={{ display: 'none', fontSize: '13px' }}>
+                                        <em>Select a merchandise category</em>
+                                    </MenuItem>
+                                    <MenuItem value="Clothing" sx={{ fontSize: '13px', py: 1.2 }}>
+                                        <CheckroomIcon sx={{ mr: 2, fontSize: 16, color: '#1565c0' }} /> Clothing
+                                    </MenuItem>
+                                    <MenuItem value="Non-Clothing" sx={{ fontSize: '13px', py: 1.2 }}>
+                                        <Inventory2Icon sx={{ mr: 2, fontSize: 16, color: '#4caf50' }} /> Non-Clothing
+                                    </MenuItem>
+                                </Select>
+                                {errors.category && <FormHelperText>{errors.category}</FormHelperText>}
+                            </FormControl>
+                        </Grid>
+
+                        {category === 'Clothing' && (
+                            <Grid width="100%">
+                                <Box sx={{ mb: 1 }}>
+                                    <Typography sx={{
+                                        fontSize: "16px",
+                                        fontWeight: 600,
+                                        display: 'flex',
+                                        alignItems: 'center'
+                                    }}>
+                                        📏 Merchandise Sizes <RequiredAsterisk />
+                                    </Typography>
+                                    <Typography variant="body2" color='text.secondary' fontSize="12px" mt={0.5}>
+                                        ⚠️ Example: Free Size, M, S, XL, L.
+                                    </Typography>
+                                </Box>
+                                <FormControl fullWidth error={Boolean(errors.sizes)}>
+                                    <TextField
+                                        fullWidth
+                                        value={size}
+                                        onChange={(e) => setSize(e.target.value)}
+                                        placeholder="Type a size and click the add icon..."
+                                        error={!!errors.sizes}
+                                        helperText={errors.sizes}
+                                        InputProps={{
+                                            endAdornment: (
+                                                <InputAdornment position="end">
+                                                    <IconButton
+                                                        onClick={handleAddSize}
+                                                        edge="end"
+                                                        color="primary"
+                                                    >
+                                                        <AddIcon sx={{ color: '#777776' }} />
+                                                    </IconButton>
+                                                </InputAdornment>
+                                            ),
+                                            sx: { borderRadius: 2, fontSize: "13px" }
+                                        }}
+                                    />
+                                </FormControl>
+
+                                {/* Sizes Preview */}
+                                {sizes.length > 0 && (
+                                    <Box
+                                        sx={{
+                                            display: 'flex',
+                                            flexWrap: 'wrap',
+                                            gap: 1.2,
+                                            mt: 1.5,
+                                            maxHeight: sizes.length > 8 ? '120px' : 'auto',
+                                            overflowY: sizes.length > 8 ? 'auto' : 'visible',
+                                            pb: sizes.length > 8 ? 1 : 0,
+                                            scrollbarWidth: 'thin',
+                                            '&::-webkit-scrollbar': {
+                                                width: '6px',
+                                            },
+                                            '&::-webkit-scrollbar-track': {
+                                                backgroundColor: 'rgba(0,0,0,0.05)',
+                                                borderRadius: 10,
+                                            },
+                                            '&::-webkit-scrollbar-thumb': {
+                                                backgroundColor: 'rgba(0,0,0,0.15)',
+                                                borderRadius: 10,
+                                                '&:hover': {
+                                                    backgroundColor: 'rgba(0,0,0,0.25)',
+                                                },
+                                            },
+                                        }}
+                                    >
+                                        {sizes.map((size, index) => (
+                                            <Zoom
+                                                key={index}
+                                                in={true}
+                                                style={{
+                                                    transitionDelay: `${index * 50}ms`
+                                                }}
+                                            >
+                                                <Tooltip title="Click to remove" arrow>
+                                                    <Chip
+                                                        label={size}
+                                                        onDelete={() => handleRemoveSize(size)}
+                                                        onMouseEnter={() => setHoveredIndex(index)}
+                                                        onMouseLeave={() => setHoveredIndex(null)}
+                                                        onClick={() => handleRemoveSize(size)}
+                                                        color="primary"
+                                                        variant="filled"
+                                                        sx={{
+                                                            borderRadius: 3,
+                                                            fontWeight: 500,
+                                                            fontSize: '0.85rem',
+                                                            px: 0.5,
+                                                            transition: 'all 0.2s ease',
+                                                            transform: hoveredIndex === index ? 'scale(1.05)' : 'scale(1)',
+                                                            '&:hover': {
+                                                                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.12)',
+                                                            },
+                                                            '& .MuiChip-deleteIcon': {
+                                                                color: hoveredIndex === index ? 'white' : 'primary.main',
+                                                                '&:hover': {
+                                                                    color: hoveredIndex === index ? 'white' : 'error.main',
+                                                                },
+                                                            },
+                                                        }}
+                                                    />
+                                                </Tooltip>
+                                            </Zoom>
+                                        ))}
+                                    </Box>
+                                )}
+                            </Grid>
+                        )}
+
+                        <Grid width="100%">
+                            <Box sx={{ mb: 1 }}>
+                                <Typography sx={{
+                                    fontSize: "16px",
+                                    fontWeight: 600,
+                                    display: 'flex',
+                                    alignItems: 'center'
+                                }}>
+                                    📌 Pickup Location <RequiredAsterisk />
+                                </Typography>
+                                <Typography variant="body2" color='text.secondary' fontSize="12px" mt={0.5}>
+                                    ⚠️ Specify where students can collect their redeemed merchandise.
+                                </Typography>
+                            </Box>
+                            <TextField
+                                fullWidth
+                                placeholder='Enter pickup location'
+                                value={locationName}
+                                onChange={(e) => setLocationName(e.target.value)}
+                                error={!!errors.locationName}
+                                helperText={errors.locationName}
+                                required
+                                variant="outlined"
+                                InputProps={{
+                                    sx: { borderRadius: 2, fontSize: "13px" }
+                                }}
+                            />
+                        </Grid>
+                    </Grid>
+
+                    <Box
+                        sx={{
+                            position: 'fixed',
+                            bottom: 0,
+                            left: 0,
+                            right: 0,
+                            py: 1.5,
+                            backgroundColor: 'white',
+                            borderTop: '1px solid rgba(169, 169, 169, 0.5)',
+                            display: 'flex',
+                            justifyContent: 'flex-end',
+                            zIndex: 100,
+                        }}
+                    >
                         <Button
                             type="submit"
                             variant="contained"
                             color="primary"
+                            disabled={!hasAllFieldsFilled}
+                            startIcon={<PublishIcon />}
                             sx={{
                                 borderRadius: 2,
-                                py: 1.5,
-                                px: 4,
+                                mr: 2,
+                                py: 1,
+                                px: 2,
                                 fontWeight: 600,
-                                boxShadow: '0 4px 12px rgba(33,150,243,0.3)',
-                                background: 'linear-gradient(45deg, #2196F3 30%, #21CBF3 90%)',
+                                fontSize: "12px",
+                                textTransform: 'none',
+                                backgroundColor: '#1976d2',
+                                transition: 'all 0.2s ease',
                                 '&:hover': {
-                                    boxShadow: '0 6px 12px rgba(33,150,243,0.4)',
+                                    backgroundColor: '#1565c0',
+                                    transform: 'translateY(-2px)',
+                                    boxShadow: '0 4px 8px rgba(21, 101, 192, 0.3)'
+                                },
+                                '&:disabled': {
+                                    backgroundColor: '#e0e0e0',
+                                    color: '#9e9e9e'
                                 }
                             }}
                         >
-                            Create
+                            Submit
                         </Button>
-                    </Stack>
+                    </Box>
                 </Box>
-            </Box>
-
-            <Snackbar
-                anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-                open={successOpen}
-                autoHideDuration={4000}
-                onClose={handleClose}
-            >
-                <Alert
-                    severity="success"
-                    variant="filled"
-                    sx={{ width: '100%' }}
-                >
-                    Merchandise created successfully!
-                </Alert>
-            </Snackbar>
+            </Card>
         </Box>
+        // <Box sx={{ py: 4, px: 6 }}>
+        //     <Typography
+        //         variant="h4"
+        //         component="h1"
+        //         sx={{
+        //             mb: 4,
+        //             fontWeight: 700,
+        //             background: 'linear-gradient(45deg, #2196F3 30%, #21CBF3 90%)',
+        //             backgroundClip: 'text',
+        //             textFillColor: 'transparent',
+        //             WebkitBackgroundClip: 'text',
+        //             WebkitTextFillColor: 'transparent'
+        //         }}
+        //     >
+        //         Create New Merchandise
+        //     </Typography>
+
+        //     <Box component="form" onSubmit={handleSubmit} noValidate sx={{ width: '100%', paddingBottom: '80px' }}>
+        //         {/* Product Information Section */}
+        //         <Box sx={{ width: '100%', mb: 2 }}>
+        //             <Typography variant="h6" sx={{ fontWeight: 550 }}>
+        //                 Merchandise Name <RequiredAsterisk />
+        //             </Typography>
+        //         </Box>
+
+        //         {/* Name Field - Full width row */}
+        //         <Box sx={{ width: '100%', mb: 3 }}>
+        //             <TextField
+        //                 fullWidth
+        //                 placeholder="Enter merchandise name"
+        //                 value={name}
+        //                 onChange={(e) => setName(e.target.value)}
+        //                 error={!!errors.name}
+        //                 helperText={errors.name}
+        //                 required
+        //                 variant="outlined"
+        //                 InputProps={{
+        //                     sx: { borderRadius: 2 }
+        //                 }}
+        //             />
+        //         </Box>
+
+        //         <Box sx={{ width: '100%', mb: 2 }}>
+        //             <Typography variant="h6" sx={{ fontWeight: 550 }}>
+        //                 Merchandise Description <RequiredAsterisk />
+        //             </Typography>
+        //         </Box>
+
+        //         {/* Description Field - Full width row */}
+        //         <Box sx={{ width: '100%', mb: 3 }}>
+        //             <TextField
+        //                 fullWidth
+        //                 placeholder="Enter merchandise details"
+        //                 value={description}
+        //                 onChange={(e) => setDescription(e.target.value)}
+        //                 error={!!errors.description}
+        //                 helperText={errors.description}
+        //                 multiline
+        //                 rows={3}
+        //                 required
+        //                 variant="outlined"
+        //                 InputProps={{
+        //                     sx: { borderRadius: 2 }
+        //                 }}
+        //             />
+        //         </Box>
+
+        //         <Box sx={{ width: '100%', mb: 2 }}>
+        //             <Typography variant="h6" sx={{ fontWeight: 550 }}>
+        //                 Merchandise Category <RequiredAsterisk />
+        //             </Typography>
+        //         </Box>
+
+        //         {/* Category Field - Full width row */}
+        //         <Box sx={{ width: '100%', mb: 2 }}>
+        //             <FormControl fullWidth error={!!errors.category} required>
+        //                 <Select
+        //                     displayEmpty
+        //                     renderValue={(selected) => {
+        //                         if (selected.length === 0) {
+        //                             return <div style={{ color: '#a9a9a9' }}>Select a category</div>
+        //                         }
+
+        //                         return selected;
+        //                     }}
+        //                     value={category}
+        //                     onChange={(e) => setCategory(e.target.value)}
+        //                     sx={{ borderRadius: 2 }}
+        //                 >
+        //                     <MenuItem value="Clothing">Clothing</MenuItem>
+        //                     <MenuItem value="Non-Clothing">Non-Clothing</MenuItem>
+        //                 </Select>
+        //                 {errors.category && <FormHelperText>{errors.category}</FormHelperText>}
+        //             </FormControl>
+        //         </Box>
+
+        //         {/* Sizes Field - Only shown for Clothing category - Full width row */}
+        //         {category === 'Clothing' && (
+        //             <>
+        //                 <Box sx={{ width: '100%', mb: 2 }}>
+        //                     <Typography variant="h6" sx={{ fontWeight: 550 }}>
+        //                         Merchandise Sizes (S, M, L, XL, Free Size, etc.) <RequiredAsterisk />
+        //                     </Typography>
+        //                 </Box>
+        //                 <Box sx={{ width: '100%', mb: 2 }}>
+        //                     <FormControl fullWidth error={!!errors.sizes}>
+        //                         <TextField
+        //                             fullWidth
+        //                             value={size}
+        //                             onChange={(e) => setSize(e.target.value)}
+        //                             placeholder="Type a size and click add"
+        //                             error={!!errors.sizes}
+        //                             helperText={errors.sizes}
+        //                             InputProps={{
+        //                                 endAdornment: (
+        //                                     <InputAdornment position="end">
+        //                                         <IconButton
+        //                                             onClick={handleAddSize}
+        //                                             edge="end"
+        //                                             color="primary"
+        //                                         >
+        //                                             <AddIcon />
+        //                                         </IconButton>
+        //                                     </InputAdornment>
+        //                                 ),
+        //                                 sx: { borderRadius: 2 }
+        //                             }}
+        //                         />
+        //                     </FormControl>
+
+        //                     {/* Sizes Preview */}
+        //                     {sizes.length > 0 && (
+        //                         <Box sx={{ mt: 2, display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+        //                             {sizes.map((s, index) => (
+        //                                 <Chip
+        //                                     key={index}
+        //                                     label={s}
+        //                                     onDelete={() => handleRemoveSize(s)}
+        //                                     color="primary"
+        //                                     sx={{ borderRadius: 2, fontWeight: 500 }}
+        //                                 />
+        //                             ))}
+        //                         </Box>
+        //                     )}
+        //                 </Box>
+        //             </>
+        //         )}
+
+        //         <Box sx={{ width: '100%', mb: 2 }}>
+        //             <Typography variant="h6" sx={{ fontWeight: 550 }}>
+        //                 Diamonds Cost <RequiredAsterisk />
+        //             </Typography>
+        //         </Box>
+
+        //         {/* Diamonds Needed Field - Full width row */}
+        //         <Box sx={{ width: '100%', mb: 3 }}>
+        //             <TextField
+        //                 fullWidth
+        //                 placeholder="Enter diamonds required"
+        //                 value={diamondsNeeded}
+        //                 onChange={(e) => setDiamondsNeeded(e.target.value.replace(/[^0-9]/g, ''))}
+        //                 error={!!errors.diamondsNeeded}
+        //                 helperText={errors.diamondsNeeded}
+        //                 type="number"
+        //                 InputProps={{
+        //                     startAdornment: (
+        //                         <InputAdornment position="start" sx={{ marginRight: 2 }}>
+        //                             <img src={Diamond} style={{ height: 24, width: 24 }} />
+        //                         </InputAdornment>
+        //                     ),
+        //                     sx: {
+        //                         borderRadius: 2,
+        //                         '& input::-webkit-outer-spin-button, & input::-webkit-inner-spin-button': {
+        //                             display: 'none'
+        //                         },
+        //                         '& input[type=number]': {
+        //                             MozAppearance: 'textfield'
+        //                         },
+        //                     },
+        //                 }}
+        //                 required
+        //             />
+        //         </Box>
+
+        //         <Box sx={{ width: '100%', mb: 2 }}>
+        //             <Typography variant="h6" sx={{ fontWeight: 550 }}>
+        //                 Pickup Location <RequiredAsterisk />
+        //             </Typography>
+
+        //         </Box>
+
+        //         {/* Collection Location Field - Full width row */}
+        //         <Box sx={{ width: '100%', mb: 3 }}>
+        //             <TextField
+        //                 fullWidth
+        //                 placeholder='Enter pickup location'
+        //                 value={locationName}
+        //                 onChange={(e) => setLocationName(e.target.value)}
+        //                 error={!!errors.locationName}
+        //                 helperText={errors.locationName}
+        //                 required
+        //                 variant="outlined"
+        //                 InputProps={{
+        //                     sx: { borderRadius: 2 }
+        //                 }}
+        //             />
+        //         </Box>
+
+        //         {/* Media Section */}
+        //         <Box sx={{ width: '100%' }}>
+        //             <Typography variant="h6" sx={{ fontWeight: 550 }}>
+        //                 Merchandise Images <RequiredAsterisk />
+        //             </Typography>
+        //         </Box>
+
+        //         {/* Merchandise Images Field - Full width row */}
+        //         <Box sx={{ width: '100%', mb: 2 }}>
+        //             <Typography variant="subtitle1" gutterBottom sx={{ mb: 2 }}>
+        //                 Upload up to 4 merchandise images (max 50KB each)
+        //             </Typography>
+
+        //             <Button
+        //                 variant="outlined"
+        //                 component="label"
+        //                 startIcon={<ImageIcon />}
+        //                 sx={{
+        //                     width: '100%',
+        //                     mb: 2,
+        //                     borderRadius: 2,
+        //                     py: 1,
+        //                     px: 3,
+        //                     borderWidth: 2,
+        //                     '&:hover': {
+        //                         borderWidth: 2
+        //                     }
+        //                 }}
+        //                 disabled={images.length >= 4}
+        //                 color="primary"
+        //             >
+        //                 {images.length > 0 ? 'Add Another Image' : 'Upload Product Images'}
+        //                 <input
+        //                     type="file"
+        //                     accept="image/*"
+        //                     hidden
+        //                     onChange={handleImageChange}
+        //                 />
+        //             </Button>
+
+        //             {errors.images && (
+        //                 <FormHelperText error>{errors.images}</FormHelperText>
+        //             )}
+
+        //             {/* Images Preview - This can be multi-column */}
+        //             {images.length > 0 && (
+        //                 <Box sx={{ mt: 3, width: '100%' }}>
+        //                     <Grid container spacing={3}>
+        //                         {images.map((img, index) => (
+        //                             <Grid item xs={12} sm={6} md={3} key={index}>
+        //                                 <Box
+        //                                     sx={{
+        //                                         position: 'relative',
+        //                                         height: "300px",
+        //                                         width: "250px",
+        //                                         borderRadius: 3,
+        //                                         overflow: 'hidden',
+        //                                         boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+        //                                         transition: 'transform 0.3s ease',
+        //                                         '&:hover': {
+        //                                             transform: 'translateY(-4px)'
+        //                                         }
+        //                                     }}
+        //                                 >
+        //                                     <Box
+        //                                         sx={{
+        //                                             position: 'relative',
+        //                                             pt: '100%', // 1:1 Aspect Ratio
+        //                                             overflow: 'hidden',
+        //                                             bgcolor: '#f5f5f5'
+        //                                         }}
+        //                                     >
+        //                                         <Box
+        //                                             component="img"
+        //                                             src={`data:image/jpeg;base64,${img.preview}`}
+        //                                             alt={`Merchandise ${index + 1}`}
+        //                                             sx={{
+        //                                                 position: 'absolute',
+        //                                                 top: 0,
+        //                                                 left: 0,
+        //                                                 width: '100%',
+        //                                                 height: '100%',
+        //                                                 objectFit: 'contain',
+        //                                             }}
+        //                                         />
+        //                                     </Box>
+        //                                     <Box
+        //                                         sx={{
+        //                                             position: 'absolute',
+        //                                             top: 8,
+        //                                             right: 8,
+        //                                             display: 'flex',
+        //                                             gap: 1
+        //                                         }}
+        //                                     >
+        //                                         <IconButton
+        //                                             size="small"
+        //                                             onClick={() => handleRemoveImage(index)}
+        //                                             sx={{
+        //                                                 bgcolor: 'error.main',
+        //                                                 color: 'white',
+        //                                                 '&:hover': {
+        //                                                     bgcolor: 'error.dark'
+        //                                                 }
+        //                                             }}
+        //                                         >
+        //                                             <DeleteIcon fontSize="small" />
+        //                                         </IconButton>
+        //                                         <IconButton
+        //                                             size="small"
+        //                                             component="label"
+        //                                             sx={{
+        //                                                 bgcolor: 'info.main',
+        //                                                 color: 'white',
+        //                                                 '&:hover': {
+        //                                                     bgcolor: 'info.dark'
+        //                                                 }
+        //                                             }}
+        //                                         >
+        //                                             <EditIcon fontSize="small" />
+        //                                             <input
+        //                                                 type="file"
+        //                                                 accept="image/*"
+        //                                                 hidden
+        //                                                 onChange={(e) => handleReplaceImage(index, e)}
+        //                                             />
+        //                                         </IconButton>
+        //                                     </Box>
+        //                                     <Box sx={{ p: 2, bgcolor: 'white' }}>
+        //                                         <Typography
+        //                                             variant="body2"
+        //                                             noWrap
+        //                                             sx={{
+        //                                                 color: 'text.secondary',
+        //                                                 fontSize: '0.75rem'
+        //                                             }}
+        //                                         >
+        //                                             {img.name}
+        //                                         </Typography>
+        //                                     </Box>
+        //                                 </Box>
+        //                             </Grid>
+        //                         ))}
+        //                     </Grid>
+        //                 </Box>
+        //             )}
+        //         </Box>
+
+        //         {/* Action Buttons - Full width row */}
+        //         <Box
+        //             sx={{
+        //                 position: 'fixed',
+        //                 bottom: 0,
+        //                 left: 0,
+        //                 right: 0,
+        //                 padding: 3,
+        //                 backgroundColor: 'transparent',
+        //                 display: 'flex',
+        //                 justifyContent: 'flex-end',
+        //                 zIndex: 1100, // To ensure buttons appear above other content
+        //             }}
+        //         >
+        //             <Stack
+        //                 direction={{ xs: 'column', sm: 'row' }}
+        //                 spacing={2}
+        //                 paddingRight={6}
+        //             >
+        //                 <Button
+        //                     onClick={() => navigate('/merchandise')}
+        //                     variant="outlined"
+        //                     color="inherit"
+        //                     sx={{
+        //                         borderRadius: 2,
+        //                         py: 1.5,
+        //                         px: 4,
+        //                         borderWidth: 2,
+        //                         '&:hover': {
+        //                             borderWidth: 2,
+        //                             bgcolor: 'rgba(0,0,0,0.04)'
+        //                         }
+        //                     }}
+        //                 >
+        //                     Cancel
+        //                 </Button>
+        //                 <Button
+        //                     type="submit"
+        //                     variant="contained"
+        //                     color="primary"
+        //                     sx={{
+        //                         borderRadius: 2,
+        //                         py: 1.5,
+        //                         px: 4,
+        //                         fontWeight: 600,
+        //                         boxShadow: '0 4px 12px rgba(33,150,243,0.3)',
+        //                         background: 'linear-gradient(45deg, #2196F3 30%, #21CBF3 90%)',
+        //                         '&:hover': {
+        //                             boxShadow: '0 6px 12px rgba(33,150,243,0.4)',
+        //                         }
+        //                     }}
+        //                 >
+        //                     Create
+        //                 </Button>
+        //             </Stack>
+        //         </Box>
+        //     </Box>
+        //     <SnackbarComponent snackbarOpen={snackbarOpen} setSnackbarOpen={setSnackbarOpen} snackbarContent={snackbarContent} />
+        // </Box>
     );
 };
 

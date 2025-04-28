@@ -179,41 +179,46 @@ const AttendanceListTable = ({ participants, eventID = "", isLoading }) => {
                     </Box>
                 ),
                 renderCell: (params) => (
-                    <Box
-                        sx={{
-                            height: '32px',
-                            width: '32px',
-                            my: 1.5,
-                            ml: 1,
-                            borderRadius: '8px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            backgroundColor: primaryLight,
-                            border: `1px solid ${primaryBorder}`,
-                            boxShadow: `0 2px 4px ${alpha(theme.palette.common.black, 0.05)}`,
-                            transition: 'all 0.2s ease',
-                            '&:hover': {
-                                backgroundColor: primaryMedium,
-                                transform: 'scale(1.05)',
-                                boxShadow: `0 3px 6px ${alpha(theme.palette.common.black, 0.1)}`
-                            }
-                        }}
-                    >
-                        <Typography
-                            variant="body2"
-                            fontWeight="700"
-                            color={theme.palette.primary.main}
-                            fontSize="0.85rem"
+                    <Box sx={{
+                        height: '100%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                    }}>
+                        <Box
+                            sx={{
+                                height: 25,
+                                width: 25,
+                                borderRadius: '8px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                backgroundColor: primaryLight,
+                                border: `1px solid ${primaryBorder}`,
+                                boxShadow: `0 2px 4px ${alpha(theme.palette.common.black, 0.05)}`,
+                                transition: 'all 0.2s ease',
+                                '&:hover': {
+                                    backgroundColor: primaryMedium,
+                                    transform: 'scale(1.05)',
+                                    boxShadow: `0 3px 6px ${alpha(theme.palette.common.black, 0.1)}`
+                                }
+                            }}
                         >
-                            {params.value}
-                        </Typography>
+                            <Typography
+                                variant="body2"
+                                fontWeight="700"
+                                color={theme.palette.primary.main}
+                                fontSize="0.65rem"
+                            >
+                                {params.value}
+                            </Typography>
+                        </Box>
                     </Box>
                 )
             },
             {
                 field: 'fullName',
-                headerName: 'Participant',
+                headerName: 'Student',
                 flex: 1,
                 headerAlign: 'center',
                 minWidth: 220,
@@ -243,12 +248,12 @@ const AttendanceListTable = ({ participants, eventID = "", isLoading }) => {
                         }}>
                             <Avatar
                                 sx={{
-                                    width: 30,
-                                    height: 30,
+                                    width: 25,
+                                    height: 25,
                                     bgcolor: primaryMedium,
                                     color: theme.palette.primary.dark,
                                     fontWeight: 600,
-                                    fontSize: '0.9rem',
+                                    fontSize: '0.65rem',
                                     border: `2px solid ${alpha(theme.palette.background.paper, 0.9)}`,
                                     boxShadow: `0 2px 8px ${alpha(theme.palette.primary.main, 0.2)}`,
                                     transition: 'transform 0.2s ease',
@@ -286,7 +291,7 @@ const AttendanceListTable = ({ participants, eventID = "", isLoading }) => {
                                     color="text.primary"
                                     sx={{
                                         lineHeight: 1.2,
-                                        fontSize: '0.95rem',
+                                        fontSize: '0.75rem',
                                         overflow: 'hidden',
                                         textOverflow: 'ellipsis',
                                         whiteSpace: 'nowrap',
@@ -317,7 +322,7 @@ const AttendanceListTable = ({ participants, eventID = "", isLoading }) => {
                     <Box
                         sx={{
                             width: '100%',
-                            py: 2,
+                            height: '100%',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
@@ -328,6 +333,7 @@ const AttendanceListTable = ({ participants, eventID = "", isLoading }) => {
                         <Typography
                             variant="body1"
                             fontWeight="600"
+                            fontSize="0.85rem"
                         >
                             {params.value}
                         </Typography>
@@ -351,7 +357,7 @@ const AttendanceListTable = ({ participants, eventID = "", isLoading }) => {
                     <Box
                         sx={{
                             width: '100%',
-                            py: 2,
+                            height: '100%',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
@@ -384,28 +390,8 @@ const AttendanceListTable = ({ participants, eventID = "", isLoading }) => {
                 headerAlign: 'center',
                 align: 'center',
                 renderHeader: () => (
-                    <Box sx={{
-                        ...commonHeaderStyle,
-                        justifyContent: 'center',
-                        position: 'relative',
-                        '&::after': {
-                            content: '""',
-                            position: 'absolute',
-                            bottom: -8,
-                            left: '50%',
-                            transform: 'translateX(-50%)',
-                            width: 40,
-                            height: 3,
-                            backgroundColor: theme.palette.primary.main,
-                            borderRadius: '10px'
-                        }
-                    }}>
-                        <Typography
-                            variant="subtitle1"
-                            fontWeight="700"
-                            color="text.primary"
-                            sx={{ letterSpacing: '0.02em' }}
-                        >
+                    <Box sx={enhancedHeaderStyle}>
+                        <Typography {...headerTypographyStyle}>
                             Email
                         </Typography>
                     </Box>
@@ -413,13 +399,20 @@ const AttendanceListTable = ({ participants, eventID = "", isLoading }) => {
                 renderCell: (params) => (
                     <Box
                         sx={{
-                            py: 2,
+                            width: '100%',
+                            height: '100%',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
+                            borderRadius: '6px',
+                            transition: 'all 0.2s ease',
                         }}
                     >
-                        <Typography variant="body1" fontWeight="700" color="text.primary">
+                        <Typography
+                            variant="body1"
+                            fontWeight="600"
+                            fontSize="0.85rem"
+                        >
                             {params.value}
                         </Typography>
                     </Box>
@@ -438,29 +431,9 @@ const AttendanceListTable = ({ participants, eventID = "", isLoading }) => {
                 sortable: false,
                 filterable: false,
                 renderHeader: () => (
-                    <Box sx={{
-                        ...commonHeaderStyle,
-                        justifyContent: 'center',
-                        position: 'relative',
-                        '&::after': {
-                            content: '""',
-                            position: 'absolute',
-                            bottom: -8,
-                            left: '50%',
-                            transform: 'translateX(-50%)',
-                            width: 40,
-                            height: 3,
-                            backgroundColor: theme.palette.primary.main,
-                            borderRadius: '10px'
-                        }
-                    }}>
-                        <Typography
-                            variant="subtitle1"
-                            fontWeight="700"
-                            color="text.primary"
-                            sx={{ letterSpacing: '0.02em' }}
-                        >
-                            Action
+                    <Box sx={enhancedHeaderStyle}>
+                        <Typography {...headerTypographyStyle}>
+                            Actions
                         </Typography>
                     </Box>
                 ),
@@ -489,7 +462,7 @@ const AttendanceListTable = ({ participants, eventID = "", isLoading }) => {
                                 fontWeight: '600',
                                 whiteSpace: 'nowrap',
                                 minWidth: 'auto',
-                                maxHeight: 40,
+                                maxHeight: 30,
                                 py: 1,
                                 px: 2,
                                 borderRadius: '12px',
@@ -507,7 +480,7 @@ const AttendanceListTable = ({ participants, eventID = "", isLoading }) => {
                         >
                             <Typography sx={{
                                 fontWeight: 600,
-                                fontSize: '0.875rem',
+                                fontSize: '0.75rem',
                                 letterSpacing: '0.01em'
                             }}>
                                 Manual Attendance
@@ -525,14 +498,15 @@ const AttendanceListTable = ({ participants, eventID = "", isLoading }) => {
         <Box
             sx={{
                 width: '100%',
-                borderRadius: '16px',
-                boxShadow: (theme) => `0 10px 30px ${alpha(theme.palette.common.black, 0.07)}`,
-                background: (theme) => `linear-gradient(165deg, 
-                    ${alpha(theme.palette.background.paper, 0.95)}, 
-                    ${alpha(theme.palette.background.paper, 1)} 60%,
-                    ${alpha(theme.palette.primary.light, 0.05)} 120%)`,
-                border: (theme) => `1px solid ${alpha(theme.palette.divider, 0.06)}`,
-                backdropFilter: 'blur(12px)',
+                borderRadius: '20px',
+                overflow: 'hidden',
+                boxShadow: (theme) => `0 20px 40px ${alpha(theme.palette.common.black, 0.08)}`,
+                background: (theme) => `linear-gradient(145deg, 
+                            ${alpha(theme.palette.background.paper, 0.98)}, 
+                            ${alpha(theme.palette.background.paper, 1)} 50%,
+                            ${alpha(theme.palette.primary.light, 0.07)} 130%)`,
+                border: (theme) => `1px solid ${alpha(theme.palette.divider, 0.05)}`,
+                backdropFilter: 'blur(16px)',
                 position: 'relative',
                 '&::before': {
                     content: '""',
@@ -540,23 +514,24 @@ const AttendanceListTable = ({ participants, eventID = "", isLoading }) => {
                     top: 0,
                     left: 0,
                     right: 0,
-                    height: '4px',
+                    height: '3px',
                     background: (theme) => `linear-gradient(90deg, 
-                        ${alpha(theme.palette.primary.main, 0.01)}, 
-                        ${alpha(theme.palette.primary.light, 0.8)} 70%, 
-                        ${alpha(theme.palette.background.paper, 0.3)})`,
+                                                    ${alpha(theme.palette.primary.main, 0.2)}, 
+                                                    ${alpha(theme.palette.primary.light, 0.9)} 50%, 
+                                                    ${alpha(theme.palette.background.paper, 0.6)})`,
                     zIndex: 5
                 }
             }}
         >
             <Box
                 sx={{
-                    height: 380,
+                    height: 300,
                     width: '100%',
                     position: 'relative',
                     '& .MuiDataGrid-root': {
                         border: 'none',
-                        borderRadius: '16px',
+                        borderRadius: '20px',
+                        overflow: 'hidden',
                         boxShadow: 'none',
                         backgroundColor: 'transparent',
                         '--DataGrid-rowBorderColor': 'transparent',
@@ -568,8 +543,8 @@ const AttendanceListTable = ({ participants, eventID = "", isLoading }) => {
                             right: 0,
                             height: '20px',
                             background: (theme) => `linear-gradient(to top, 
-                                ${alpha(theme.palette.background.paper, 1)}, 
-                                ${alpha(theme.palette.background.paper, 0)})`,
+                                        ${alpha(theme.palette.background.paper, 1)}, 
+                                        ${alpha(theme.palette.background.paper, 0)})`,
                             pointerEvents: 'none',
                             zIndex: 3
                         }
@@ -582,71 +557,54 @@ const AttendanceListTable = ({ participants, eventID = "", isLoading }) => {
                         borderBottom: 'none',
                         color: (theme) => theme.palette.text.primary,
                         padding: '18px 16px',
-                        transition: 'all 0.2s ease',
-                        '&:hover': {
-                            backgroundColor: (theme) => alpha(theme.palette.action.hover, 0.05),
-                        }
+                        transition: 'color 0.2s ease',
                     },
                     '& .MuiDataGrid-columnHeaders': {
                         borderBottom: 'none',
-                        backgroundColor: (theme) => alpha(theme.palette.background.default, 0.5),
-                        backdropFilter: 'blur(10px)',
-                        height: 57,
+                        backgroundColor: (theme) => alpha(theme.palette.background.default, 0.6),
+                        backdropFilter: 'blur(14px)',
+                        height: 50,
                         position: 'relative',
                         '&::after': {
                             content: '""',
                             position: 'absolute',
                             bottom: 0,
-                            left: '10px',
-                            right: '10px',
+                            left: '6px',
+                            right: '6px',
                             height: '1px',
                             background: (theme) => `linear-gradient(90deg, 
-                                ${alpha(theme.palette.divider, 0)}, 
-                                ${alpha(theme.palette.divider, 0.3)} 20%, 
-                                ${alpha(theme.palette.divider, 0.3)} 80%, 
-                                ${alpha(theme.palette.divider, 0)})`,
+                                        ${alpha(theme.palette.divider, 0)}, 
+                                        ${alpha(theme.palette.divider, 0.25)} 20%, 
+                                        ${alpha(theme.palette.divider, 0.25)} 80%, 
+                                        ${alpha(theme.palette.divider, 0)})`,
                         }
                     },
                     '& .MuiDataGrid-columnHeaderTitle': {
-                        fontWeight: 700,
+                        fontWeight: 600,
                         fontSize: '0.85rem',
                         textTransform: 'uppercase',
-                        letterSpacing: '0.05em',
-                        color: (theme) => theme.palette.text.secondary,
+                        letterSpacing: '0.06em',
+                        color: (theme) => alpha(theme.palette.text.secondary, 0.85),
                     },
                     '& .MuiDataGrid-columnSeparator': {
                         display: 'none',
                     },
                     '& .MuiDataGrid-footerContainer': {
                         borderTop: 'none',
-                        backgroundColor: (theme) => alpha(theme.palette.background.default, 0.5),
-                        backdropFilter: 'blur(10px)',
-                        borderRadius: '0 0 16px 16px',
+                        backgroundColor: (theme) => alpha(theme.palette.background.default, 0.6),
+                        borderRadius: '0 0 20px 20px',
                         position: 'relative',
-                        height: 60,
-                        '&::before': {
-                            content: '""',
-                            position: 'absolute',
-                            top: 0,
-                            left: '10px',
-                            right: '10px',
-                            height: '1px',
-                            background: (theme) => `linear-gradient(90deg, 
-                                ${alpha(theme.palette.divider, 0)}, 
-                                ${alpha(theme.palette.divider, 0.3)} 20%, 
-                                ${alpha(theme.palette.divider, 0.3)} 80%, 
-                                ${alpha(theme.palette.divider, 0)})`,
-                        }
+                        height: 50,
                     },
                     '& .MuiDataGrid-row': {
-                        transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
+                        transition: 'all 0.28s cubic-bezier(0.4, 0, 0.2, 1)',
                         display: 'flex',
                         justifyContent: 'center',
                         position: 'relative',
                         '&:hover': {
-                            backgroundColor: (theme) => alpha(theme.palette.primary.main, 0.04),
-                            transform: 'translateY(-2px) scale(1.005)',
-                            boxShadow: (theme) => `0 5px 15px ${alpha(theme.palette.common.black, 0.05)}`,
+                            backgroundColor: (theme) => alpha(theme.palette.primary.main, 0.05),
+                            transform: 'translateY(-1px) scale(1.005)',
+                            boxShadow: (theme) => `0 8px 20px ${alpha(theme.palette.common.black, 0.05)}`,
                             zIndex: 2,
                             '&::after': {
                                 opacity: 1,
@@ -656,26 +614,26 @@ const AttendanceListTable = ({ participants, eventID = "", isLoading }) => {
                         '&::after': {
                             content: '""',
                             position: 'absolute',
-                            bottom: '2px',
+                            bottom: 0,
                             left: '2%',
                             width: '96%',
                             height: '1px',
                             background: (theme) => `linear-gradient(90deg, 
-                                ${alpha(theme.palette.divider, 0)}, 
-                                ${alpha(theme.palette.divider, 0.15)} 20%, 
-                                ${alpha(theme.palette.divider, 0.15)} 80%, 
-                                ${alpha(theme.palette.divider, 0)})`,
-                            opacity: 0.7,
+                                        ${alpha(theme.palette.divider, 0)}, 
+                                        ${alpha(theme.palette.divider, 0.12)} 20%, 
+                                        ${alpha(theme.palette.divider, 0.12)} 80%, 
+                                        ${alpha(theme.palette.divider, 0)})`,
+                            opacity: 0.6,
                             transition: 'all 0.3s ease',
-                            transform: 'scaleX(0.85)',
+                            transform: 'scaleX(0.8)',
                         },
                         '&:nth-of-type(even)': {
-                            backgroundColor: (theme) => alpha(theme.palette.background.default, 0.4),
+                            backgroundColor: (theme) => alpha(theme.palette.background.default, 0.45),
                         },
                         '&.Mui-selected': {
-                            backgroundColor: (theme) => alpha(theme.palette.primary.main, 0.08),
+                            backgroundColor: (theme) => alpha(theme.palette.primary.main, 0.1),
                             '&:hover': {
-                                backgroundColor: (theme) => alpha(theme.palette.primary.main, 0.12),
+                                backgroundColor: (theme) => alpha(theme.palette.primary.main, 0.15),
                             }
                         },
                         '&:last-child': {
@@ -686,57 +644,58 @@ const AttendanceListTable = ({ participants, eventID = "", isLoading }) => {
                     },
                     // Enhanced scrollbar styling
                     '& ::-webkit-scrollbar': {
-                        width: '8px',
-                        height: '8px',
+                        width: '10px',
+                        height: '10px',
                     },
                     '& ::-webkit-scrollbar-track': {
                         backgroundColor: 'transparent',
                         borderRadius: '10px',
-                        margin: '4px',
+                        margin: '6px',
                     },
                     '& ::-webkit-scrollbar-thumb': {
-                        backgroundColor: (theme) => alpha(theme.palette.primary.main, 0.15),
+                        backgroundColor: (theme) => alpha(theme.palette.primary.main, 0.2),
                         borderRadius: '10px',
                         border: (theme) => `2px solid transparent`,
                         backgroundClip: 'content-box',
                         transition: 'all 0.2s ease',
                         '&:hover': {
-                            backgroundColor: (theme) => alpha(theme.palette.primary.main, 0.3),
+                            backgroundColor: (theme) => alpha(theme.palette.primary.main, 0.4),
                             cursor: 'pointer',
                         },
                     },
                     // Enhanced pagination styling
                     '& .MuiTablePagination-root': {
                         fontSize: '0.85rem',
-                        color: (theme) => alpha(theme.palette.text.primary, 0.8),
+                        color: (theme) => alpha(theme.palette.text.primary, 0.85),
                     },
                     '& .MuiTablePagination-selectLabel, & .MuiTablePagination-displayedRows': {
                         fontSize: '0.85rem',
-                        color: (theme) => alpha(theme.palette.text.secondary, 0.8),
+                        color: (theme) => alpha(theme.palette.text.secondary, 0.85),
                         fontWeight: 500,
                     },
                     '& .MuiTablePagination-select': {
-                        borderRadius: '8px',
+                        borderRadius: '10px',
                         marginRight: '8px',
-                        padding: '4px 8px',
-                        backgroundColor: (theme) => alpha(theme.palette.background.default, 0.6),
-                        transition: 'all 0.2s ease',
+                        padding: '6px 12px',
+                        backgroundColor: (theme) => alpha(theme.palette.background.default, 0.7),
+                        transition: 'all 0.25s ease',
                         '&:hover': {
-                            backgroundColor: (theme) => alpha(theme.palette.action.hover, 0.1),
-                            borderColor: (theme) => alpha(theme.palette.primary.main, 0.2),
+                            backgroundColor: (theme) => alpha(theme.palette.action.hover, 0.15),
+                            borderColor: (theme) => alpha(theme.palette.primary.main, 0.3),
                         }
                     },
                     '& .MuiTablePagination-actions': {
                         '& .MuiIconButton-root': {
-                            padding: '6px',
-                            borderRadius: '8px',
+                            padding: '8px',
+                            borderRadius: '10px',
                             color: (theme) => theme.palette.primary.main,
-                            backgroundColor: (theme) => alpha(theme.palette.primary.main, 0.04),
-                            transition: 'all 0.2s ease',
-                            margin: '0 2px',
+                            backgroundColor: (theme) => alpha(theme.palette.primary.main, 0.06),
+                            transition: 'all 0.25s ease',
+                            margin: '0 3px',
                             '&:hover': {
-                                backgroundColor: (theme) => alpha(theme.palette.primary.main, 0.12),
+                                backgroundColor: (theme) => alpha(theme.palette.primary.main, 0.15),
                                 transform: 'translateY(-1px)',
+                                boxShadow: (theme) => `0 4px 12px ${alpha(theme.palette.primary.main, 0.2)}`,
                             },
                             '&.Mui-disabled': {
                                 color: (theme) => alpha(theme.palette.text.disabled, 0.4),
@@ -750,10 +709,10 @@ const AttendanceListTable = ({ participants, eventID = "", isLoading }) => {
                         flexDirection: 'column',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        backgroundColor: (theme) => alpha(theme.palette.background.paper, 0.7),
-                        backdropFilter: 'blur(6px)',
-                        borderRadius: '12px',
-                        padding: '24px',
+                        backgroundColor: (theme) => alpha(theme.palette.background.paper, 0.75),
+                        backdropFilter: 'blur(8px)',
+                        borderRadius: '16px',
+                        padding: '28px',
                         height: '100%',
                         '& .MuiCircularProgress-root': {
                             color: (theme) => theme.palette.primary.main,
@@ -768,11 +727,11 @@ const AttendanceListTable = ({ participants, eventID = "", isLoading }) => {
                         '&::after': {
                             content: '""',
                             position: 'absolute',
-                            left: 0,
-                            right: 0,
+                            left: '5%',
+                            right: '5%',
                             bottom: 0,
                             height: '2px',
-                            backgroundColor: (theme) => alpha(theme.palette.primary.main, 0.5),
+                            backgroundColor: (theme) => alpha(theme.palette.primary.main, 0.6),
                             borderRadius: '2px',
                         }
                     },
@@ -785,15 +744,17 @@ const AttendanceListTable = ({ participants, eventID = "", isLoading }) => {
                         '& .MuiIconButton-root': {
                             padding: '4px',
                             color: (theme) => alpha(theme.palette.text.secondary, 0.7),
+                            transition: 'all 0.2s ease',
                             '&:hover': {
-                                backgroundColor: (theme) => alpha(theme.palette.action.hover, 0.1),
+                                backgroundColor: (theme) => alpha(theme.palette.action.hover, 0.15),
                                 color: (theme) => theme.palette.primary.main,
+                                transform: 'scale(1.1)',
                             }
                         }
                     },
                     '& .MuiDataGrid-sortIcon': {
-                        opacity: 0.7,
-                        fontSize: '1rem',
+                        opacity: 0.8,
+                        fontSize: '0.9rem',
                     },
                 }}
             >
@@ -811,7 +772,7 @@ const AttendanceListTable = ({ participants, eventID = "", isLoading }) => {
                     }}
                     pageSizeOptions={[5, 10, 25, 50]}
                     getRowId={(row) => row.id}
-                    getRowHeight={() => 65}
+                    getRowHeight={() => 50}
                     slots={{
                         noRowsOverlay: () => (
                             <Box
@@ -886,9 +847,9 @@ const AttendanceListTable = ({ participants, eventID = "", isLoading }) => {
                                 width: '200%',
                                 height: '100%',
                                 background: (theme) => `linear-gradient(90deg, 
-                                                transparent, 
-                                                ${alpha(theme.palette.background.paper, 0.2)}, 
-                                                transparent)`,
+                                                    transparent, 
+                                                    ${alpha(theme.palette.background.paper, 0.2)}, 
+                                                    transparent)`,
                                 animation: 'shimmer 2s infinite',
                                 '@keyframes shimmer': {
                                     '0%': {

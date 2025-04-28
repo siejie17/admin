@@ -10,8 +10,9 @@ const ExcelExportButton = ({ handleExport }) => {
             variant="contained"
             onClick={handleExport}
             sx={{
-                height: 40,
+                height: "35px",
                 borderRadius: 2,
+                fontSize: "10px",
                 textTransform: 'none',
                 fontWeight: 600,
                 boxShadow: '0 4px 10px rgba(0, 0, 0, 0.08)',
@@ -26,7 +27,7 @@ const ExcelExportButton = ({ handleExport }) => {
                 gap: 1
             }}
         >
-            <FileDownload sx={{ fontSize: 18 }} />
+            <FileDownload sx={{ fontSize: "16px" }} />
             <span>Export Excel</span>
         </Button>
     )

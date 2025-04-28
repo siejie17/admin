@@ -6,7 +6,6 @@ import {
     CardContent,
     Typography,
     Grid,
-    Stack,
     Chip,
     Link,
     alpha,
@@ -37,10 +36,10 @@ const EventListState = ({ events }) => {
         <Grid
             container
             width="100%"
-            spacing={{ xs: 2, sm: 3, md: 5, lg: 8 }}
+            spacing={{ xs: 2, sm: 3, md: 4 }}
             sx={{
-                px: { xs: 2, sm: 4 },
-                justifyContent: { xs: 'center', lg: 'flex-start' }
+                px: 1,
+                justifyContent: 'center'
             }}
         >
             {events.map((event) => {
@@ -55,10 +54,10 @@ const EventListState = ({ events }) => {
                             sx={{ display: 'block' }}
                         >
                             <Card
-                                elevation={0}
+                                elevation={1}
                                 sx={{
                                     height: '100%',
-                                    width: { xs: 325, sm: 425, md: 450 },
+                                    width: 350,
                                     display: 'flex',
                                     flexDirection: 'column',
                                     borderRadius: 3,
@@ -76,7 +75,7 @@ const EventListState = ({ events }) => {
                                     }
                                 }}
                             >
-                                <Box sx={{ position: 'relative', height: { xs: 150, sm: 175 } }}>
+                                <Box sx={{ position: 'relative', height: { xs: 125, sm: 140 } }}>
                                     <CardMedia
                                         component="img"
                                         sx={{
@@ -96,23 +95,42 @@ const EventListState = ({ events }) => {
                                         size="small"
                                         sx={{
                                             position: 'absolute',
-                                            top: 10,
-                                            right: 10,
-                                            fontWeight: 600,
+                                            top: 12,
+                                            right: 12,
+                                            fontWeight: 700,
                                             fontSize: '0.65rem',
                                             textTransform: 'uppercase',
-                                            letterSpacing: '0.5px',
+                                            letterSpacing: '0.6px',
                                             backgroundColor:
-                                                event.status === 'Upcoming' ? alpha(theme.palette.primary.main, 0.95) :
-                                                    event.status === 'Ongoing' ? alpha(theme.palette.success.main, 0.95) :
-                                                        event.status === 'Cancelled' ? alpha(theme.palette.error.main, 0.95) :
-                                                            event.status === 'Completed' ? alpha(theme.palette.info.main, 0.95) :
-                                                                alpha(theme.palette.primary.main, 0.95),
+                                                event.status === 'Scheduled' ? alpha(theme.palette.primary.main, 0.9) :
+                                                    event.status === 'Postponed' ? alpha(theme.palette.warning.main, 0.9) :
+                                                        event.status === 'Ongoing' ? alpha(theme.palette.success.main, 0.9) :
+                                                            event.status === 'Cancelled' ? alpha(theme.palette.error.main, 0.9) :
+                                                                event.status === 'Completed' ? alpha(theme.palette.info.main, 0.9) :
+                                                                    alpha(theme.palette.primary.main, 0.95),
                                             color: "#fff",
-                                            height: 22,
-                                            borderRadius: 1,
-                                            boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-                                            px: 1
+                                            height: 24,
+                                            borderRadius: 6,
+                                            backdropFilter: 'blur(8px)',
+                                            boxShadow: `0 2px 10px ${alpha('#000', 0.2)}, 0 0 0 1px ${alpha('#fff', 0.1)}`,
+                                            px: 1.2,
+                                            py: 0.5,
+                                            '&:before': {
+                                                content: '""',
+                                                position: 'absolute',
+                                                top: '-1px',
+                                                left: '-1px',
+                                                right: '-1px',
+                                                bottom: '-1px',
+                                                borderRadius: 6,
+                                                background: 'linear-gradient(135deg, rgba(255,255,255,0.25), rgba(255,255,255,0))',
+                                                zIndex: -1,
+                                            },
+                                            transition: 'all 0.2s ease',
+                                            '&:hover': {
+                                                transform: 'translateY(-1px)',
+                                                boxShadow: `0 4px 12px ${alpha('#000', 0.25)}, 0 0 0 1px ${alpha('#fff', 0.15)}`
+                                            }
                                         }}
                                     />
                                 </Box>
@@ -138,7 +156,7 @@ const EventListState = ({ events }) => {
                                             WebkitLineClamp: 2,
                                             WebkitBoxOrient: 'vertical',
                                             lineHeight: 1.3,
-                                            fontSize: { xs: '0.95rem', sm: '1rem' },
+                                            fontSize: { xs: '0.75rem', sm: '0.85rem' },
                                             color: theme.palette.text.primary,
                                             height: '2em'
                                         }}
@@ -160,11 +178,11 @@ const EventListState = ({ events }) => {
                                             <CalendarTodayIcon
                                                 sx={{
                                                     color: 'primary.main',
-                                                    fontSize: { xs: 18, sm: 20 }
+                                                    fontSize: { xs: 14, sm: 16 }
                                                 }}
                                             />
                                         </Box>
-                                        <Box sx={{ ml: 2, display: 'flex', alignItems: 'center', flexWrap: 'wrap' }}>
+                                        <Box sx={{ ml: 1, display: 'flex', alignItems: 'center', flexWrap: 'wrap' }}>
                                             <Box>
                                                 <Typography
                                                     variant='caption'
@@ -180,7 +198,7 @@ const EventListState = ({ events }) => {
                                                     sx={{
                                                         color: 'text.primary',
                                                         fontWeight: 600,
-                                                        fontSize: { xs: '0.7rem', sm: '0.8rem' }
+                                                        fontSize: { xs: '0.5rem', sm: '0.65rem' }
                                                     }}
                                                 >
                                                     {formatTimestamp(event.eventStartDateTime)}
@@ -192,7 +210,7 @@ const EventListState = ({ events }) => {
                                                     sx={{
                                                         mx: { xs: 1, sm: 2 },
                                                         color: 'text.secondary',
-                                                        fontSize: { xs: 20, sm: 24 }
+                                                        fontSize: { xs: 16, sm: 18 }
                                                     }}
                                                 />
                                                 <Box>
@@ -210,7 +228,7 @@ const EventListState = ({ events }) => {
                                                         sx={{
                                                             color: 'text.primary',
                                                             fontWeight: 600,
-                                                            fontSize: { xs: '0.7rem', sm: '0.8rem' }
+                                                            fontSize: { xs: '0.5rem', sm: '0.65rem' }
                                                         }}
                                                     >
                                                         {formatTimestamp(event.eventEndDateTime)}
@@ -234,11 +252,11 @@ const EventListState = ({ events }) => {
                                             <LocationOnIcon
                                                 sx={{
                                                     color: 'primary.main',
-                                                    fontSize: { xs: 18, sm: 20 }
+                                                    fontSize: { xs: 14, sm: 16 }
                                                 }}
                                             />
                                         </Box>
-                                        <Box sx={{ ml: 2 }}>
+                                        <Box sx={{ ml: 1 }}>
                                             <Typography
                                                 variant='caption'
                                                 sx={{
@@ -253,7 +271,7 @@ const EventListState = ({ events }) => {
                                                 sx={{
                                                     color: 'text.primary',
                                                     fontWeight: 600,
-                                                    fontSize: { xs: '0.7rem', sm: '0.8rem' }
+                                                    fontSize: { xs: '0.5rem', sm: '0.65rem' }
                                                 }}
                                             >
                                                 {event.locationName || 'No location speacified'}

@@ -1,4 +1,4 @@
-import { alpha, Box, Button, Card, Chip, Divider, IconButton, InputAdornment, Paper, Tab, Tabs, TextField, Tooltip, Typography, useTheme } from '@mui/material';
+import { alpha, Box, Button, Card, Chip, Divider, Fade, IconButton, InputAdornment, Tab, Tabs, TextField, Tooltip, Typography, useTheme, Zoom } from '@mui/material';
 import {
     ArrowBack as ArrowBackIcon,
     HelpOutline as HelpOutlineIcon,
@@ -12,22 +12,23 @@ import {
     RateReview as RateReviewIcon,
     AutoMode as AutoModeIcon,
     Lock as LockIcon,
-    Save as SaveIcon
+    Save as SaveIcon,
+    Delete as DeleteIcon
 } from '@mui/icons-material';
 import React, { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import CryptoJS from 'crypto-js';
-import { collection, doc, getDoc, getDocs, onSnapshot, query, updateDoc, where } from 'firebase/firestore';
 
+import { collection, deleteDoc, doc, getDoc, getDocs, onSnapshot, query, updateDoc, where } from 'firebase/firestore';
 import { db } from '../../../utils/firebaseConfig';
 
+import QuestProgressTable from './QuestProgressTable';
 import Loader from '../../General/Loader';
 import RequiredAsterisk from '../../General/RequiredAsterisk';
+import SnackbarComponent from '../../General/SnackbarComponent';
 
 import Diamond from '../../../assets/icons/diamond.png';
 import Point from '../../../assets/icons/point.png';
-import SnackbarComponent from '../../General/SnackbarComponent';
-import QuestProgressTable from './QuestProgressTable';
 
 const QuestDetails = () => {
     const [eventID, setEventID] = useState("");
@@ -53,6 +54,7 @@ const QuestDetails = () => {
         completionNum: ''
     });
     const [errors, setErrors] = useState({});
+
     const [snackbarOpen, setSnackbarOpen] = useState(false);
     const [snackbarContent, setSnackbarContent] = useState({
         msg: '',
@@ -117,7 +119,6 @@ const QuestDetails = () => {
             unsubscribes.forEach(unsub => unsub());
             unsubscribeAllQuestProgress.forEach(unsub => unsub());
         };
-
     }, []);
 
     const getDecryptedEventID = () => {
@@ -325,8 +326,59 @@ const QuestDetails = () => {
                     })
                 }
             } catch (error) {
-
+                setSnackbarOpen(true);
+                setSnackbarContent({
+                    msg: 'Something went wrong when editing the quest details.',
+                    type: 'error'
+                })
             }
+        }
+    }
+
+    const handleDelete = async () => {
+        try {
+            const participantsQuestProgressQuery = query(collection(db, "questProgress"), where("eventID", "==", getDecryptedEventID()));
+            const participantsQuestProgressSnapshot = await getDocs(participantsQuestProgressQuery);
+
+            for (const participantQuestList of participantsQuestProgressSnapshot.docs) {
+                const participantQuestListID = participantQuestList.id;
+
+                const currentQuestProgressQuery = query(collection(db, "questProgress", participantQuestListID, "questProgressList"), where("questID", "==", questID));
+                const querySnapshot = await getDocs(currentQuestProgressQuery);
+
+                if (!querySnapshot.empty) {
+                    const questProgressToDelete = querySnapshot.docs[0];
+                    const questProgressDocRef = doc(db, "questProgress", participantQuestListID, "questProgressList", questProgressToDelete.id);
+                    await deleteDoc(questProgressDocRef);
+                }
+            }
+
+            const eventQuestColQuery = query(collection(db, "quest"), where("eventID", "==", getDecryptedEventID()));
+            const eventQuestColSnapshot = await getDocs(eventQuestColQuery);
+
+            if (eventQuestColSnapshot.empty) {
+                console.error("Something went wrong when retrieving the event quest collection");
+                return;
+            }
+
+            const eventQuestColDoc = eventQuestColSnapshot.docs[0];
+            const eventQuestColID = eventQuestColDoc.id;
+
+            const currentEventQuestRef = doc(db, "quest", eventQuestColID, "questList", questID);
+            await deleteDoc(currentEventQuestRef);
+
+            setSnackbarOpen(true);
+            setSnackbarContent({
+                msg: 'The quest is deleted successfully.',
+                type: 'success'
+            });
+            navigate(`/event/details?id=${encodeURIComponent(eventID)}&name=${encodeURIComponent(eventName)}&tab=${encodeURIComponent(navigateBackTab)}`);
+        } catch (error) {
+            setSnackbarOpen(true);
+            setSnackbarContent({
+                msg: 'Something went wrong when deleting the quest details.',
+                type: 'error'
+            })
         }
     }
 
@@ -359,7 +411,7 @@ const QuestDetails = () => {
                     sx={{
                         display: 'flex',
                         alignItems: 'center',
-                        py: 2.5,
+                        py: 1.5,
                         px: 3.5,
                         borderBottom: '1px solid rgba(0, 0, 0, 0.06)'
                     }}
@@ -378,7 +430,7 @@ const QuestDetails = () => {
                                 }
                             }}
                         >
-                            <ArrowBackIcon />
+                            <ArrowBackIcon fontSize="small" />
                         </IconButton>
                     </Tooltip>
                     <Typography
@@ -387,11 +439,41 @@ const QuestDetails = () => {
                         sx={{
                             flexGrow: 1,
                             fontWeight: 600,
-                            fontSize: { xs: '1.1rem', sm: '1.2rem' }
+                            fontSize: { xs: '0.8rem', sm: '1rem' }
                         }}
                     >
                         Quest "{questName}"
                     </Typography>
+                    <Tooltip
+                        title="Delete this quest"
+                        arrow
+                    >
+                        <Button
+                            variant="contained"
+                            startIcon={<DeleteIcon fontSize="small" />}
+                            color="error"
+                            disabled={questData.questType === "attendance" || questData.questType === "feedback"}
+                            onClick={handleDelete}
+                            sx={{
+                                borderRadius: 2,
+                                textTransform: 'none',
+                                fontWeight: 600,
+                                px: 2,
+                                py: 1,
+                                boxShadow: 2,
+                                fontSize: "10px",
+                                '&:hover': {
+                                    backgroundColor: 'error.dark',
+                                    boxShadow: 3,
+                                    transform: 'translateY(-1px)',
+                                    transition: 'all 0.2s ease',
+                                },
+                            }}
+                            aria-label="Delete this quest from list."
+                        >
+                            Delete
+                        </Button>
+                    </Tooltip>
                 </Box>
 
                 <Box sx={{
@@ -399,8 +481,7 @@ const QuestDetails = () => {
                     overflowY: 'auto', // Enable vertical scrolling
                     flexGrow: 1, // Allow the box to grow and take available space
                 }}>
-                    <Paper
-                        elevation={0}
+                    <Box
                         sx={{
                             pt: 3,
                             mb: 2,
@@ -418,24 +499,24 @@ const QuestDetails = () => {
                                     alignItems: 'center',
                                     justifyContent: 'center',
                                     borderRadius: 2,
-                                    width: 42,
-                                    height: 42,
+                                    width: 30,
+                                    height: 30,
                                     mr: 2,
                                     background: `linear-gradient(135deg, ${theme.palette.primary.light}, ${theme.palette.primary.main})`,
                                     color: 'white',
                                     boxShadow: '0 4px 10px rgba(0, 0, 0, 0.15)',
                                 }}
                             >
-                                <SettingsRoundedIcon fontSize="medium" />
+                                <SettingsRoundedIcon fontSize="small" />
                             </Box>
-                            <Typography variant='h5' fontWeight="700" sx={{ lineHeight: 1.5 }}>
+                            <Typography variant='h5' fontWeight="700" sx={{ lineHeight: 1.5, fontSize: "18px" }}>
                                 {(formData.questType === "attendance" || formData.questType == "feedback") ?
                                     "Quest Information - View Mode" : "Quest Information - View/Edit Mode"}
                             </Typography>
                         </Box>
-                    </Paper>
+                    </Box>
 
-                    <Box sx={{ my: 1, px: 1 }}>
+                    <Box sx={{ my: 1 }}>
                         <Box sx={{
                             width: '100%',
                             mb: 3,
@@ -443,36 +524,36 @@ const QuestDetails = () => {
                             borderBottom: '1px solid rgba(0, 0, 0, 0.08)',
                             position: 'relative',
                         }}>
-                            <Typography variant="h6" sx={{ fontWeight: 600, mb: 1 }}>
+                            <Typography variant="h6" sx={{ fontWeight: 600, mb: 1, fontSize: "18px" }}>
                                 Quest Type
                             </Typography>
 
                             <Box sx={{ display: 'flex', flexDirection: 'column', mb: 1 }}>
                                 {(() => {
-                                    // Define quest type properties with enhanced styling
+                                    // Define quest type properties
                                     const questTypes = {
                                         'attendance': {
                                             icon: <LocationOnIcon fontSize="small" />,
                                             label: 'Attendance',
-                                            color: '#4CAF50',//'#2196F3',
+                                            color: '#4CAF50',
                                             gradient: 'linear-gradient(45deg, rgba(76, 175, 80, 0.5), rgba(139, 195, 74, 0.5))'
                                         },
                                         'earlyBird': {
                                             icon: <AlarmIcon fontSize="small" />,
                                             label: 'Early Bird',
-                                            color:  '#2196F3',//'#FF9800',
+                                            color: '#2196F3',
                                             gradient: 'linear-gradient(45deg, rgba(33, 150, 243, 0.5), rgba(33, 203, 243, 0.5))'
                                         },
                                         'networking': {
                                             icon: <GroupIcon fontSize="small" />,
                                             label: 'Networking',
-                                            color: '#9C27B0',//'#4CAF50',
+                                            color: '#9C27B0',
                                             gradient: 'linear-gradient(45deg, rgba(156, 39, 176, 0.5), rgba(186, 104, 200, 0.5))'
                                         },
                                         'q&a': {
                                             icon: <QuestionAnswerIcon fontSize="small" />,
                                             label: 'Q&A',
-                                            color:  '#FF9800',//'#9C27B0',
+                                            color: '#FF9800',
                                             gradient: 'linear-gradient(45deg, rgba(255, 152, 0, 0.5), rgba(255, 171, 64, 0.5))'
                                         },
                                         'feedback': {
@@ -498,9 +579,9 @@ const QuestDetails = () => {
                                             variant="filled"
                                             sx={{
                                                 borderRadius: 2,
-                                                px: 1.5,
-                                                py: 2.5,
-                                                fontSize: '0.95rem',
+                                                px: 1,
+                                                py: 1.75,
+                                                fontSize: '0.8rem',
                                                 fontWeight: 600,
                                                 height: 'auto',
                                                 background: typeProps.gradient,
@@ -534,7 +615,7 @@ const QuestDetails = () => {
                         </Box>
 
                         <Box sx={{ width: '100%', mb: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                            <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                            <Typography variant="h6" sx={{ fontWeight: 600, fontSize: "18px" }}>
                                 Description {(formData.questType !== "attendance" || formData.questType !== "feedback") && <RequiredAsterisk />}
                             </Typography>
                             {disabledQuestBool && (
@@ -569,6 +650,7 @@ const QuestDetails = () => {
                                 sx: {
                                     mb: 3,
                                     borderRadius: 2,
+                                    fontSize: "13px",
                                     backgroundColor: disabledQuestBool ? 'rgba(0, 0, 0, 0.02)' : 'white',
                                     boxShadow: disabledQuestBool ? 'none' : '0 2px 8px rgba(0, 0, 0, 0.04) inset',
                                     '& .MuiOutlinedInput-notchedOutline': {
@@ -581,7 +663,7 @@ const QuestDetails = () => {
                         {formData.questType === "networking" && (
                             <>
                                 <Box sx={{ width: '100%', mb: 2 }}>
-                                    <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                                    <Typography variant="h6" sx={{ fontWeight: 600, fontSize: "18px" }}>
                                         Number of Connections to Make <RequiredAsterisk />
                                     </Typography>
                                 </Box>
@@ -611,6 +693,7 @@ const QuestDetails = () => {
                                         sx: {
                                             borderRadius: 2,
                                             mb: 3,
+                                            fontSize: "13px",
                                             boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04) inset',
                                             '& input::-webkit-outer-spin-button, & input::-webkit-inner-spin-button': {
                                                 display: 'none'
@@ -628,7 +711,7 @@ const QuestDetails = () => {
                         {formData.questType === "earlyBird" && (
                             <>
                                 <Box sx={{ width: '100%', mb: 2 }}>
-                                    <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                                    <Typography variant="h6" sx={{ fontWeight: 600, fontSize: "18px" }}>
                                         Maximum Early Bird Attendees <RequiredAsterisk />
                                     </Typography>
                                 </Box>
@@ -658,6 +741,7 @@ const QuestDetails = () => {
                                         sx: {
                                             borderRadius: 2,
                                             mb: 3,
+                                            fontSize: "13px",
                                             boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04) inset',
                                             '& input::-webkit-outer-spin-button, & input::-webkit-inner-spin-button': {
                                                 display: 'none'
@@ -676,7 +760,7 @@ const QuestDetails = () => {
                             <>
                                 <Box sx={{ mb: 3, p: 3, bgcolor: 'rgba(156, 39, 176, 0.04)', borderRadius: 3, border: '1px dashed rgba(156, 39, 176, 0.2)' }}>
                                     <Box sx={{ width: '100%', mb: 2 }}>
-                                        <Typography variant="h6" sx={{ fontWeight: 600, color: '#9C27B0' }}>
+                                        <Typography variant="h6" sx={{ fontWeight: 600, color: '#9C27B0', fontSize: "18px" }}>
                                             Question <RequiredAsterisk />
                                         </Typography>
                                         <Typography variant="caption" color="text.secondary">
@@ -699,6 +783,7 @@ const QuestDetails = () => {
                                             sx: {
                                                 borderRadius: 2,
                                                 mb: 3,
+                                                fontSize: "13px",
                                                 bgcolor: 'white',
                                                 boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04) inset',
                                             }
@@ -706,7 +791,7 @@ const QuestDetails = () => {
                                     />
 
                                     <Box sx={{ width: '100%', mb: 2 }}>
-                                        <Typography variant="h6" sx={{ fontWeight: 600, color: '#9C27B0' }}>
+                                        <Typography variant="h6" sx={{ fontWeight: 600, color: '#9C27B0', fontSize: "18px" }}>
                                             Answer <RequiredAsterisk />
                                         </Typography>
                                         <Typography variant="caption" color="text.secondary">
@@ -727,6 +812,7 @@ const QuestDetails = () => {
                                         InputProps={{
                                             sx: {
                                                 borderRadius: 2,
+                                                fontSize: "13px",
                                                 bgcolor: 'white',
                                                 boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04) inset',
                                             }
@@ -736,7 +822,7 @@ const QuestDetails = () => {
                             </>
                         )}
 
-                        <Box sx={{ mt: 4, mb: 3 }}>
+                        <Box sx={{ my: 2 }}>
                             <Typography variant="h6" fontWeight={700} sx={{ mb: 2 }}>
                                 Rewards
                             </Typography>
@@ -746,7 +832,7 @@ const QuestDetails = () => {
                                 {/* Points Rewards */}
                                 <Box sx={{ flex: '1 1 280px', mb: 3 }}>
                                     <Box sx={{ width: '100%', mb: 1.5 }}>
-                                        <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                                        <Typography variant="subtitle1" sx={{ fontWeight: 600, fontSize: "18px" }}>
                                             Point Rewards <RequiredAsterisk />
                                         </Typography>
                                     </Box>
@@ -776,6 +862,7 @@ const QuestDetails = () => {
                                             ),
                                             sx: {
                                                 borderRadius: 2,
+                                                fontSize: "13px",
                                                 boxShadow: disabledQuestBool ? 'none' : '0 2px 8px rgba(0, 0, 0, 0.04) inset',
                                                 backgroundColor: disabledQuestBool ? 'rgba(0, 0, 0, 0.02)' : 'white',
                                                 '& input::-webkit-outer-spin-button, & input::-webkit-inner-spin-button': {
@@ -791,9 +878,9 @@ const QuestDetails = () => {
                                 </Box>
 
                                 {/* Diamonds Rewards */}
-                                <Box sx={{ flex: '1 1 280px', mb: 3 }}>
+                                <Box sx={{ flex: '1 1 280px', mb: 2 }}>
                                     <Box sx={{ width: '100%', mb: 1.5 }}>
-                                        <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                                        <Typography variant="subtitle1" sx={{ fontWeight: 600, fontSize: "18px" }}>
                                             Diamonds Rewards <RequiredAsterisk />
                                         </Typography>
                                     </Box>
@@ -823,6 +910,7 @@ const QuestDetails = () => {
                                             ),
                                             sx: {
                                                 borderRadius: 2,
+                                                fontSize: "13px",
                                                 boxShadow: disabledQuestBool ? 'none' : '0 2px 8px rgba(0, 0, 0, 0.04) inset',
                                                 backgroundColor: disabledQuestBool ? 'rgba(0, 0, 0, 0.02)' : 'white',
                                                 '& input::-webkit-outer-spin-button, & input::-webkit-inner-spin-button': {
@@ -842,8 +930,8 @@ const QuestDetails = () => {
                         {(formData.questType !== "attendace" || formData.questType !== "feedback") && (
                             <Box
                                 sx={{
-                                    py: 3,
-                                    mt: 2,
+                                    py: 2.5,
+                                    mt: 1.5,
                                     display: 'flex',
                                     justifyContent: 'flex-end',
                                     borderTop: '1px solid rgba(0, 0, 0, 0.05)',
@@ -857,9 +945,10 @@ const QuestDetails = () => {
                                     startIcon={<SaveIcon />}
                                     sx={{
                                         borderRadius: 2,
-                                        py: 1.5,
-                                        px: 4,
+                                        py: 1.25,
+                                        px: 2.5,
                                         fontWeight: 600,
+                                        fontSize: "10px",
                                         boxShadow: hasChanges ? '0 4px 12px rgba(33,150,243,0.3)' : 'none',
                                         background: hasChanges ? 'linear-gradient(45deg, #2196F3 30%, #21CBF3 90%)' : undefined,
                                         '&:hover': {
@@ -882,7 +971,7 @@ const QuestDetails = () => {
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'space-between',
-                        mt: 3
+                        mt: 1.5
                     }}>
                         <Box sx={{ display: 'flex', alignItems: 'center' }}>
                             <Box
@@ -891,16 +980,16 @@ const QuestDetails = () => {
                                     alignItems: 'center',
                                     justifyContent: 'center',
                                     borderRadius: 1.5,
-                                    width: 40,
-                                    height: 40,
+                                    width: 30,
+                                    height: 30,
                                     mr: 3,
                                     background: `linear-gradient(135deg, ${theme.palette.primary.light}, ${theme.palette.primary.main})`,
                                     color: 'white',
                                 }}
                             >
-                                <AutoModeIcon />
+                                <AutoModeIcon fontSize="small" />
                             </Box>
-                            <Typography variant='h5' fontWeight="700" sx={{ lineHeight: 1.1 }}>
+                            <Typography variant='h5' fontWeight="700" sx={{ lineHeight: 1.1, fontSize: "18px" }}>
                                 Participants' Progress List
                             </Typography>
                         </Box>
@@ -922,9 +1011,9 @@ const QuestDetails = () => {
                                     display: 'none',
                                 },
                                 '& .MuiButtonBase-root': {
-                                    minHeight: '48px',
+                                    minHeight: '36px',
                                     py: 1,
-                                    px: 3,
+                                    px: 2,
                                     borderRadius: '12px',
                                     transition: 'all 0.2s ease-in-out',
                                 }
@@ -935,7 +1024,7 @@ const QuestDetails = () => {
                                 sx={{
                                     textTransform: 'none',
                                     fontWeight: 500,
-                                    fontSize: '0.95rem',
+                                    fontSize: '0.75rem',
                                     color: 'text.secondary',
                                     backgroundColor: (theme) =>
                                         activeTab === 0
@@ -945,7 +1034,7 @@ const QuestDetails = () => {
                                         activeTab === 0
                                             ? `1px solid ${alpha(theme.palette.primary.main, 0.3)}`
                                             : `1px solid ${alpha(theme.palette.divider, 0.08)}`,
-                                    minWidth: '140px',
+                                    minWidth: '120px',
                                     boxShadow: (theme) =>
                                         activeTab === 0
                                             ? `0 4px 12px ${alpha(theme.palette.primary.main, 0.12)}`
@@ -967,7 +1056,7 @@ const QuestDetails = () => {
                                 sx={{
                                     textTransform: 'none',
                                     fontWeight: 500,
-                                    fontSize: '0.95rem',
+                                    fontSize: '0.75rem',
                                     color: 'text.secondary',
                                     backgroundColor: (theme) =>
                                         activeTab === 1
@@ -977,7 +1066,7 @@ const QuestDetails = () => {
                                         activeTab === 1
                                             ? `1px solid ${alpha(theme.palette.primary.main, 0.3)}`
                                             : `1px solid ${alpha(theme.palette.divider, 0.08)}`,
-                                    minWidth: '140px',
+                                    minWidth: '120px',
                                     boxShadow: (theme) =>
                                         activeTab === 1
                                             ? `0 4px 12px ${alpha(theme.palette.primary.main, 0.12)}`
@@ -1002,7 +1091,7 @@ const QuestDetails = () => {
                         hidden={activeTab !== 0}
                         id={'quest-progress-tabpanel-0'}
                         aria-labelledby={'quest-progress-tab-0'}
-                        sx={{ py: 3, maxHeight: '100%' }}
+                        sx={{ py: 1.5, maxHeight: '100%' }}
                     >
                         {activeTab === 0 && <QuestProgressTable activeTab={activeTab} progress={completedProgress} isLoading={isLoading} />}
                     </Box>
@@ -1012,7 +1101,7 @@ const QuestDetails = () => {
                         hidden={activeTab !== 1}
                         id={'quest-progress-tabpanel-1'}
                         aria-labelledby={'quest-progress-tab-1'}
-                        sx={{ py: 3, maxHeight: '100%' }}
+                        sx={{ py: 1.5, maxHeight: '100%' }}
                     >
                         {activeTab === 1 && <QuestProgressTable activeTab={activeTab} progress={inProgress} questType={questData.questType} completionTarget={questData.completionNum} isLoading={isLoading} />}
                     </Box>

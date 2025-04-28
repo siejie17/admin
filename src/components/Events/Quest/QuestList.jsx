@@ -94,8 +94,8 @@ const QuestList = ({ quest, index, eventID, eventName }) => {
                         <Box sx={{ display: 'flex', alignItems: 'center', mb: 1, flexGrow: 1 }}>
                             <Box
                                 sx={{
-                                    height: '32px',
-                                    width: '32px',
+                                    height: '24px',
+                                    width: '24px',
                                     mr: 2,
                                     borderRadius: '8px',
                                     display: 'flex',
@@ -107,14 +107,14 @@ const QuestList = ({ quest, index, eventID, eventName }) => {
                             >
                                 <Typography
                                     variant="body2"
-                                    fontWeight="700"
+                                    fontWeight="600"
                                     color={alpha(theme.palette.text.primary, 0.9)}
-                                    fontSize="0.8rem"
+                                    fontSize="0.75rem"
                                 >
                                     {index}
                                 </Typography>
                             </Box>
-                            <Typography variant="h6" fontWeight="600">
+                            <Typography variant="h6" fontWeight="600" fontSize="0.85rem">
                                 {quest.questName}
                             </Typography>
                         </Box>
@@ -123,24 +123,24 @@ const QuestList = ({ quest, index, eventID, eventName }) => {
                             alignItems: 'center',
                             justifyContent: 'center',
                             alignSelf: 'center',
-                            height: '40px',
-                            width: '40px',
+                            height: '30px',
+                            width: '30px',
                             borderRadius: '50%',
                             backgroundColor: alpha(theme.palette.text.primary, 0.1),
                         }}>
-                            <ChevronRightRoundedIcon sx={{ height: 28, width: 28, color: alpha(theme.palette.text.primary, 0.5) }} />
+                            <ChevronRightRoundedIcon sx={{ height: 20, width: 20, color: alpha(theme.palette.text.primary, 0.5) }} />
                         </Box>
                     </Box>
                     <Stack direction="row" spacing={2} sx={{ mt: 1 }}>
                         <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                            <img src={Diamond} style={{ height: 24, width: 24, marginRight: 6 }} />
-                            <Typography variant="body2" fontWeight="bold">
+                            <img src={Diamond} style={{ height: 18, width: 18, marginRight: 6 }} />
+                            <Typography variant="body2" fontWeight="bold" fontSize="0.85rem">
                                 {quest.diamondsRewards} diamonds
                             </Typography>
                         </Box>
                         <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                            <img src={Point} style={{ height: 24, width: 24, marginRight: 6 }} />
-                            <Typography variant="body2" fontWeight="bold">
+                            <img src={Point} style={{ height: 18, width: 18, marginRight: 6 }} />
+                            <Typography variant="body2" fontWeight="bold" fontSize="0.85rem">
                                 {quest.pointsRewards} leaderboard points
                             </Typography>
                         </Box>

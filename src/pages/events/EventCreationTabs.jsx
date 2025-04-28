@@ -1,7 +1,8 @@
-import { Alert, Box, Card, Snackbar, Tab, Tabs, Typography } from '@mui/material';
+import { alpha, Alert, Box, Card, Fade, Paper, Snackbar, Step, StepLabel, Stepper, Tab, Tabs, Typography, useMediaQuery, useTheme, IconButton, Tooltip } from '@mui/material';
 import {
-  SportsEsportsOutlined as SportsEsportsOutlinedIcon,
-  EventOutlined as EventOutlinedIcon
+  ArrowBack as ArrowBackIcon,
+  EmojiEvents as EmojiEventsIcon,
+  Event as EventIcon
 } from '@mui/icons-material';
 import React, { useState } from 'react';
 import EventDetailsCreation from './EventDetailsCreation';
@@ -10,8 +11,12 @@ import { db } from '../../utils/firebaseConfig';
 import EventQuestCreation from './EventQuestCreation';
 import { getItem } from '../../utils/localStorage';
 import { useNavigate } from 'react-router-dom';
+import SnackbarComponent from '../../components/General/SnackbarComponent';
 
 const EventCreationPage = () => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+
   const [activeTab, setActiveTab] = useState(0);
   const [tabsEnabled, setTabsEnabled] = useState([true, false]);
 
@@ -26,7 +31,7 @@ const EventCreationPage = () => {
   const [pinpoint, setPinpoint] = useState();
   const [requiresCapacity, setRequiresCapacity] = useState(false);
   const [images, setImages] = useState([]);
-  const [capacity, setCapacity] = useState(1);
+  const [capacity, setCapacity] = useState('');
   const [requiresPaymentProof, setRequiresPaymentProof] = useState(false);
   const [errors, setErrors] = useState({});
 
@@ -65,7 +70,26 @@ const EventCreationPage = () => {
     "Sports": 5,
     "Health & Wellness": 6,
     "Others": 7,
-  }
+  };
+
+  const tabSx = {
+    textTransform: 'none',
+    fontWeight: 550,
+    color: 'text.secondary',
+    borderRight: '1px solid rgba(169, 169, 169, 0.3)',
+    fontSize: { xs: '0.7rem', sm: '0.75rem', md: '0.8rem' },
+    width: '100%',
+    px: { xs: 1, sm: 1.5, md: 2 },
+    '&.Mui-selected': {
+      color: 'primary.main',
+      fontWeight: 600,
+      backgroundColor: 'rgba(25, 118, 210, 0.04)',
+    },
+    '&:hover': {
+      backgroundColor: 'rgba(0, 0, 0, 0.03)',
+      color: 'primary.dark',
+    }
+  };
 
   const handleTabChange = (event, newValue) => {
     if (tabsEnabled[newValue]) {
@@ -181,11 +205,11 @@ const EventCreationPage = () => {
 
   const handleEventCreation = async (e) => {
     e.preventDefault();
-  
+
     try {
       const adminData = await getItem("admin");
       const parsedAdminData = JSON.parse(adminData);
-  
+
       const event = {
         eventName: name,
         eventDescription: description,
@@ -201,17 +225,17 @@ const EventCreationPage = () => {
         paymentProofRequired: requiresPaymentProof,
         status: "Scheduled"
       };
-  
+
       if (event.requiresCapacity) {
-        event.capacity = capacity;
+        event.capacity = Number(capacity);
       }
-  
+
       const eventRef = await addDoc(collection(db, "event"), event);
-  
+
       // ✅ Validate inserted data after saving
       const insertedDoc = await getDoc(eventRef);
       const insertedData = insertedDoc.data();
-  
+
       if (!insertedData || !insertedData.eventName || !insertedData.organisedID) {
         setSnackbarContent({
           message: "Event was saved, but required data is missing.",
@@ -220,41 +244,41 @@ const EventCreationPage = () => {
         setSnackbarOpen(true);
         return;
       }
-  
+
       // Continue saving related collections only if validation passes
       await addDoc(collection(db, "eventImages"), {
         eventID: eventRef.id,
         images: images.map(item => item.preview),
       });
-  
+
       const questRef = await addDoc(collection(db, "quest"), {
         eventID: eventRef.id,
       });
-  
+
       await addDoc(collection(questRef, "questList"), {
         ...attendanceQuest,
         completionNum: 1
       });
-  
+
       if (Object.keys(earlyBirdQuest).length > 0) {
         await addDoc(collection(questRef, "questList"), earlyBirdQuest);
       }
-  
+
       if (questionAnswerQuest.length > 0) {
         for (const quest of questionAnswerQuest) {
           await addDoc(collection(questRef, "questList"), quest);
         }
       }
-  
+
       if (Object.keys(networkingQuest).length > 0) {
         await addDoc(collection(questRef, "questList"), networkingQuest);
       }
-  
+
       await addDoc(collection(questRef, "questList"), {
         ...feedbackQuest,
         completionNum: 1
       });
-  
+
       setSnackbarContent({
         message: "Event successfully created!",
         severity: "success",
@@ -268,203 +292,383 @@ const EventCreationPage = () => {
       });
       setSnackbarOpen(true);
     }
-  };  
+  };
+
+  const tabs = [
+    {
+      label: 'Step 1: Event Details',
+      icon: <EventIcon />,
+      description: 'Define your event basics',
+      component: (
+        <EventDetailsCreation
+          name={name}
+          setName={setName}
+          description={description}
+          setDescription={setDescription}
+          category={category}
+          setCategory={setCategory}
+          startDateTime={startDateTime}
+          setStartDateTime={setStartDateTime}
+          endDateTime={endDateTime}
+          setEndDateTime={setEndDateTime}
+          registrationDate={registrationDate}
+          setRegistrationDate={setRegistrationDate}
+          location={location}
+          setLocation={setLocation}
+          pinpoint={pinpoint}
+          setPinpoint={setPinpoint}
+          images={images}
+          setImages={setImages}
+          requiresCapacity={requiresCapacity}
+          setRequiresCapacity={setRequiresCapacity}
+          capacity={capacity}
+          setCapacity={setCapacity}
+          requiresPaymentProof={requiresPaymentProof}
+          setRequiresPaymentProof={setRequiresPaymentProof}
+          errors={errors}
+          setErrors={setErrors}
+          handleImageChange={handleImageChange}
+          handleRemoveImage={handleRemoveImage}
+          handleReplaceImage={handleReplaceImage}
+          handleDetailsSubmit={handleDetailsSubmit}
+        />
+      )
+    },
+    {
+      label: 'Step 2: Quests Management',
+      icon: <EmojiEventsIcon />,
+      description: 'Create interactive challenges',
+      component: (
+        <EventQuestCreation
+          attendanceQuest={attendanceQuest}
+          setAttendanceQuest={setAttendanceQuest}
+          earlyBirdQuest={earlyBirdQuest}
+          setEarlyBirdQuest={setEarlyBirdQuest}
+          questionAnswerQuest={questionAnswerQuest}
+          setQuestionAnswerQuest={setQuestionAnswerQuest}
+          networkingQuest={networkingQuest}
+          setNetworkingQuest={setNetworkingQuest}
+          feedbackQuest={feedbackQuest}
+          setFeedbackQuest={setFeedbackQuest}
+          questErrors={questErrors}
+          setQuestErrors={setQuestErrors}
+          handleEventCreation={handleEventCreation}
+          handleBack={handleBack}
+        />
+      )
+    }
+  ];
 
   return (
     <Box
       sx={{
-        position: 'relative',
         width: '100%',
         height: '100%',
-        bgcolor: 'f7f9fc'
-      }}>
+      }}
+    >
       <Card
         sx={{
           borderRadius: { xs: 0, md: 3 },
-          overflow: 'hidden',
           backgroundColor: '#ffffff',
           width: '100%',
           height: '100%',
-          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.04)',
+          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.05)',
+          display: 'flex',
+          flexDirection: 'column',
         }}
       >
-        {/* Header Section */}
         <Box
           sx={{
             display: 'flex',
-            alignItems: 'center',
-            pt: 3,
-            px: { xs: 3, md: 5 },
-            pb: 3,
-            background: 'linear-gradient(to right, #f7f9fc, #ffffff)',
+            flexDirection: 'column',//{ xs: 'column', sm: 'row' },
+            alignItems: 'flex-start',
+            py: { xs: 1, sm: 1.5 },
+            px: { xs: 2, sm: 3.5 },
+            gap: { xs: 2, sm: 0 },
+            borderBottom: '1px solid rgba(0, 0, 0, 0.06)'
           }}
         >
-          <Typography
-            variant="h4"
-            component="h1"
+          {/* Header with Back Button */}
+          <Box
             sx={{
-              fontWeight: 800,
-              background: 'linear-gradient(45deg, #2196F3 30%, #21CBF3 90%)',
-              backgroundClip: 'text',
-              textFillColor: 'transparent',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              position: 'relative',
-              display: 'inline-block'
+              display: 'flex',
+              alignItems: 'center',
+              flexGrow: 1,
+              minWidth: 0,
             }}
           >
-            Design Your Event
-          </Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+              <Tooltip title="Back to Events" arrow>
+                <IconButton
+                  edge="start"
+                  onClick={() => navigate('/event')}
+                  sx={{
+                    mr: 1.5,
+                    color: 'text.primary',
+                    transition: 'all 0.2s ease',
+                    '&:hover': {
+                      bgcolor: 'rgba(25, 118, 210, 0.08)',
+                      transform: 'translateX(-1px)',
+                    }
+                  }}
+                  aria-label="back to events"
+                >
+                  <ArrowBackIcon fontSize={isMobile ? "small" : "medium"} />
+                </IconButton>
+              </Tooltip>
+
+              <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+                <Typography
+                  variant="h6"
+                  component="h1"
+                  sx={{
+                    flexGrow: 1,
+                    fontWeight: 600,
+                    fontSize: { xs: '0.9rem', sm: '1rem', md: '1.1rem' },
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                    maxWidth: { xs: '200px', sm: '250px', md: '100%' }
+                  }}
+                >
+                  Create Your Event
+                </Typography>
+                <Typography
+                  variant="subtitle2"
+                  sx={{
+                    flexGrow: 1,
+                    fontSize: { xs: '8px', sm: '10px', md: '12px' },
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                    maxWidth: { xs: '200px', sm: '500px', md: '100%' }
+                  }}
+                >
+                  Design an unforgettable event with interactive challenges that engage your audience
+                </Typography>
+              </Box>
+            </Box>
+          </Box>
         </Box>
 
-        {/* Tab Navigation */}
-        <Box sx={{
-          width: '100%',
-          borderBottom: '1px solid rgba(176, 174, 174, 0)',
-          backgroundColor: '#ffffff'
-        }}>
+        <Box sx={{ width: '100%', borderBottom: '1px solid rgba(176, 174, 174, 0)' }}>
           <Tabs
             value={activeTab}
             onChange={handleTabChange}
             variant="fullWidth"
-            aria-label="event creation tabs"
+            scrollButtons={isMobile ? "auto" : false}
+            aria-label="event-details-tabs"
             sx={{
               '& .MuiTabs-indicator': {
+                backgroundColor: 'primary.main',
                 height: 3,
-                borderTopLeftRadius: 3,
-                borderTopRightRadius: 3,
-                background: 'linear-gradient(45deg, #2196F3 30%, #21CBF3 90%)',
+                borderRadius: '3px 3px 0 0',
+              },
+              minHeight: { xs: '40px', sm: '45px' },
+              borderBottom: '1px solid rgba(169, 169, 169, 0.3)',
+              '& .MuiButtonBase-root': {
+                minHeight: { xs: '40px', sm: '45px' },
+                py: 0.5,
+                transition: 'all 0.2s ease',
               },
               '& .Mui-disabled': {
-                color: 'rgba(0, 0, 0, 0.38)',
                 opacity: 0.6,
               },
-              borderTop: '1px solid rgba(169, 169, 169, 0.2)',
-              borderBottom: '1px solid rgba(169, 169, 169, 0.2)',
-              '& .MuiTab-root': {
-                transition: 'all 0.3s ease',
-              }
             }}
           >
-            <Tab
-              icon={<EventOutlinedIcon sx={{ fontSize: 22, mr: 1 }} />}
-              iconPosition="start"
-              disabled={false}
-              label="Step 1: Event Information"
-              sx={{
-                textTransform: 'none',
-                fontWeight: 500,
-                color: 'text.secondary',
-                borderRight: '1px solid rgba(169, 169, 169, 0.3)',
-                py: 2,
-                '&.Mui-selected': {
-                  color: 'primary.main',
-                  fontWeight: 'bold'
-                },
-              }}
-            />
-            <Tab
-              icon={<SportsEsportsOutlinedIcon sx={{ fontSize: 22, mr: 1 }} />}
-              iconPosition="start"
-              disabled={!tabsEnabled[1]}
-              label="Step 2: Quest"
-              sx={{
-                textTransform: 'none',
-                fontWeight: 500,
-                fontSize: '0.95rem',
-                color: 'text.secondary',
-                py: 2,
-                '&.Mui-selected': {
-                  color: 'primary.main',
-                  fontWeight: 'bold'
-                },
-                '&:hover:not(.Mui-disabled)': {
-                  backgroundColor: 'rgba(33, 150, 243, 0.04)',
-                }
-              }}
-            />
+            {tabs.map((tab, index) => (
+              <Tab
+                key={tab.label}
+                icon={tab.icon}
+                iconPosition="start"
+                label={tab.label}
+                disabled={index > 0 && !name}
+                sx={{
+                  ...tabSx,
+                  // Remove border from last tab
+                  ...(index === tabs.length - 1 && { borderRight: 'none' })
+                }}
+              />
+            ))}
           </Tabs>
         </Box>
 
-        {/* Tab content */}
-        <Box
-          role="tabpanel"
-          hidden={activeTab !== 0}
-          id={`eventcreation-tabpanel-0`}
-          aria-labelledby={`eventcreation-details-tab-0`}
-          sx={{
-            p: { xs: 2, md: 4 },
-            height: '100%',
-            overflow: 'auto',
-            marginBottom: '180px',
-            backgroundColor: '#ffffff'
-          }}
-        >
-          {activeTab === 0 && (
-            <EventDetailsCreation
-              name={name} setName={setName}
-              description={description} setDescription={setDescription}
-              category={category} setCategory={setCategory}
-              startDateTime={startDateTime} setStartDateTime={setStartDateTime}
-              endDateTime={endDateTime} setEndDateTime={setEndDateTime}
-              registrationDate={registrationDate} setRegistrationDate={setRegistrationDate}
-              location={location} setLocation={setLocation}
-              pinpoint={pinpoint} setPinpoint={setPinpoint}
-              images={images} setImages={setImages}
-              requiresCapacity={requiresCapacity} setRequiresCapacity={setRequiresCapacity}
-              capacity={capacity} setCapacity={setCapacity}
-              requiresPaymentProof={requiresPaymentProof} setRequiresPaymentProof={setRequiresPaymentProof}
-              errors={errors} setErrors={setErrors}
-              handleImageChange={handleImageChange} handleRemoveImage={handleRemoveImage} handleReplaceImage={handleReplaceImage}
-              handleDetailsSubmit={handleDetailsSubmit}
-            />
-          )}
-        </Box>
-
-        <Box
-          role="tabpanel"
-          hidden={activeTab !== 1}
-          id={`eventcreation-tabpanel-1`}
-          aria-labelledby={`eventcreation-quest-tab-1`}
-          sx={{
-            py: { xs: 2, md: 3 },
-            px: { xs: 2, md: 4 },
-            height: '100%',
-            overflow: 'auto',
-            backgroundColor: '#ffffff'
-          }}
-        >
-          {activeTab === 1 && (
-            <>
-              <EventQuestCreation
-                attendanceQuest={attendanceQuest} setAttendanceQuest={setAttendanceQuest}
-                earlyBirdQuest={earlyBirdQuest} setEarlyBirdQuest={setEarlyBirdQuest}
-                questionAnswerQuest={questionAnswerQuest} setQuestionAnswerQuest={setQuestionAnswerQuest}
-                networkingQuest={networkingQuest} setNetworkingQuest={setNetworkingQuest}
-                feedbackQuest={feedbackQuest} setFeedbackQuest={setFeedbackQuest}
-                questErrors={questErrors} setQuestErrors={setQuestErrors}
-                handleEventCreation={handleEventCreation} handleBack={handleBack}
-              />
-
-              <Snackbar
-                anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-                open={snackbarOpen}
-                autoHideDuration={4000}
-                onClose={() => setSnackbarOpen(false)}
-              >
-                <Alert
-                  severity={snackbarContent.severity}
-                  variant="filled"
-                  sx={{ width: '100%' }}
-                >
-                  {snackbarContent.message}
-                </Alert>
-              </Snackbar>
-            </>
-          )}
+        {/* Tab/Step Content */}
+        <Box sx={{ p: { xs: 2, md: 4 }, minHeight: '500px' }}>
+          {tabs.map((tab, index) => (
+            <div
+              key={index}
+              role="tabpanel"
+              hidden={activeTab !== index}
+            >
+              {activeTab === index && (
+                <Fade in={activeTab === index} timeout={500}>
+                  <Box>{tab.component}</Box>
+                </Fade>
+              )}
+            </div>
+          ))}
+          <SnackbarComponent snackbarOpen={snackbarOpen} setSnackbarOpen={setSnackbarOpen} snackbarContent={snackbarContent} />
         </Box>
       </Card>
     </Box>
+    // <Box>
+    //     {/* Header Section */}
+    //     <Box
+    //       sx={{
+    //         pt: 5,
+    //         pb: 3,
+    //         px: { xs: 3, md: 5 },
+    //         textAlign: 'center',
+    //         position: 'relative',
+    //         overflow: 'hidden',
+    //         '&::after': {
+    //           content: '""',
+    //           position: 'absolute',
+    //           bottom: 0,
+    //           left: '10%',
+    //           width: '80%',
+    //           height: '1px',
+    //           background: alpha(theme.palette.divider, 0.5),
+    //         }
+    //       }}
+    //     >
+    //       <Typography
+    //         variant="h6"
+    //         component="h1"
+    //         sx={{
+    //           fontWeight: 800,
+    //           mb: 1,
+    //           backgroundImage: 'linear-gradient(90deg, #3a7bd5, #00d2ff)',
+    //           backgroundClip: 'text',
+    //           WebkitBackgroundClip: 'text',
+    //           WebkitTextFillColor: 'transparent',
+    //           textShadow: '0 2px 10px rgba(58, 123, 213, 0.1)',
+    //           letterSpacing: '-0.5px',
+    //         }}
+    //       >
+    //         Create Your Experience
+    //       </Typography>
+
+    //       <Typography 
+    //         variant="subtitle2"
+    //         color="text.secondary"
+    //         sx={{ 
+    //           maxWidth: '600px',
+    //           mx: 'auto',
+    //           fontWeight: 400,
+    //           opacity: 0.8,
+    //         }}
+    //       >
+    //         Design an unforgettable event with interactive challenges that engage your audience
+    //       </Typography>
+    //     </Box>
+
+    //     {/* Desktop Stepper Navigation */}
+    //     {!isMobile && (
+    //       <Box sx={{ px: 4, pt: 3 }}>
+    //         <Stepper activeStep={activeTab} alternativeLabel sx={{ mb: 4 }}>
+    //           {steps.map((step, index) => (
+    //             <Step key={step.label}>
+    //               <StepLabel 
+    //                 StepIconProps={{ 
+    //                   icon: step.icon,
+    //                   sx: { 
+    //                     ...(activeTab === index && {
+    //                       '& .MuiStepIcon-root': {
+    //                         color: 'primary.main',
+    //                         boxShadow: '0 0 0 8px ' + alpha(theme.palette.primary.main, 0.1),
+    //                         borderRadius: '50%',
+    //                       }
+    //                     })
+    //                   }
+    //                 }}
+    //               >
+    //                 <Typography
+    //                   variant="subtitle2"
+    //                   sx={{
+    //                     fontWeight: activeTab === index ? 700 : 500,
+    //                     color: activeTab === index ? 'primary.main' : 'text.secondary',
+    //                   }}
+    //                 >
+    //                   {step.label}
+    //                   <Typography
+    //                     variant="caption"
+    //                     component="p"
+    //                     sx={{
+    //                       display: 'block',
+    //                       color: 'text.secondary',
+    //                       fontWeight: 400,
+    //                     }}
+    //                   >
+    //                     {step.description}
+    //                   </Typography>
+    //                 </Typography>
+    //               </StepLabel>
+    //             </Step>
+    //           ))}
+    //         </Stepper>
+    //       </Box>
+    //     )}
+
+    //     {/* Mobile Tabs Navigation */}
+    //     {isMobile && (
+    //       <Box sx={{ width: '100%', bgcolor: 'background.paper' }}>
+    //         <Tabs
+    //           value={activeTab}
+    //           onChange={(e, newValue) => setActiveTab(newValue)}
+    //           variant="fullWidth"
+    //           aria-label="event creation steps"
+    //           sx={{
+    //             '& .MuiTabs-indicator': {
+    //               height: 3,
+    //               borderRadius: '3px 3px 0 0',
+    //               background: 'linear-gradient(90deg, #3a7bd5, #00d2ff)',
+    //             },
+    //             '& .Mui-disabled': {
+    //               opacity: 0.6,
+    //             },
+    //           }}
+    //         >
+    //           {steps.map((step, index) => (
+    //             <Tab
+    //               key={index}
+    //               icon={step.icon}
+    //               iconPosition="start"
+    //               disabled={index > 0 && !name} // Example validation
+    //               label={step.label}
+    //               sx={{
+    //                 textTransform: 'none',
+    //                 fontWeight: activeTab === index ? 600 : 400,
+    //                 fontSize: '0.9rem',
+    //                 py: 2,
+    //                 '&.Mui-selected': {
+    //                   color: 'primary.main',
+    //                 },
+    //               }}
+    //             />
+    //           ))}
+    //         </Tabs>
+    //       </Box>
+    //     )}
+
+    //     {/* Tab/Step Content */}
+    //     <Box sx={{ p: { xs: 2, md: 4 }, minHeight: '500px' }}>
+    //       {steps.map((step, index) => (
+    //         <div
+    //           key={index}
+    //           role="tabpanel"
+    //           hidden={activeTab !== index}
+    //         >
+    //           {activeTab === index && (
+    //             <Fade in={activeTab === index} timeout={500}>
+    //               <Box>{step.component}</Box>
+    //             </Fade>
+    //           )}
+    //         </div>
+    //       ))}
+    //     </Box>
+    // </Box>
   )
 }
 

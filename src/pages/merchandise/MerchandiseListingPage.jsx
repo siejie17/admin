@@ -1,17 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import {
   Container, Box, Typography, Button, Link, CircularProgress, Pagination,
-  Paper, Divider, Chip, useMediaQuery, useTheme, Fade
+  Paper, Divider, Chip, useMediaQuery, useTheme, Fade,
+  alpha,
+  Tooltip,
+  Stack
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import StorefrontIcon from '@mui/icons-material/Storefront';
 
-import { Link as RouterLink } from 'react-router-dom';
+import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import { collection, query, orderBy, limit, startAfter, where, onSnapshot } from 'firebase/firestore';
 
 import { getItem } from '../../utils/localStorage';
 import { db } from '../../utils/firebaseConfig';
 import MerchandiseListState from '../../components/Merchandises/MerchandiseListState';
+import Loader from '../../components/General/Loader';
 
 const Merchandise = () => {
   const [merchandises, setMerchandises] = useState([]);
@@ -21,10 +25,13 @@ const Merchandise = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [lastVisible, setLastVisible] = useState(null);
   const [hasMore, setHasMore] = useState(true);
+
+  const navigate = useNavigate();
   const merchandisesPerPage = 6;
 
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const isExtraSmall = useMediaQuery(theme.breakpoints.down('xs'));
 
   const fetchMerchandises = async (isFirstPage = false) => {
     try {
@@ -158,118 +165,138 @@ const Merchandise = () => {
   };
 
   return (
-    <Container maxWidth="100%" sx={{ py: 4 }}>
-      {/* Header Section */}
+    <Box
+      sx={{
+        maxWidth: "100%",
+        pb: 3,
+      }}
+    >
       <Box
         sx={{
           display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          mb: 3,
-          px: 1
+          flexDirection: { xs: 'column', sm: 'row' },
+          alignItems: { xs: 'flex-start', md: 'center' },
+          justifyContent: { xs: 'flex-start', md: 'space-between' },
+          py: { xs: 1, sm: 1.5 },
+          px: { xs: 2, sm: 3 },
+          gap: 2,
+          mb: 4,
+          borderBottom: '1px solid rgba(0, 0, 0, 0.06)'
         }}
       >
-        <Box sx={{ display: 'flex', alignItems: 'center' }}>
-          <StorefrontIcon
-            color="primary"
-            sx={{
-              fontSize: { xs: 28, sm: 36 },
-              mr: 1.5,
-              opacity: 0.9
-            }}
-          />
-          <Typography
-            variant="h4"
-            component="h1"
-            fontWeight="800"
-            sx={{
-              color: theme.palette.text.primary,
-              fontSize: { xs: '1.5rem', sm: '1.75rem', md: '2rem' },
-              lineHeight: 1.2,
-              letterSpacing: '-0.01em'
-            }}
-          >
-            My Merchandise
-          </Typography>
-          <Chip
-            label={merchandises?.length || 0}
-            size="small"
-            color="primary"
-            variant="outlined"
-            sx={{
-              ml: 2,
-              fontWeight: 600,
-              height: 24,
-              borderRadius: 1.5
-            }}
-          />
-        </Box>
-
-        <Fade in={true}>
-          <Link
-            component={RouterLink}
-            to="/merchandise/create-merchandise"
-            variant="body2"
-            underline="none"
-            sx={{
-              transition: 'all 0.2s',
-            }}
-          >
-            <Button
-              variant="contained"
-              color="primary"
-              startIcon={<AddIcon />}
-              disableElevation
-              sx={{
-                borderRadius: 2.5,
-                px: { xs: 2, sm: 3 },
-                py: 1.25,
-                textTransform: 'none',
-                fontWeight: 600,
-                fontSize: '0.9rem',
-                transition: 'all 0.3s ease',
-                background: theme.palette.primary.main,
-                '&:hover': {
-                  transform: 'translateY(-2px)',
-                  boxShadow: theme.shadows[4],
-                  background: theme.palette.primary.dark,
-                }
-              }}
-            >
-              Create Merchandise
-            </Button>
-          </Link>
-        </Fade>
-      </Box>
-
-      <Divider sx={{ mb: 4, opacity: 0.6 }} />
-
-      {/* Content Area */}
-      {loading ? (
+        {/* Header with Back Button */}
         <Box
           sx={{
             display: 'flex',
-            flexDirection: 'column',
             alignItems: 'center',
-            justifyContent: 'center',
-            py: 10,
-            opacity: 0.8
+            flexShrink: 1, // Allow this container to shrink if needed
+            minWidth: 0,
           }}
         >
-          <CircularProgress
-            size={48}
-            thickness={4}
-            color="primary"
-          />
-          <Typography
-            variant="body2"
-            color="text.secondary"
-            sx={{ mt: 2, fontWeight: 500 }}
+          <Box
+            sx={{
+              backgroundColor: alpha(theme.palette.primary.main, 0.08),
+              color: theme.palette.primary.dark,
+              borderRadius: 2,
+              p: 1.25,
+              mr: 2,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0, // Prevent icon from shrinking
+            }}
           >
-            Loading merchandise...
-          </Typography>
+            <StorefrontIcon
+              sx={{
+                fontSize: { xs: 18, sm: 22 },
+                color: theme.palette.primary.dark
+              }}
+            />
+          </Box>
+
+          <Box sx={{
+            display: 'flex',
+            alignItems: 'center',
+            minWidth: 0, // Important for text overflow
+            flexWrap: { xs: 'nowrap', sm: 'wrap' }, // Allow wrapping on smaller screens
+          }}>
+            <Typography
+              variant="h5"
+              component="h1"
+              fontWeight="700"
+              sx={{
+                fontSize: { xs: '1.25rem', sm: '1.5rem' },
+                letterSpacing: '-0.01em',
+                mr: 1.5,
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: { xs: 'nowrap', sm: 'normal' }, // Only allow wrapping on sm+
+              }}
+            >
+              My Merchandises
+            </Typography>
+
+            <Tooltip title="Total merchandises managed by admin" arrow placement="top">
+              <Chip
+                label={merchandises.length}
+                size="small"
+                color="primary"
+                sx={{
+                  height: 24,
+                  fontWeight: 600,
+                  borderRadius: 4,
+                  bgcolor: alpha(theme.palette.primary.main, 0.12),
+                  color: theme.palette.primary.main,
+                  border: 'none',
+                }}
+              />
+            </Tooltip>
+          </Box>
         </Box>
-      ) : merchandises.length === 0 ? (
+
+        {/* Action Buttons */}
+        <Stack
+          direction={isExtraSmall ? "column" : "row"}
+          spacing={1.5}
+          sx={{
+            mb: { xs: 2, sm: 0 },
+            ml: { xs: 1, sm: 0 },
+            width: { xs: '100%', sm: 'auto' },
+            flexShrink: 0,
+          }}
+        >
+          <Button
+            fullWidth
+            variant="contained"
+            startIcon={<AddIcon fontSize='small' />}
+            onClick={() => navigate('/merchandise/create-merchandise')}
+            size={isMobile ? "small" : "medium"}
+            sx={{
+              borderRadius: 2,
+              textTransform: 'none',
+              fontWeight: 600,
+              backgroundImage: `linear-gradient(135deg, rgba(33, 150, 243, 0.8), ${theme.palette.primary.main})`,
+              fontSize: '12px',
+              py: 1,
+              boxShadow: 2,
+              whiteSpace: 'nowrap', // Prevent button text from wrapping
+              '&:hover': {
+                backgroundImage: `linear-gradient(135deg, rgba(33, 150, 243, 0.9), ${theme.palette.primary.dark})`,
+                boxShadow: 3,
+                transform: 'translateY(-1px)',
+                transition: 'all 0.2s ease',
+              },
+            }}
+            aria-label="add event button"
+          >
+            Add Merchandise
+          </Button>
+        </Stack>
+      </Box>
+
+      {/* Content Area */}
+      {loading ? <Loader loadingText='Loading merchandise...' /> 
+        : merchandises.length === 0 ? (
         <>
           <StorefrontIcon
             sx={{
@@ -310,38 +337,54 @@ const Merchandise = () => {
 
           <Box sx={{
             display: 'flex',
-            justifyContent: 'center',
-            mt: { xs: 4, sm: 5 },
-            mb: 1
+            justifyContent: 'flex-end', // Changed from 'center' to 'flex-end' to align to the right
+            position: 'fixed', // Make it fixed positioned
+            bottom: 40, // Distance from the bottom
+            right: 40, // Distance from the right
+            zIndex: 1000, // Ensure it stays on top of other content
           }}>
-            <Pagination
-              count={totalPages || 1}
-              page={page}
-              onChange={handlePageChange}
-              color="primary"
-              size={isMobile ? "small" : "medium"}
-              showFirstButton
-              showLastButton
+            <Paper
+              elevation={3} // Increased elevation for better floating appearance
               sx={{
-                '& .MuiPaginationItem-root': {
-                  borderRadius: 2,
-                  mx: { xs: 0.2, sm: 0.3 },
-                  fontWeight: 500,
-                  transition: 'all 0.2s'
-                },
-                '& .Mui-selected': {
-                  fontWeight: 700,
-                  boxShadow: '0 2px 6px rgba(0,0,0,0.1)'
-                },
-                '& .MuiPaginationItem-page:hover': {
-                  backgroundColor: theme.palette.action.hover
-                }
+                py: 1,
+                px: 1.5,
+                borderRadius: 3,
+                backgroundColor: theme.palette.background.paper,
+                border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+                backdropFilter: 'blur(8px)',
+                boxShadow: `0 4px 12px ${alpha(theme.palette.common.black, 0.08)}`, // Added shadow for floating effect
               }}
-            />
+            >
+              <Pagination
+                count={totalPages || 1}
+                page={page}
+                onChange={handlePageChange}
+                color="primary"
+                size={isMobile ? "small" : "medium"}
+                showFirstButton
+                showLastButton
+                sx={{
+                  '& .MuiPaginationItem-root': {
+                    color: 'black',
+                    borderRadius: 1.5,
+                    mx: { xs: 0.2, sm: 0.5 },
+                    fontWeight: 500,
+                    fontSize: { xs: '0.875rem', sm: '0.9rem' }
+                  },
+                  '& .Mui-selected': {
+                    fontWeight: 700,
+                    backgroundColor: alpha(theme.palette.primary.main, 0.1),
+                    '&:hover': {
+                      backgroundColor: alpha(theme.palette.primary.main, 0.2),
+                    }
+                  }
+                }}
+              />
+            </Paper>
           </Box>
         </>
       )}
-    </Container>
+    </Box>
   )
 }
 

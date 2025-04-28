@@ -191,7 +191,6 @@ const QuestCreationForm = ({
         return newErrors;
     };
 
-
     return (
         <Dialog
             open={questCreationFormOpen}

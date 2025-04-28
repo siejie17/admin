@@ -180,14 +180,13 @@ const ParticipantManager = ({ eventID }) => {
     <Box
       sx={{
         px: 2,
-        minHeight: '100vh',
       }}
     >
       <Paper
         elevation={0}
         sx={{
-          pb: 2,
-          mb: 3,
+          pb: 1.5,
+          mb: 1.5,
           borderRadius: 2,
           display: 'flex',
           flexDirection: { xs: 'column', sm: 'row' },
@@ -201,30 +200,32 @@ const ParticipantManager = ({ eventID }) => {
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              borderRadius: 1.5,
-              width: 40,
-              height: 40,
+              borderRadius: 2,
+              width: 30,
+              height: 30,
               mr: 2,
               background: `linear-gradient(135deg, ${theme.palette.primary.light}, ${theme.palette.primary.main})`,
               color: 'white',
+              boxShadow: '0 4px 10px rgba(0, 0, 0, 0.15)',
             }}
           >
-            <NumbersOutlined />
+            <NumbersOutlined fontSize="small" />
           </Box>
-          <Typography variant='h5' fontWeight="700" sx={{ lineHeight: 1.1 }}>
+          <Typography variant='h5' fontWeight="700" sx={{ lineHeight: 1.5, fontSize: "18px" }}>
             Overview
           </Typography>
         </Box>
       </Paper>
 
       {/* Dashboard metrics grid */}
-      <Grid container spacing={3} sx={{ mb: 5 }}>
+      <Grid container spacing={3} sx={{ mb: 3 }}>
         <Grid>
           <MetricCard
-            title="Total Registered Participants"
+            title="Total Number of"
+            subtitle="Registered Participants"
             value={totalParticipants.toLocaleString()}
             icon={<PeopleAlt />}
-            color={theme.palette.primary.main}
+            color={alpha(theme.palette.primary.main, 0.75)}
           />
         </Grid>
       </Grid>
@@ -238,15 +239,16 @@ const ParticipantManager = ({ eventID }) => {
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  borderRadius: 1.5,
-                  width: 40,
-                  height: 40,
+                  borderRadius: 2,
+                  width: 30,
+                  height: 30,
                   mr: 2,
                   background: `linear-gradient(135deg, ${theme.palette.primary.light}, ${theme.palette.primary.main})`,
                   color: 'white',
+                  boxShadow: '0 4px 10px rgba(0, 0, 0, 0.15)',
                 }}
               >
-                <PeopleAlt />
+                <PeopleAlt fontSize="small" />
               </Box>
               <Typography variant='h5' fontWeight="700" sx={{ lineHeight: 1.1 }}>
                 Participants List
@@ -370,17 +372,18 @@ const ParticipantManager = ({ eventID }) => {
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  borderRadius: 1.5,
-                  width: 40,
-                  height: 40,
+                  borderRadius: 2,
+                  width: 30,
+                  height: 30,
                   mr: 2,
                   background: `linear-gradient(135deg, ${theme.palette.primary.light}, ${theme.palette.primary.main})`,
                   color: 'white',
+                  boxShadow: '0 4px 10px rgba(0, 0, 0, 0.15)',
                 }}
               >
-                <PeopleAlt />
+                <PeopleAlt fontSize="small" />
               </Box>
-              <Typography variant='h5' fontWeight="700" sx={{ lineHeight: 1.1 }}>
+              <Typography variant='h5' fontWeight="700" sx={{ lineHeight: 1.1, fontSize: "16px" }}>
                 List of Confirmed Participants
               </Typography>
             </Box>
@@ -388,7 +391,7 @@ const ParticipantManager = ({ eventID }) => {
             <ExcelExportButton handleExport={handleExport} />
           </Box>
 
-          <Box sx={{ mt: 3 }}>
+          <Box sx={{ mt: 2.5 }}>
             <ParticipantsListTable participants={verifiedParticipants} isLoading={isLoading} />
           </Box>
         </Box>

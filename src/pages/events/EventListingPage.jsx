@@ -1,18 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import {
   Box,
-  Container,
   Pagination,
   useMediaQuery,
   useTheme,
-  CircularProgress,
   Typography,
   Button,
   Paper,
-  Link,
   Chip,
-  Divider,
-  alpha
+  alpha,
+  Tooltip,
+  Stack,
+  IconButton
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -24,7 +23,8 @@ import ErrorEventState from '../../components/Events/ErrorEventState';
 import { getItem } from '../../utils/localStorage';
 import { db } from '../../utils/firebaseConfig'; // Make sure to create this file for your Firebase config
 import EventListState from '../../components/Events/EventListState';
-import { Link as RouterLink } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
+import Loader from '../../components/General/Loader';
 
 const EventListingPage = () => {
   const [events, setEvents] = useState([]);
@@ -34,10 +34,13 @@ const EventListingPage = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [lastVisible, setLastVisible] = useState(null);
   const [hasMore, setHasMore] = useState(true);
+
+  const navigate = useNavigate();
   const eventsPerPage = 6;
 
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const isExtraSmall = useMediaQuery(theme.breakpoints.down('xs'));
 
   // Load events from Firestore
   const fetchEvents = async (isFirstPage = false) => {
@@ -129,191 +132,182 @@ const EventListingPage = () => {
     <Box
       sx={{
         maxWidth: "100%",
-        py: 5,
-        px: { xs: 2, sm: 4 },
+        pb: 3,
       }}
     >
-      {/* Header Section */}
       <Box
         sx={{
           display: 'flex',
           flexDirection: { xs: 'column', sm: 'row' },
-          justifyContent: 'space-between',
-          alignItems: { xs: 'flex-start', sm: 'center' },
+          alignItems: isExtraSmall ? 'flex-start' : 'center',
+          py: { xs: 1, sm: 1.5 },
+          px: { xs: 2, sm: 3 },
+          gap: { xs: 2, sm: 0 },
           mb: 4,
-          gap: { xs: 3, sm: 0 }
+          borderBottom: '1px solid rgba(0, 0, 0, 0.06)'
         }}
       >
-        <Box sx={{ display: 'flex', alignItems: 'center' }}>
-          <Box
-            sx={{
-              backgroundColor: alpha(theme.palette.primary.main, 0.1),
-              borderRadius: 2,
-              p: 1.5,
-              mr: 2,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}
-          >
-            <EventIcon
-              color="primary"
-              sx={{ fontSize: { xs: 24, sm: 28 } }}
-            />
-          </Box>
-
-          <Typography
-            variant="h4"
-            component="h1"
-            fontWeight="800"
-            sx={{
-              color: theme.palette.text.primary,
-              fontSize: { xs: '1.5rem', sm: '1.75rem', md: '2rem' },
-              lineHeight: 1.2,
-              letterSpacing: '-0.01em'
-            }}
-          >
-            My Events
-          </Typography>
-          <Chip
-            label={events?.length || 0}
-            size="small"
-            color="primary"
-            variant="outlined"
-            sx={{
-              fontWeight: 600,
-              height: 24,
-              borderRadius: 1,
-              ml: 1.5
-            }}
-          />
-        </Box>
-
-        <Button
-          component={RouterLink}
-          to="/event/create-event"
-          variant="contained"
-          color="primary"
-          startIcon={<AddIcon />}
-          sx={{
-            borderRadius: 2,
-            px: 3,
-            py: 1.25,
-            textTransform: 'none',
-            fontWeight: 600,
-            boxShadow: 'none',
-            bgcolor: theme.palette.primary.main,
-            '&:hover': {
-              boxShadow: `0 8px 16px ${alpha(theme.palette.primary.main, 0.25)}`,
-              bgcolor: theme.palette.primary.dark,
-            },
-            transition: 'all 0.2s ease',
-            alignSelf: { xs: 'stretch', sm: 'auto' },
-            width: { xs: '100%', sm: 'auto' }
-          }}
-        >
-          Create Event
-        </Button>
-      </Box>
-
-      {/* Content Section */}
-      {loading ? (
+        {/* Header with Back Button */}
         <Box
           sx={{
             display: 'flex',
-            justifyContent: 'center',
             alignItems: 'center',
-            flexDirection: 'column',
-            py: 10,
-            bgcolor: alpha(theme.palette.background.paper, 0.6),
-            borderRadius: 3,
-            backdropFilter: 'blur(8px)',
+            width: { xs: '100%', sm: 'auto' },
+            justifyContent: { xs: 'space-between', sm: 'flex-start' }
           }}
         >
-          <Box sx={{ position: 'relative' }}>
-            <CircularProgress
-              size={48}
-              thickness={4}
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            <Box
               sx={{
-                color: 'primary.main',
-                opacity: 0.3
-              }}
-            />
-            <CircularProgress
-              size={48}
-              thickness={4}
-              sx={{
-                color: 'primary.main',
-                position: 'absolute',
-                left: 0,
-                animationDuration: '1s'
-              }}
-            />
-          </Box>
-          <Typography
-            variant="body1"
-            sx={{
-              mt: 3,
-              color: 'text.primary',
-              fontWeight: 500
-            }}
-          >
-            Loading your events...
-          </Typography>
-        </Box>
-      ) : error ? (
-        <ErrorEventState error={error} fetchEvents={fetchEvents} />
-      ) : events.length === 0 ? (
-        <EmptyEventState />
-      ) : (
-        <>
-          <EventListState events={events} />
-
-          <Box sx={{
-            display: 'flex',
-            justifyContent: 'center',
-            mt: 3
-          }}>
-            <Paper
-              elevation={0}
-              sx={{
-                py: 1,
-                px: 1.5,
-                borderRadius: 3,
-                backgroundColor: theme.palette.background.paper,
-                border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
-                backdropFilter: 'blur(8px)',
+                backgroundColor: alpha(theme.palette.primary.main, 0.08),
+                color: theme.palette.primary.dark,
+                borderRadius: 2,
+                p: 1.25,
+                mr: 2,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                transition: 'all 0.2s ease',
               }}
             >
-              <Pagination
-                count={totalPages || 1}
-                page={page}
-                onChange={handlePageChange}
-                color="primary"
-                size={isMobile ? "small" : "medium"}
-                showFirstButton
-                showLastButton
+              <EventIcon
                 sx={{
-                  '& .MuiPaginationItem-root': {
-                    color: 'black',
-                    borderRadius: 1.5,
-                    mx: { xs: 0.2, sm: 0.5 },
-                    fontWeight: 500,
-                    fontSize: { xs: '0.875rem', sm: '0.9rem' }
-                  },
-                  '& .Mui-selected': {
-                    fontWeight: 700,
-                    backgroundColor: alpha(theme.palette.primary.main, 0.1),
-                    '&:hover': {
-                      backgroundColor: alpha(theme.palette.primary.main, 0.2),
-                    }
-                  }
+                  fontSize: { xs: 18, sm: 22 },
+                  color: theme.palette.primary.dark
                 }}
               />
-            </Paper>
+            </Box>
+
+            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+              <Typography
+                variant="h5"
+                component="h1"
+                fontWeight="700"
+                sx={{
+                  fontSize: { xs: '1.25rem', sm: '1.5rem' },
+                  letterSpacing: '-0.01em'
+                }}
+              >
+                My Events
+              </Typography>
+
+              <Tooltip title="Total events" arrow placement="top">
+                <Chip
+                  label={events.length}
+                  size="small"
+                  color="primary"
+                  sx={{
+                    ml: 1.5,
+                    height: 24,
+                    fontWeight: 600,
+                    borderRadius: 4,
+                    bgcolor: alpha(theme.palette.primary.main, 0.12),
+                    color: theme.palette.primary.main,
+                    border: 'none'
+                  }}
+                />
+              </Tooltip>
+            </Box>
           </Box>
-        </>
-      )}
+        </Box>
+
+        {/* Action Buttons */}
+        <Stack
+          direction={isExtraSmall ? "column" : "row"}
+          spacing={1.5}
+          sx={{
+            mb: { xs: 1, sm: 0 },
+            ml: { xs: 0, sm: 'auto' },
+            width: { xs: '100%', sm: 'auto' }
+          }}
+        >
+          <Button
+            fullWidth
+            variant="contained"
+            startIcon={<AddIcon fontSize='small' />}
+            onClick={() => navigate('/event/create-event')}
+            size={isMobile ? "small" : "medium"}
+            sx={{
+              borderRadius: 2,
+              textTransform: 'none',
+              fontWeight: 600,
+              backgroundImage: `linear-gradient(135deg, rgba(33, 150, 243, 0.8), ${theme.palette.primary.main})`,
+              fontSize: '12px',
+              py: 1,
+              boxShadow: 2,
+              '&:hover': {
+                backgroundImage: `linear-gradient(135deg, rgba(33, 150, 243, 0.9), ${theme.palette.primary.dark})`,
+                boxShadow: 3,
+                transform: 'translateY(-1px)',
+                transition: 'all 0.2s ease',
+              },
+            }}
+            aria-label="add event button"
+          >
+            Add Event
+          </Button>
+        </Stack>
+      </Box>
+
+      {/* Content Section */}
+      {loading ? <Loader loadingText='Loading your events...' />
+        : error ? <ErrorEventState error={error} fetchEvents={fetchEvents} />
+          : events.length === 0 ? <EmptyEventState />
+            : (
+              <>
+                {/* Events List */}
+                <EventListState events={events} />
+
+                {/* Pagination - only if events exist */}
+                <Box sx={{
+                  display: 'flex',
+                  justifyContent: 'flex-end',
+                  position: 'fixed',
+                  bottom: 30,
+                  right: 30,
+                  zIndex: 1000,
+                }}>
+                  <Paper
+                    elevation={3}
+                    sx={{
+                      py: 1,
+                      px: 1.5,
+                      borderRadius: 3,
+                      backgroundColor: theme.palette.background.paper,
+                      border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+                      backdropFilter: 'blur(8px)',
+                      boxShadow: `0 4px 12px ${alpha(theme.palette.common.black, 0.08)}`, // Added shadow for floating effect
+                    }}
+                  >
+                    <Pagination
+                      count={totalPages || 1}
+                      page={page}
+                      onChange={handlePageChange}
+                      color="primary"
+                      size={isMobile ? "small" : "medium"}
+                      showFirstButton
+                      showLastButton
+                      sx={{
+                        '& .MuiPaginationItem-root': {
+                          color: 'black',
+                          borderRadius: 1.5,
+                          mx: { xs: 0.2, sm: 0.5 },
+                          fontWeight: 500,
+                          fontSize: { xs: '0.875rem', sm: '0.9rem' }
+                        },
+                        '& .Mui-selected': {
+                          fontWeight: 700,
+                          backgroundColor: alpha(theme.palette.primary.main, 0.1),
+                          '&:hover': {
+                            backgroundColor: alpha(theme.palette.primary.main, 0.2),
+                          }
+                        }
+                      }}
+                    />
+                  </Paper>
+                </Box>
+              </>
+            )}
     </Box>
   );
 };

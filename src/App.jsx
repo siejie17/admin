@@ -4,7 +4,7 @@ import { Route, BrowserRouter as Router, Routes, Navigate } from 'react-router-d
 import AppLayout from "./layout/AppLayout";
 import EventListingPage from "./pages/events/EventListingPage";
 import EventCreationTabs from './pages/events/EventCreationTabs.jsx';
-import EventTabs from './pages/events/EventTabs.jsx';
+import EventManager from './pages/events/EventManager.jsx';
 import MerchandiseListingPage from "./pages/merchandise/MerchandiseListingPage";
 
 import LoginPage from './pages/auth/LoginPage';
@@ -33,7 +33,7 @@ function App() {
               {/* Events Routes */}
               <Route path="/event" element={<EventListingPage />} />
               <Route path="/event/create-event" element={<EventCreationTabs />} />
-              <Route path="/event/details" element={<EventTabs />} />
+              <Route path="/event/details" element={<EventManager />} />
               <Route path="/event/details/quest" element={<QuestDetails />} />
 
               {/* Merchandise Routes */}

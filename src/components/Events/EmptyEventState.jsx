@@ -82,7 +82,7 @@ const EmptyStateContainer = styled(Paper)(({ theme }) => ({
           mb: 1
         }}
       >
-        Your Calendar is Empty
+        Your List is Empty
       </Typography>
       
       <Typography 

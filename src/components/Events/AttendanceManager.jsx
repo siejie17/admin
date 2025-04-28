@@ -1,5 +1,5 @@
 import { collection, doc, getDoc, onSnapshot, query, where } from 'firebase/firestore';
-import { CheckBox as CheckBoxIcon, Dangerous as DangerousIcon, NumbersOutlined as NumbersOutlinedIcon, EmojiPeople as EmojiPeopleIcon } from '@mui/icons-material';
+import { Wc as WcIcon, PersonOff as PersonOffIcon, NumbersOutlined as NumbersOutlinedIcon, EmojiPeople as EmojiPeopleIcon } from '@mui/icons-material';
 import React, { useEffect, useState } from 'react';
 import { db } from '../../utils/firebaseConfig';
 import { alpha, Box, Grid, Paper, Tab, Tabs, Typography, useTheme } from '@mui/material';
@@ -176,38 +176,41 @@ const AttendanceManager = ({ eventID }) => {
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            borderRadius: 1.5,
-                            width: 40,
-                            height: 40,
-                            mr: 3,
+                            borderRadius: 2,
+                            width: 30,
+                            height: 30,
+                            mr: 2,
                             background: `linear-gradient(135deg, ${theme.palette.primary.light}, ${theme.palette.primary.main})`,
                             color: 'white',
+                            boxShadow: '0 4px 10px rgba(0, 0, 0, 0.15)',
                         }}
                     >
-                        <NumbersOutlinedIcon />
+                        <NumbersOutlinedIcon fontSize="small" />
                     </Box>
-                    <Typography variant='h5' fontWeight="700" sx={{ lineHeight: 1.5 }}>
+                    <Typography variant='h5' fontWeight="700" sx={{ lineHeight: 1.5, fontSize: "18px" }}>
                         Overview
                     </Typography>
                 </Box>
             </Paper>
 
-            <Grid container spacing={3}>
+            <Grid container spacing={{ xs: 2 }}>
                 <Grid item>
                     <MetricCard
-                        title="Total Attendees"
+                        title="Total Number of"
+                        subtitle="Attendees"
                         value={attendeeSize.toLocaleString()}
-                        icon={<CheckBoxIcon />}
-                        color={theme.palette.primary.main}
+                        icon={<WcIcon />}
+                        color={alpha(theme.palette.primary.main, 0.75)}
                     />
                 </Grid>
 
                 <Grid item>
                     <MetricCard
-                        title="Total Absentees"
+                        title="Total Number of"
+                        subtitle="Absentees"
                         value={absenteeSize.toLocaleString()}
-                        icon={<DangerousIcon />}
-                        color={theme.palette.primary.main}
+                        icon={<PersonOffIcon />}
+                        color="rgba(244, 67, 54, 0.7)"
                     />
                 </Grid>
             </Grid>
@@ -224,17 +227,18 @@ const AttendanceManager = ({ eventID }) => {
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            borderRadius: 1.5,
-                            width: 40,
-                            height: 40,
-                            mr: 3,
+                            borderRadius: 2,
+                            width: 30,
+                            height: 30,
+                            mr: 2,
                             background: `linear-gradient(135deg, ${theme.palette.primary.light}, ${theme.palette.primary.main})`,
                             color: 'white',
+                            boxShadow: '0 4px 10px rgba(0, 0, 0, 0.15)',
                         }}
                     >
-                        <EmojiPeopleIcon />
+                        <EmojiPeopleIcon fontSize="small" />
                     </Box>
-                    <Typography variant='h5' fontWeight="700" sx={{ lineHeight: 1.1 }}>
+                    <Typography variant='h5' fontWeight="700" sx={{ lineHeight: 1.5, fontSize: "18px" }}>
                         Attendees/Absentees List
                     </Typography>
                 </Box>
@@ -242,7 +246,7 @@ const AttendanceManager = ({ eventID }) => {
                 {activeTab === 0 && <ExcelExportButton handleExport={handleExcelExport} />}
             </Box>
 
-            <Box sx={{ mt: 3 }}>
+            <Box sx={{ py: 2 }}>
                 <Tabs
                     value={activeTab}
                     onChange={(event, changedTab) => setActiveTab(changedTab)}
@@ -258,7 +262,7 @@ const AttendanceManager = ({ eventID }) => {
                             display: 'none',
                         },
                         '& .MuiButtonBase-root': {
-                            minHeight: '48px',
+                            minHeight: '40px',
                             py: 1,
                             px: 3,
                             borderRadius: '12px',
@@ -271,7 +275,7 @@ const AttendanceManager = ({ eventID }) => {
                         sx={{
                             textTransform: 'none',
                             fontWeight: 500,
-                            fontSize: '0.95rem',
+                            fontSize: '0.75rem',
                             color: 'text.secondary',
                             backgroundColor: (theme) =>
                                 activeTab === 0
@@ -281,7 +285,7 @@ const AttendanceManager = ({ eventID }) => {
                                 activeTab === 0
                                     ? `1px solid ${alpha(theme.palette.primary.main, 0.3)}`
                                     : `1px solid ${alpha(theme.palette.divider, 0.08)}`,
-                            minWidth: '140px',
+                            minWidth: '120px',
                             boxShadow: (theme) =>
                                 activeTab === 0
                                     ? `0 4px 12px ${alpha(theme.palette.primary.main, 0.12)}`
@@ -303,7 +307,7 @@ const AttendanceManager = ({ eventID }) => {
                         sx={{
                             textTransform: 'none',
                             fontWeight: 500,
-                            fontSize: '0.95rem',
+                            fontSize: '0.75rem',
                             color: 'text.secondary',
                             backgroundColor: (theme) =>
                                 activeTab === 1
@@ -313,7 +317,7 @@ const AttendanceManager = ({ eventID }) => {
                                 activeTab === 1
                                     ? `1px solid ${alpha(theme.palette.primary.main, 0.3)}`
                                     : `1px solid ${alpha(theme.palette.divider, 0.08)}`,
-                            minWidth: '140px',
+                            minWidth: '120px',
                             boxShadow: (theme) =>
                                 activeTab === 1
                                     ? `0 4px 12px ${alpha(theme.palette.primary.main, 0.12)}`
@@ -338,7 +342,7 @@ const AttendanceManager = ({ eventID }) => {
                 hidden={activeTab !== 0}
                 id={'attendance-tabpanel-0'}
                 aria-labelledby={'attendance-tab-0'}
-                sx={{ py: 3, maxHeight: '100%' }}
+                sx={{ maxHeight: '100%' }}
             >
                 {activeTab === 0 && <AttendanceListTable participants={attendees} isLoading={isLoading} />}
             </Box>
@@ -348,7 +352,7 @@ const AttendanceManager = ({ eventID }) => {
                 hidden={activeTab !== 1}
                 id={'attendance-tabpanel-1'}
                 aria-labelledby={'attendance-tab-1'}
-                sx={{ py: 3, maxHeight: '100%' }}
+                sx={{ maxHeight: '100%' }}
             >
                 {activeTab === 1 && <AttendanceListTable participants={absentees} eventID={eventID} isLoading={isLoading} />}
             </Box>
