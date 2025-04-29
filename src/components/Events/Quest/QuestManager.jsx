@@ -3,15 +3,15 @@ import React, { useEffect, useState } from 'react';
 import { Box, Grid, Paper, Typography, useTheme } from '@mui/material';
 import { NumbersOutlined as NumbersOutlinedIcon, Task as TaskIcon } from '@mui/icons-material';
 
-import { db } from '../../utils/firebaseConfig';
+import { db } from '../../../utils/firebaseConfig';
 import { collection, getDocs, onSnapshot, query, where } from 'firebase/firestore';
 
-import MetricCard from '../General/MetricCard';
-import Loader from '../General/Loader';
+import MetricCard from '../../General/MetricCard';
+import Loader from '../../General/Loader';
 
-import QuestList from './Quest/QuestList';
-import QuestAddButton from './Quest/QuestAddButton';
-import QuestAdditionForm from './Quest/QuestAdditionForm';
+import QuestList from './QuestList';
+import QuestAddButton from './QuestAddButton';
+import QuestAdditionForm from './QuestAdditionForm';
 
 const QuestManager = ({ eventID, eventName }) => {
     const [quests, setQuests] = useState([]);
@@ -32,113 +32,116 @@ const QuestManager = ({ eventID, eventName }) => {
     };
 
     useEffect(() => {
-        let unsubscribe = () => { };
-
-        setIsLoading(true);
-
-        fetchQuestProgress().then(result => {
-            if (Array.isArray(result)) {
-                unsubscribe = () => result.forEach(fn => fn && fn());
+        let unsubscribeAll = () => {};
+      
+        const init = async () => {
+          setIsLoading(true);
+          try {
+            const unsubList = await fetchQuestProgress();
+            if (Array.isArray(unsubList)) {
+              unsubscribeAll = () => unsubList.forEach(fn => fn && fn());
             }
-        }).catch(err => {
+          } catch (err) {
             console.error("Something went wrong when setting up real-time listener", err);
-        }).finally(() => setIsLoading(false));
-
-        return () => unsubscribe();
-    }, []);
-
-    const fetchQuestProgress = async () => {
+          } finally {
+            setIsLoading(false);
+          }
+        };
+      
+        init();
+      
+        return () => unsubscribeAll();
+      }, []);
+      
+      const fetchQuestProgress = async () => {
         try {
-            let unsubscribes = [];
-
-            const questsQuery = query(collection(db, "quest"), where("eventID", "==", eventID));
-            const questsSnapshot = await getDocs(questsQuery);
-
-            if (questsSnapshot.empty) return [];
-
-            const questsDoc = questsSnapshot.docs[0];
-            const questsID = questsDoc.id;
-
-            const questListRef = collection(db, "quest", questsID, "questList");
-
-            const unsubscribeEventQuests = onSnapshot(questListRef, async (questListSnapshot) => {
-                setQuests([]);
-                let eventQuests = [];
-                
-                if (questListSnapshot.empty) return [];
-
-                for (const quest of questListSnapshot.docs) {
-                    eventQuests.push({
-                        id: quest.id,
-                        ...quest.data(),
-                        totalCompleted: 0
-                    });
-                }
-
-                const questTypes = eventQuests.map(quest => quest.questType);
-
-                setQuestExist({ earlyBird: questTypes.includes("earlyBird"), networking: questTypes.includes("networking") })
-                setQAIndex(questTypes.filter(type => type === "q&a").length);
-
-                const questsProgressQuery = query(collection(db, "questProgress"), where("eventID", "==", eventID));
-                const questsProgressSnapshot = await getDocs(questsProgressQuery);
-
-                for (const questsProgressDoc of questsProgressSnapshot.docs) {
-                    const id = questsProgressDoc.id;
-                    const userQuestProgressRef = collection(db, "questProgress", id, "questProgressList");
-
-                    const unsubscribeUserQuestProgress = onSnapshot(userQuestProgressRef, userQuestProgressSnapshot => {
-                        for (const userQuestProgress of userQuestProgressSnapshot.docs) {
-                            const userQuestData = userQuestProgress.data();
-                            const index = eventQuests.findIndex(e => e.id === userQuestData.questID);
-
-                            if (index !== -1 && userQuestData.isCompleted) {
-                                const updatedQuest = {
-                                    ...eventQuests[index],
-                                    totalCompleted: eventQuests[index].totalCompleted + 1
-                                };
-
-                                eventQuests = [
-                                    ...eventQuests.slice(0, index),
-                                    updatedQuest,
-                                    ...eventQuests.slice(index + 1)
-                                ];
-                            }
-                        }
-
-                        eventQuests.sort((a, b) => {
-                            const order = ["attendance", "earlyBird", "q&a", "networking", "feedback"];
-                            const aIndex = order.indexOf(a.questType);
-                            const bIndex = order.indexOf(b.questType);
-                        
-                            if (aIndex !== bIndex) return aIndex - bIndex;
-                        
-                            // If both are "q&a", sort by the number in the title
-                            if (a.questType === "q&a" && b.questType === "q&a") {
-                                const getNumber = (name) => {
-                                    const match = name.match(/\[#(\d+)\]/);
-                                    return match ? parseInt(match[1], 10) : 0;
-                                };
-                                return getNumber(a.questName) - getNumber(b.questName);
-                            }
-                        
-                            return 0; // keep original order if not specifically sorted
-                        });                        
-
-                        setQuests(eventQuests);
-                    });
-
-                    unsubscribes.push(unsubscribeUserQuestProgress);
-                }
-                unsubscribes.push(unsubscribeEventQuests);
-            })
-
-            return unsubscribes;
+          const unsubscribes = [];
+      
+          const questsQuery = query(collection(db, "quest"), where("eventID", "==", eventID));
+          const questsSnapshot = await getDocs(questsQuery);
+      
+          if (questsSnapshot.empty) return [];
+      
+          const questsDoc = questsSnapshot.docs[0];
+          const questsID = questsDoc.id;
+      
+          const questListRef = collection(db, "quest", questsID, "questList");
+      
+          const unsubscribeEventQuests = onSnapshot(questListRef, async (questListSnapshot) => {
+            if (questListSnapshot.empty) {
+              setQuests([]);
+              return;
+            }
+      
+            let eventQuests = questListSnapshot.docs.map((doc) => ({
+              id: doc.id,
+              ...doc.data(),
+              totalCompleted: 0
+            }));
+      
+            const questTypes = eventQuests.map(q => q.questType);
+            setQuestExist({
+              earlyBird: questTypes.includes("earlyBird"),
+              networking: questTypes.includes("networking")
+            });
+            setQAIndex(questTypes.filter(type => type === "q&a").length);
+      
+            const questsProgressQuery = query(collection(db, "questProgress"), where("eventID", "==", eventID));
+            const questsProgressSnapshot = await getDocs(questsProgressQuery);
+      
+            const unsubscribeUserListeners = [];
+      
+            for (const userDoc of questsProgressSnapshot.docs) {
+              const userQuestProgressRef = collection(db, "questProgress", userDoc.id, "questProgressList");
+      
+              const unsubscribeUser = onSnapshot(userQuestProgressRef, (snapshot) => {
+                const updatedQuests = [...eventQuests];
+      
+                snapshot.forEach((doc) => {
+                  const data = doc.data();
+                  const index = updatedQuests.findIndex(q => q.id === data.questID);
+      
+                  if (index !== -1 && data.isCompleted) {
+                    updatedQuests[index] = {
+                      ...updatedQuests[index],
+                      totalCompleted: updatedQuests[index].totalCompleted + 1
+                    };
+                  }
+                });
+      
+                updatedQuests.sort((a, b) => {
+                  const order = ["attendance", "earlyBird", "q&a", "networking", "feedback"];
+                  const aIndex = order.indexOf(a.questType);
+                  const bIndex = order.indexOf(b.questType);
+      
+                  if (aIndex !== bIndex) return aIndex - bIndex;
+      
+                  if (a.questType === "q&a" && b.questType === "q&a") {
+                    const getNumber = (name) => {
+                      const match = name.match(/\[#(\d+)\]/);
+                      return match ? parseInt(match[1], 10) : 0;
+                    };
+                    return getNumber(a.questName) - getNumber(b.questName);
+                  }
+      
+                  return 0;
+                });
+      
+                setQuests(updatedQuests);
+              });
+      
+              unsubscribeUserListeners.push(unsubscribeUser);
+            }
+      
+            unsubscribes.push(...unsubscribeUserListeners, unsubscribeEventQuests);
+          });
+      
+          return unsubscribes;
         } catch (err) {
-            console.error("Error in fetchQuestProgress:", err);
-            return [];
+          console.error("Error in fetchQuestProgress:", err);
+          return [];
         }
-    }
+      };      
 
     if (isLoading) {
         return (

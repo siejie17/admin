@@ -1,19 +1,26 @@
 import React, { useState, useEffect } from 'react';
-import {
-  Container, Box, Typography, Button, Link, CircularProgress, Pagination,
-  Paper, Divider, Chip, useMediaQuery, useTheme, Fade,
+import { 
+  Box, 
+  Typography, 
+  Button, 
+  Pagination,
+  Paper, 
+  Chip, 
+  useMediaQuery, 
+  useTheme, 
+  Fade,
   alpha,
   Tooltip,
   Stack
 } from '@mui/material';
-import AddIcon from '@mui/icons-material/Add';
-import StorefrontIcon from '@mui/icons-material/Storefront';
+import { Add as AddIcon, Storefront as StorefrontIcon } from '@mui/icons-material';
 
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import { collection, query, orderBy, limit, startAfter, where, onSnapshot } from 'firebase/firestore';
 
 import { getItem } from '../../utils/localStorage';
 import { db } from '../../utils/firebaseConfig';
+
 import MerchandiseListState from '../../components/Merchandises/MerchandiseListState';
 import Loader from '../../components/General/Loader';
 
@@ -174,12 +181,11 @@ const Merchandise = () => {
       <Box
         sx={{
           display: 'flex',
-          flexDirection: { xs: 'column', sm: 'row' },
-          alignItems: { xs: 'flex-start', md: 'center' },
-          justifyContent: { xs: 'flex-start', md: 'space-between' },
+          flexDirection: isExtraSmall ? 'column' : 'row',//{ xs: 'column', sm: 'row' },
+          alignItems: isExtraSmall ? 'flex-start' : 'center',
           py: { xs: 1, sm: 1.5 },
-          px: { xs: 2, sm: 3 },
-          gap: 2,
+          px: { xs: 2, sm: 3.5 },
+          gap: { xs: 2, sm: 0 },
           mb: 4,
           borderBottom: '1px solid rgba(0, 0, 0, 0.06)'
         }}
@@ -189,68 +195,70 @@ const Merchandise = () => {
           sx={{
             display: 'flex',
             alignItems: 'center',
-            flexShrink: 1, // Allow this container to shrink if needed
+            flexGrow: 1,
             minWidth: 0,
           }}
         >
-          <Box
-            sx={{
-              backgroundColor: alpha(theme.palette.primary.main, 0.08),
-              color: theme.palette.primary.dark,
-              borderRadius: 2,
-              p: 1.25,
-              mr: 2,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexShrink: 0, // Prevent icon from shrinking
-            }}
-          >
-            <StorefrontIcon
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            <Box
               sx={{
-                fontSize: { xs: 18, sm: 22 },
-                color: theme.palette.primary.dark
-              }}
-            />
-          </Box>
-
-          <Box sx={{
-            display: 'flex',
-            alignItems: 'center',
-            minWidth: 0, // Important for text overflow
-            flexWrap: { xs: 'nowrap', sm: 'wrap' }, // Allow wrapping on smaller screens
-          }}>
-            <Typography
-              variant="h5"
-              component="h1"
-              fontWeight="700"
-              sx={{
-                fontSize: { xs: '1.25rem', sm: '1.5rem' },
-                letterSpacing: '-0.01em',
-                mr: 1.5,
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: { xs: 'nowrap', sm: 'normal' }, // Only allow wrapping on sm+
+                backgroundColor: alpha(theme.palette.primary.main, 0.08),
+                color: theme.palette.primary.dark,
+                borderRadius: 2,
+                p: 1.25,
+                mr: 2,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0, // Prevent icon from shrinking
               }}
             >
-              My Merchandises
-            </Typography>
-
-            <Tooltip title="Total merchandises managed by admin" arrow placement="top">
-              <Chip
-                label={merchandises.length}
-                size="small"
-                color="primary"
+              <StorefrontIcon
                 sx={{
-                  height: 24,
-                  fontWeight: 600,
-                  borderRadius: 4,
-                  bgcolor: alpha(theme.palette.primary.main, 0.12),
-                  color: theme.palette.primary.main,
-                  border: 'none',
+                  fontSize: { xs: 18, sm: 22 },
+                  color: theme.palette.primary.dark
                 }}
               />
-            </Tooltip>
+            </Box>
+
+            <Box sx={{
+              display: 'flex',
+              alignItems: 'center',
+              minWidth: 0, // Important for text overflow
+              flexWrap: { xs: 'nowrap', sm: 'wrap' }, // Allow wrapping on smaller screens
+            }}>
+              <Typography
+                variant="h5"
+                component="h1"
+                fontWeight="700"
+                sx={{
+                  fontSize: { xs: '1.25rem', sm: '1.5rem' },
+                  letterSpacing: '-0.01em',
+                  mr: 1.5,
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: { xs: 'nowrap', sm: 'normal' }, // Only allow wrapping on sm+
+                }}
+              >
+                My Merchandises
+              </Typography>
+
+              <Tooltip title="Total merchandises managed by admin" arrow placement="top">
+                <Chip
+                  label={merchandises.length}
+                  size="small"
+                  color="primary"
+                  sx={{
+                    height: 24,
+                    fontWeight: 600,
+                    borderRadius: 4,
+                    bgcolor: alpha(theme.palette.primary.main, 0.12),
+                    color: theme.palette.primary.main,
+                    border: 'none',
+                  }}
+                />
+              </Tooltip>
+            </Box>
           </Box>
         </Box>
 
@@ -262,7 +270,7 @@ const Merchandise = () => {
             mb: { xs: 2, sm: 0 },
             ml: { xs: 1, sm: 0 },
             width: { xs: '100%', sm: 'auto' },
-            flexShrink: 0,
+            // flexShrink: 0,
           }}
         >
           <Button
@@ -295,95 +303,95 @@ const Merchandise = () => {
       </Box>
 
       {/* Content Area */}
-      {loading ? <Loader loadingText='Loading merchandise...' /> 
+      {loading ? <Loader loadingText='Loading merchandise...' />
         : merchandises.length === 0 ? (
-        <>
-          <StorefrontIcon
-            sx={{
-              fontSize: 56,
-              mb: 2,
-              color: theme.palette.text.disabled
-            }}
-          />
-          <Typography variant="h6" gutterBottom>
-            No merchandise items yet
-          </Typography>
-          <Typography variant="body2" color="text.secondary" paragraph>
-            Create your first merchandise item to get started
-          </Typography>
-          <Button
-            variant="outlined"
-            color="primary"
-            startIcon={<AddIcon />}
-            component={RouterLink}
-            to="/merchandise/create-merchandise"
-            sx={{
-              mt: 1,
-              borderRadius: 2,
-              textTransform: 'none',
-              fontWeight: 600
-            }}
-          >
-            Create Merchandise
-          </Button>
-        </>
-      ) : (
-        <>
-          <Fade in={true}>
-            <Box>
-              <MerchandiseListState merchandises={merchandises} />
-            </Box>
-          </Fade>
-
-          <Box sx={{
-            display: 'flex',
-            justifyContent: 'flex-end', // Changed from 'center' to 'flex-end' to align to the right
-            position: 'fixed', // Make it fixed positioned
-            bottom: 40, // Distance from the bottom
-            right: 40, // Distance from the right
-            zIndex: 1000, // Ensure it stays on top of other content
-          }}>
-            <Paper
-              elevation={3} // Increased elevation for better floating appearance
+          <>
+            <StorefrontIcon
               sx={{
-                py: 1,
-                px: 1.5,
-                borderRadius: 3,
-                backgroundColor: theme.palette.background.paper,
-                border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
-                backdropFilter: 'blur(8px)',
-                boxShadow: `0 4px 12px ${alpha(theme.palette.common.black, 0.08)}`, // Added shadow for floating effect
+                fontSize: 56,
+                mb: 2,
+                color: theme.palette.text.disabled
+              }}
+            />
+            <Typography variant="h6" gutterBottom>
+              No merchandise items yet
+            </Typography>
+            <Typography variant="body2" color="text.secondary" paragraph>
+              Create your first merchandise item to get started
+            </Typography>
+            <Button
+              variant="outlined"
+              color="primary"
+              startIcon={<AddIcon />}
+              component={RouterLink}
+              to="/merchandise/create-merchandise"
+              sx={{
+                mt: 1,
+                borderRadius: 2,
+                textTransform: 'none',
+                fontWeight: 600
               }}
             >
-              <Pagination
-                count={totalPages || 1}
-                page={page}
-                onChange={handlePageChange}
-                color="primary"
-                size={isMobile ? "small" : "medium"}
-                showFirstButton
-                showLastButton
+              Create Merchandise
+            </Button>
+          </>
+        ) : (
+          <>
+            <Fade in={true}>
+              <Box>
+                <MerchandiseListState merchandises={merchandises} />
+              </Box>
+            </Fade>
+
+            <Box sx={{
+              display: 'flex',
+              justifyContent: 'flex-end', // Changed from 'center' to 'flex-end' to align to the right
+              position: 'fixed', // Make it fixed positioned
+              bottom: 40, // Distance from the bottom
+              right: 40, // Distance from the right
+              zIndex: 1000, // Ensure it stays on top of other content
+            }}>
+              <Paper
+                elevation={3} // Increased elevation for better floating appearance
                 sx={{
-                  '& .MuiPaginationItem-root': {
-                    color: 'black',
-                    borderRadius: 1.5,
-                    mx: { xs: 0.2, sm: 0.5 },
-                    fontWeight: 500,
-                    fontSize: { xs: '0.875rem', sm: '0.9rem' }
-                  },
-                  '& .Mui-selected': {
-                    fontWeight: 700,
-                    backgroundColor: alpha(theme.palette.primary.main, 0.1),
-                    '&:hover': {
-                      backgroundColor: alpha(theme.palette.primary.main, 0.2),
-                    }
-                  }
+                  py: 1,
+                  px: 1.5,
+                  borderRadius: 3,
+                  backgroundColor: theme.palette.background.paper,
+                  border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+                  backdropFilter: 'blur(8px)',
+                  boxShadow: `0 4px 12px ${alpha(theme.palette.common.black, 0.08)}`, // Added shadow for floating effect
                 }}
-              />
-            </Paper>
-          </Box>
-        </>
-      )}
+              >
+                <Pagination
+                  count={totalPages || 1}
+                  page={page}
+                  onChange={handlePageChange}
+                  color="primary"
+                  size={isMobile ? "small" : "medium"}
+                  showFirstButton
+                  showLastButton
+                  sx={{
+                    '& .MuiPaginationItem-root': {
+                      color: 'black',
+                      borderRadius: 1.5,
+                      mx: { xs: 0.2, sm: 0.5 },
+                      fontWeight: 500,
+                      fontSize: { xs: '0.875rem', sm: '0.9rem' }
+                    },
+                    '& .Mui-selected': {
+                      fontWeight: 700,
+                      backgroundColor: alpha(theme.palette.primary.main, 0.1),
+                      '&:hover': {
+                        backgroundColor: alpha(theme.palette.primary.main, 0.2),
+                      }
+                    }
+                  }}
+                />
+              </Paper>
+            </Box>
+          </>
+        )}
     </Box>
   )
 }

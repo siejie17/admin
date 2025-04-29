@@ -1,11 +1,12 @@
-import { Close, Numbers as NumbersIcon, TaskAlt as TaskAltIcon, Visibility } from '@mui/icons-material';
+import { Close, Numbers as NumbersIcon, PersonAddDisabled as PersonAddDisabledIcon, TaskAlt as TaskAltIcon, VerifiedUser as VerifiedUserIcon, Visibility } from '@mui/icons-material';
 import { Alert, alpha, Avatar, Box, Button, Chip, Dialog, DialogContent, DialogTitle, IconButton, Snackbar, Typography, useTheme } from '@mui/material';
 import { DataGrid } from '@mui/x-data-grid';
 import { doc, updateDoc } from 'firebase/firestore';
 import React, { useState } from 'react'
-import { db } from '../../utils/firebaseConfig';
+import { db } from '../../../utils/firebaseConfig';
+import EmptyTableRows from '../../General/EmptyTableRows';
 
-const ParticipantsListTable = ({ participants, isLoading }) => {
+const ParticipantsListTable = ({ participants, activeTab, isLoading }) => {
     const [openImageModal, setOpenImageModal] = useState(false);
     const [currentProof, setCurrentProof] = useState('');
 
@@ -79,7 +80,6 @@ const ParticipantsListTable = ({ participants, isLoading }) => {
             ...commonHeaderStyle,
             justifyContent: 'center',
             position: 'relative',
-            // py: 1.5,
             '&::after': {
                 content: '""',
                 position: 'absolute',
@@ -482,7 +482,7 @@ const ParticipantsListTable = ({ participants, isLoading }) => {
     return (
         <Box
             sx={{
-                width: '100%',
+                width: 'auto',
                 borderRadius: '20px',
                 overflow: 'hidden',
                 boxShadow: (theme) => `0 20px 40px ${alpha(theme.palette.common.black, 0.08)}`,
@@ -510,7 +510,7 @@ const ParticipantsListTable = ({ participants, isLoading }) => {
         >
             <Box
                 sx={{
-                    height: 300,
+                    height: 350,
                     width: '100%',
                     position: 'relative',
                     '& .MuiDataGrid-root': {
@@ -758,6 +758,28 @@ const ParticipantsListTable = ({ participants, isLoading }) => {
                     pageSizeOptions={[5, 10, 25, 50]}
                     getRowId={(row) => row.id}
                     getRowHeight={() => 50}
+                    slots={{
+                        noRowsOverlay: () => {
+                            if (activeTab === 0) {
+                                return (
+                                    <EmptyTableRows
+                                        icon={<PersonAddDisabledIcon />}
+                                        title="No Participants Yet"
+                                        subtitle="No students have registered or been added as participants for this event."
+                                    />
+                                )
+                            } else {
+                                return (
+                                    <EmptyTableRows
+                                        icon={<VerifiedUserIcon />}
+                                        title="No Unverified Participants"
+                                        subtitle="All participants have been verified, or no verification is required at the moment."
+                                    />
+
+                                )
+                            }
+                        }
+                    }}
                     sx={{
                         '& .MuiCircularProgress-root': {
                             color: (theme) => theme.palette.primary.main,

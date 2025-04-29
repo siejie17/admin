@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { alpha, Box, Button, Chip, Fade, FormControl, FormControlLabel, FormHelperText, Grid, IconButton, MenuItem, Paper, Select, Stack, Switch, TextField, Tooltip, Typography, useTheme } from '@mui/material'
+import { alpha, Box, Button, Chip, Fade, FormControl, FormHelperText, Grid, IconButton, MenuItem, Paper, Select, Switch, TextField, Tooltip, Typography, useTheme } from '@mui/material'
 import { DateTimePicker, LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import dayjs from 'dayjs';
@@ -13,19 +13,25 @@ import {
     ChevronRight as ChevronRightIcon,
     Delete as DeleteIcon,
     Edit as EditIcon,
+    FitnessCenter as FitnessCenterIcon,
     Image as ImageIcon,
     Info as InfoIcon,
+    KeyboardArrowDown as KeyboardArrowDownIcon,
     LocationOn as LocationOnIcon,
     LocationSearching as LocationSearchingIcon,
+    MoreHoriz as MoreHorizIcon,
+    Public as PublicIcon,
+    School as SchoolIcon,
     SkipNext as SkipNextIcon,
+    SportsBasketball as SportsBasketballIcon,
+    TheaterComedy as TheaterComedyIcon,
     TouchApp as TouchAppIcon,
-    ZoomIn as ZoomInIcon
+    VolunteerActivism as VolunteerActivismIcon
 } from '@mui/icons-material';
 
-import RequiredAsterisk from '../../components/General/RequiredAsterisk';
+import RequiredAsterisk from '../../General/RequiredAsterisk';
 
 import { useNavigate } from 'react-router-dom';
-import { FitnessCenter as FitnessCenterIcon, KeyboardArrowDown as KeyboardArrowDownIcon, MoreHoriz as MoreHorizIcon, Public as PublicIcon, School as SchoolIcon, SportsBasketball as SportsBasketballIcon, TheaterComedy as TheaterComedyIcon, VolunteerActivism as VolunteerActivismIcon } from '@mui/icons-material';
 
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
@@ -34,7 +40,7 @@ L.Icon.Default.mergeOptions({
     shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
 });
 
-const EventDetailsCreation = ({
+const DetailsCreation = ({
     name,
     setName,
     description,
@@ -52,7 +58,6 @@ const EventDetailsCreation = ({
     pinpoint,
     setPinpoint,
     images,
-    setImages,
     requiresCapacity,
     setRequiresCapacity,
     capacity,
@@ -173,9 +178,14 @@ const EventDetailsCreation = ({
 
     const hasAllFieldsFilled = useMemo(() => {
         const fieldsFilled = name && description && category && startDateTime && endDateTime && registrationDate && location && pinpoint && images.length > 0;
-        const capacityValid = (requiresCapacity && !isNaN(capacity) && capacity > 0);
+        
+        if (requiresCapacity) {
+            const capacityValid = (requiresCapacity && !isNaN(capacity) && capacity > 0);
 
-        return fieldsFilled && capacityValid;
+            return fieldsFilled && capacityValid;
+        }
+
+        return fieldsFilled;
     }, [name, description, category, startDateTime, endDateTime, registrationDate, location, pinpoint, images, requiresCapacity, capacity]);
 
     // Common props for all DateTimePickers
@@ -192,6 +202,21 @@ const EventDetailsCreation = ({
     return (
         <Box component="form" onSubmit={handleDetailsSubmit} noValidate sx={{ width: '100%', pt: 1, pb: 8 }}>
             <Box sx={{ width: '100%' }}>
+                <Box sx={{ width: '100%', mb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Box>
+                        <Typography variant="h5" sx={{
+                            fontSize: "16px",
+                            fontWeight: 600,
+                            display: 'flex',
+                            alignItems: 'center'
+                        }}>
+                            🖼️ Event Poster <RequiredAsterisk />
+                        </Typography>
+                        <Typography variant="body2" color='text.secondary' fontSize="12px" mt={0.5}>
+                            ⚠️ Upload up to 4 event posters (max 50KB each). The first uploaded image will be used as the event thumbnail.
+                        </Typography>
+                    </Box>
+                </Box>
                 {images.length > 0 && (
                     <Box sx={{ width: '100%', mb: 1 }}>
                         <Box sx={{ width: '100%', position: 'relative' }}>
@@ -343,26 +368,10 @@ const EventDetailsCreation = ({
                         </Box>
                     </Box>
                 )}
-
-                <Box sx={{ width: '100%', mb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <Box>
-                        <Typography variant="h5" sx={{
-                            fontSize: "16px",
-                            fontWeight: 600,
-                            display: 'flex',
-                            alignItems: 'center'
-                        }}>
-                            🖼️ Event Poster <RequiredAsterisk />
-                        </Typography>
-                        <Typography variant="body2" color='text.secondary' fontSize="12px" mt={0.5}>
-                            ⚠️ Upload up to 4 event posters (max 50KB each). The first uploaded image will be used as the event thumbnail.
-                        </Typography>
-                    </Box>
-                </Box>
             </Box>
 
             {/* Event Poster Images Field - Full width row */}
-            <Box sx={{ width: '100%', mb: 2 }}>
+            <Box sx={{ width: '100%', my: 2 }}>
                 <Button
                     variant="contained"
                     component="label"
@@ -1102,4 +1111,4 @@ const EventDetailsCreation = ({
     )
 }
 
-export default EventDetailsCreation;
+export default DetailsCreation;

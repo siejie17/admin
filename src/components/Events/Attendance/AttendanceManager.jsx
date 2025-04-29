@@ -1,16 +1,16 @@
 import { collection, doc, getDoc, onSnapshot, query, where } from 'firebase/firestore';
 import { Wc as WcIcon, PersonOff as PersonOffIcon, NumbersOutlined as NumbersOutlinedIcon, EmojiPeople as EmojiPeopleIcon } from '@mui/icons-material';
 import React, { useEffect, useState } from 'react';
-import { db } from '../../utils/firebaseConfig';
+import { db } from '../../../utils/firebaseConfig';
 import { alpha, Box, Grid, Paper, Tab, Tabs, Typography, useTheme } from '@mui/material';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 
-import MetricCard from '../General/MetricCard';
-import ExcelExportButton from '../General/ExcelExportButton';
-import AttendanceListTable from './Attendance/AttendanceListTable';
+import MetricCard from '../../General/MetricCard';
+import ExcelExportButton from '../../General/ExcelExportButton';
+import AttendanceListTable from './AttendanceListTable';
 
-const AttendanceManager = ({ eventID }) => {
+const AttendanceManager = ({ eventID, eventName }) => {
     const [attendees, setAttendees] = useState([]);
     const [attendeeSize, setAttendeeSize] = useState(0);
     const [absentees, setAbsentees] = useState([]);
@@ -37,90 +37,81 @@ const AttendanceManager = ({ eventID }) => {
     useEffect(() => {
         let unsubscribe;
 
-        setIsLoading(true);
+        const init = async () => {
+            setIsLoading(true);
+            try {
+                unsubscribe = await fetchParticipantsAttendanceInfo();
+            } catch (err) {
+                console.error("Something went wrong when setting up real-time listener:", err);
+            } finally {
+                setIsLoading(false);
+            }
+        };
 
-        fetchParticipantsAttendanceInfo().then(
-            result => unsubscribe = result
-        ).catch(
-            err => console.log("Something went wrong when setup real time listener:", err)
-        );
+        init();
 
-        setIsLoading(false);
-
-        return () => unsubscribe;
+        return () => {
+            if (typeof unsubscribe === 'function') unsubscribe();
+        };
     }, [eventID]);
 
     const fetchParticipantsAttendanceInfo = async () => {
         try {
-            const attendanceQuery = query(collection(db, "registration"), where("eventID", "==", eventID));
+            const attendanceQuery = query(
+                collection(db, "registration"),
+                where("eventID", "==", eventID)
+            );
 
-            const unsubscribeAttendance = onSnapshot(attendanceQuery, async (attendance) => {
-                let attendees = [];
-                let absentees = [];
-
-                for (const attendanceDoc of attendance.docs) {
-                    const attendanceData = attendanceDoc.data();
-                    const studentID = attendanceData.studentID;
+            const unsubscribeAttendance = onSnapshot(attendanceQuery, async (snap) => {
+                const attendancePromises = snap.docs.map(async (docSnap) => {
+                    const regData = docSnap.data();
+                    const studentID = regData.studentID;
 
                     try {
                         const studentDoc = await getDoc(doc(db, "user", studentID));
+                        if (!studentDoc.exists()) return null;
 
-                        if (studentDoc.exists()) {
-                            const studentData = studentDoc.data();
+                        const studentData = studentDoc.data();
 
-                            const attendanceData = {
-                                id: attendanceDoc.id,
-                                studentID: attendanceDoc.data().studentID,
-                                fullName: studentData.firstName + " " + studentData.lastName,
-                                email: studentData.email,
-                                facultyID: studentData.facultyID,
-                                yearOfStudy: studentData.yearOfStudy,
-                                profilePicture: studentData.profilePicture,
-                                isAttended: attendanceDoc.data().isAttended
-                            };
-
-                            if (attendanceData.isAttended) {
-                                attendees.push(attendanceData);
-                            } else {
-                                absentees.push(attendanceData);
-                            }
-                        }
+                        return {
+                            id: docSnap.id,
+                            studentID,
+                            fullName: `${studentData.firstName} ${studentData.lastName}`,
+                            email: studentData.email,
+                            facultyID: studentData.facultyID,
+                            yearOfStudy: studentData.yearOfStudy,
+                            profilePicture: studentData.profilePicture,
+                            isAttended: regData.isAttended
+                        };
                     } catch (err) {
-                        console.error("Error fetching user data (name and profile picture):", err);
+                        console.error("Error fetching user data:", err);
+                        return null;
                     }
-                }
+                });
+
+                const results = (await Promise.all(attendancePromises)).filter(Boolean);
+
+                const attendees = [];
+                const absentees = [];
+
+                results.forEach((entry) => {
+                    (entry.isAttended ? attendees : absentees).push(entry);
+                });
+
+                const addIndex = (list) =>
+                    list.map((item, index) => ({ ...item, bil: index + 1 }));
 
                 setAttendeeSize(attendees.length);
                 setAbsenteeSize(absentees.length);
-
-                if (attendees && attendees.length > 0) {
-                    const attendeesWithBil = attendees.map((attendee, index) => ({
-                        ...attendee,
-                        bil: index + 1
-                    }));
-
-                    setAttendees(attendeesWithBil);
-                } else {
-                    setAttendees([]);
-                }
-
-                if (absentees && absentees.length > 0) {
-                    const absenteesWithBil = absentees.map((absentee, index) => ({
-                        ...absentee,
-                        bil: index + 1
-                    }));
-
-                    setAbsentees(absenteesWithBil);
-                } else {
-                    setAbsentees([]);
-                }
-            })
+                setAttendees(addIndex(attendees));
+                setAbsentees(addIndex(absentees));
+            });
 
             return unsubscribeAttendance;
         } catch (err) {
-            console.log("Something went wrong when fetching attendance info for this event:", err)
+            console.error("Something went wrong when fetching attendance info for this event:", err);
         }
-    }
+    };
 
     const handleExcelExport = () => {
         const formattedData = attendees.map((attendee, index) => ({
@@ -153,7 +144,7 @@ const AttendanceManager = ({ eventID }) => {
             type: 'application/octet-stream',
         });
 
-        saveAs(data, `Attendees.xlsx`);
+        saveAs(data, `${eventName}-Attendees.xlsx`);
     }
 
     return (
@@ -243,7 +234,7 @@ const AttendanceManager = ({ eventID }) => {
                     </Typography>
                 </Box>
 
-                {activeTab === 0 && <ExcelExportButton handleExport={handleExcelExport} />}
+                {activeTab === 0 && attendees.length > 0 && <ExcelExportButton handleExport={handleExcelExport} />}
             </Box>
 
             <Box sx={{ py: 2 }}>
@@ -344,7 +335,7 @@ const AttendanceManager = ({ eventID }) => {
                 aria-labelledby={'attendance-tab-0'}
                 sx={{ maxHeight: '100%' }}
             >
-                {activeTab === 0 && <AttendanceListTable participants={attendees} isLoading={isLoading} />}
+                {activeTab === 0 && <AttendanceListTable participants={attendees} activeTab={activeTab} isLoading={isLoading} />}
             </Box>
 
             <Box
@@ -354,7 +345,7 @@ const AttendanceManager = ({ eventID }) => {
                 aria-labelledby={'attendance-tab-1'}
                 sx={{ maxHeight: '100%' }}
             >
-                {activeTab === 1 && <AttendanceListTable participants={absentees} eventID={eventID} isLoading={isLoading} />}
+                {activeTab === 1 && <AttendanceListTable participants={absentees} eventID={eventID} activeTab={activeTab} isLoading={isLoading} />}
             </Box>
         </Box>
     )

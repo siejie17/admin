@@ -1,4 +1,4 @@
-import { alpha, Box, Card, CardContent, Stack, Typography, useTheme, Link } from '@mui/material';
+import { alpha, Box, Card, CardContent, Stack, Typography, useTheme, Link, Chip } from '@mui/material';
 import React, { useEffect, useState } from 'react';
 import {
     ChevronRightRounded as ChevronRightRoundedIcon,
@@ -7,51 +7,13 @@ import {
     People as NetworkingIcon,
     Checklist as AttendanceIcon,
     Feedback as FeedbackIcon,
+    SportsEsports as SportsEsportsIcon
 } from '@mui/icons-material';
 import { Link as RouterLink } from 'react-router-dom';
 import CryptoJS from "crypto-js";
 
 import Diamond from '../../../assets/icons/diamond.png';
 import Point from '../../../assets/icons/point.png'
-
-// Quest type definitions with their respective colors and icons
-const QUEST_TYPES = {
-    "attendance": {
-        color: "rgba(76, 175, 80, 0.3)", // Green
-        icon: AttendanceIcon,
-        editable: false,
-        removable: false,
-        compulsory: true
-    },
-    "earlyBird": {
-        color: "rgba(33, 150, 243, 0.3)", // Blue
-        icon: EarlyBirdIcon,
-        editable: true,
-        removable: true,
-        compulsory: false
-    },
-    "q&a": {
-        color: "rgba(255, 152, 0, 0.3)", // Orange
-        icon: QAIcon,
-        editable: true,
-        removable: true,
-        compulsory: false
-    },
-    "networking": {
-        color: "rgba(156, 39, 176, 0.3)", // Purple
-        icon: NetworkingIcon,
-        editable: true,
-        removable: true,
-        compulsory: false
-    },
-    "feedback": {
-        color: "rgba(244, 67, 54, 0.3)", // Red
-        icon: FeedbackIcon,
-        editable: false,
-        removable: false,
-        compulsory: true
-    }
-};
 
 const QuestList = ({ quest, index, eventID, eventName }) => {
     const [participantsProgress, setParticipantsProgress] = useState([]);
@@ -60,7 +22,57 @@ const QuestList = ({ quest, index, eventID, eventName }) => {
 
     const theme = useTheme();
 
+    // Quest type definitions with their respective colors and icons
+    const QUEST_TYPES = {
+        "attendance": {
+            color: "rgba(76, 175, 80, 0.3)", // Green
+            chipColor: theme.palette.success.main,
+            label: "Attendance",
+            icon: AttendanceIcon,
+            editable: false,
+            removable: false,
+            compulsory: true
+        },
+        "earlyBird": {
+            color: "rgba(33, 150, 243, 0.3)", // Blue
+            chipColor: theme.palette.primary.main,
+            label: "Early Bird",
+            icon: EarlyBirdIcon,
+            editable: true,
+            removable: true,
+            compulsory: false
+        },
+        "q&a": {
+            color: "rgba(255, 152, 0, 0.3)", // Orange
+            chipColor: theme.palette.warning.main,
+            label: "Question & Answer",
+            icon: QAIcon,
+            editable: true,
+            removable: true,
+            compulsory: false
+        },
+        "networking": {
+            color: "rgba(156, 39, 176, 0.3)", // Purple
+            chipColor: theme.palette.secondary.main,
+            label: "Networking",
+            icon: NetworkingIcon,
+            editable: true,
+            removable: true,
+            compulsory: false
+        },
+        "feedback": {
+            color: "rgba(244, 67, 54, 0.3)", // Red
+            chipColor: theme.palette.error.main,
+            label: "Feedback",
+            icon: FeedbackIcon,
+            editable: false,
+            removable: false,
+            compulsory: true
+        }
+    };
+
     const questTypeConfig = QUEST_TYPES[quest.questType];
+    const QuestIcon = questTypeConfig.icon;
 
     useEffect(() => {
         setEncryptedEventID(CryptoJS.AES.encrypt(eventID, "UniEXP_Admin").toString());
@@ -77,10 +89,12 @@ const QuestList = ({ quest, index, eventID, eventName }) => {
         >
             <Card
                 sx={{
-                    mb: 2,
+                    mb: 3,
                     borderRadius: 2,
                     borderLeft: `6px solid ${questTypeConfig.color}`,
                     boxShadow: 2,
+                    overflow: 'visible',
+                    position: 'relative',
                     transition: 'transform 0.2s, box-shadow 0.2s',
                     '&:hover': {
                         transform: 'translateY(-1px)',
@@ -90,7 +104,32 @@ const QuestList = ({ quest, index, eventID, eventName }) => {
                 }}
             >
                 <CardContent>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', width: '100%' }}>
+                    <Box
+                        sx={{
+                            position: 'absolute',
+                            top: -12,
+                            left: 20,
+                            zIndex: 1,
+                        }}
+                    >
+                        <Chip
+                            icon={<QuestIcon fontSize="small" />}
+                            label={questTypeConfig.label}
+                            size="small"
+                            sx={{
+                                fontWeight: 600,
+                                bgcolor: questTypeConfig.chipColor,
+                                color: '#fff',
+                                px: 2.5,
+                                py: 1.5,
+                                boxShadow: theme.shadows[2],
+                                '& .MuiChip-icon': {
+                                    color: '#fff',
+                                },
+                            }}
+                        />
+                    </Box>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', width: '100%', pt: 1 }}>
                         <Box sx={{ display: 'flex', alignItems: 'center', mb: 1, flexGrow: 1 }}>
                             <Box
                                 sx={{

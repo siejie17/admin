@@ -124,13 +124,18 @@ const MerchandiseCreationPage = () => {
     };
 
     const handleRemoveImage = (index) => {
-        // setImages(images.filter((_, i) => i !== index));
-        const newImages = [...images];
-        newImages.splice(index, 1);
-        setImages(newImages);
+        if (index !== 0 && images.length !== 1) {
+            const newImages = [...images];
+            newImages.splice(index, 1);
+            setImages(newImages);
+            setCurrentImageIndex((prev) => (prev > 0 ? prev - 1 : images.length - 1));
 
-        if (newImages.length <= 4) {
-            setErrors({ ...errors, images: null });
+            if (newImages.length <= 4) {
+                setErrors({ ...errors, images: null });
+            }
+        } else {
+            const newError = "You cannot delete image when there is only one image.";
+            setErrors({ ...errors, images: newError });
         }
     };
 
@@ -229,9 +234,9 @@ const MerchandiseCreationPage = () => {
     const hasAllFieldsFilled = useMemo(() => {
         const fieldsFilled = name && description && category && locationName && images.length > 0;
         const sizeValid = (category !== "Clothing") || (sizes.length > 0);
-    
+
         return fieldsFilled && sizeValid;
-    }, [name, description, category, locationName, images, sizes]);    
+    }, [name, description, category, locationName, images, sizes]);
 
     return (
         <Box
@@ -327,158 +332,6 @@ const MerchandiseCreationPage = () => {
 
                 <Box component="form" onSubmit={handleSubmit} noValidate sx={{ width: 'auto', minHeight: '500px', px: { xs: 2, md: 4 }, pt: { xs: 3, md: 5 }, pb: { xs: 8, sm: 10 } }}>
                     <Box sx={{ width: '100%', mb: 1 }}>
-                        {images.length > 0 && (
-                            <Box sx={{ width: '100%', mb: 1 }}>
-                                <Box sx={{ width: '100%', position: 'relative' }}>
-                                    <Paper
-                                        elevation={2}
-                                        sx={{
-                                            p: 1.5,
-                                            borderRadius: 3,
-                                            overflow: 'hidden',
-                                            position: 'relative',
-                                            height: 300,
-                                            display: 'flex',
-                                            justifyContent: 'center',
-                                            background: `linear-gradient(135deg, rgba(250, 250, 250, 0.5), ${theme.palette.common.white})`
-                                        }}
-                                    >
-                                        <Box
-                                            component="img"
-                                            src={`data:image/jpeg;base64,${images[currentImageIndex].preview}`}
-                                            alt={`Merchandise Image ${currentImageIndex + 1}`}
-                                            sx={{
-                                                maxWidth: '100%',
-                                                maxHeight: '90%',
-                                                objectFit: 'contain',
-                                                borderRadius: '10px'
-                                            }}
-                                        />
-
-                                        {currentImageIndex !== 0 && (
-                                            <IconButton
-                                                sx={{
-                                                    position: 'absolute',
-                                                    left: 10,
-                                                    top: '50%',
-                                                    transform: 'translateY(-50%)',
-                                                    bgcolor: 'background.paper',
-                                                    boxShadow: 2,
-                                                    '&:hover': { bgcolor: 'background.paper', opacity: 0.9 }
-                                                }}
-                                                onClick={handlePrevImage}
-                                            >
-                                                <ChevronLeftIcon />
-                                            </IconButton>
-                                        )}
-
-                                        {(images.length !== 1 && currentImageIndex !== images.length - 1) && (
-                                            <IconButton
-                                                sx={{
-                                                    position: 'absolute',
-                                                    right: 10,
-                                                    top: '50%',
-                                                    transform: 'translateY(-50%)',
-                                                    bgcolor: 'background.paper',
-                                                    boxShadow: 2,
-                                                    '&:hover': { bgcolor: 'background.paper', opacity: 0.9 }
-                                                }}
-                                                onClick={handleNextImage}
-                                            >
-                                                <ChevronRightIcon />
-                                            </IconButton>
-                                        )}
-
-                                        <Box
-                                            sx={{
-                                                position: 'absolute',
-                                                top: 10,
-                                                right: 15,
-                                                display: 'flex',
-                                                gap: 1,
-                                            }}
-                                        >
-                                            <IconButton
-                                                size="small"
-                                                onClick={() => handleRemoveImage(currentImageIndex)}
-                                                sx={{
-                                                    bgcolor: 'error.main',
-                                                    color: 'white',
-                                                    '&:hover': {
-                                                        bgcolor: 'error.dark'
-                                                    }
-                                                }}
-                                            >
-                                                <DeleteIcon fontSize="small" />
-                                            </IconButton>
-                                            <IconButton
-                                                size="small"
-                                                component="label"
-                                                sx={{
-                                                    bgcolor: 'info.main',
-                                                    color: 'white',
-                                                    '&:hover': {
-                                                        bgcolor: 'info.dark'
-                                                    }
-                                                }}
-                                            >
-                                                <EditIcon fontSize="small" />
-                                                <input
-                                                    type="file"
-                                                    accept="image/*"
-                                                    hidden
-                                                    onChange={(e) => handleReplaceImage(currentImageIndex, e)}
-                                                />
-                                            </IconButton>
-                                        </Box>
-
-                                        <Box
-                                            sx={{
-                                                position: 'absolute',
-                                                bottom: 16,
-                                                left: '50%',
-                                                transform: 'translateX(-50%)',
-                                                display: 'flex',
-                                                gap: 1
-                                            }}
-                                        >
-                                            {images.length !== 1 && images.map((_, index) => (
-                                                <Box
-                                                    key={index}
-                                                    sx={{
-                                                        width: 7,
-                                                        height: 7,
-                                                        borderRadius: '50%',
-                                                        bgcolor: index === currentImageIndex ? 'primary.main' : 'grey.300',
-                                                        cursor: 'pointer',
-                                                        transition: 'all 0.2s',
-                                                        '&:hover': {
-                                                            transform: 'scale(1.2)',
-                                                            bgcolor: index === currentImageIndex ? 'primary.dark' : 'grey.400'
-                                                        }
-                                                    }}
-                                                    onClick={() => setCurrentImageIndex(index)}
-                                                />
-                                            ))}
-                                        </Box>
-                                    </Paper>
-
-                                    <Typography
-                                        variant="body2"
-                                        sx={{
-                                            fontSize: "12px",
-                                            textAlign: 'center',
-                                            mt: 2,
-                                            color: 'text.secondary',
-                                            fontStyle: 'italic'
-                                        }}
-                                    >
-                                        Image {currentImageIndex + 1} of {images.length}
-                                    </Typography>
-                                </Box>
-                            </Box>
-                        )}
-
                         <Box sx={{ width: '100%', mb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <Box>
                                 <Typography variant="h5" sx={{
@@ -496,7 +349,159 @@ const MerchandiseCreationPage = () => {
                         </Box>
                     </Box>
 
-                    <Box sx={{ width: '100%', mb: 2 }}>
+                    {images.length > 0 && (
+                        <Box sx={{ width: '100%', mb: 1 }}>
+                            <Box sx={{ width: '100%', position: 'relative' }}>
+                                <Paper
+                                    elevation={2}
+                                    sx={{
+                                        p: 1.5,
+                                        borderRadius: 3,
+                                        overflow: 'hidden',
+                                        position: 'relative',
+                                        height: 300,
+                                        display: 'flex',
+                                        justifyContent: 'center',
+                                        background: `linear-gradient(135deg, rgba(250, 250, 250, 0.5), ${theme.palette.common.white})`
+                                    }}
+                                >
+                                    <Box
+                                        component="img"
+                                        src={`data:image/jpeg;base64,${images[currentImageIndex].preview}`}
+                                        alt={`Merchandise Image ${currentImageIndex + 1}`}
+                                        sx={{
+                                            maxWidth: '100%',
+                                            maxHeight: '90%',
+                                            objectFit: 'contain',
+                                            borderRadius: '10px'
+                                        }}
+                                    />
+
+                                    {currentImageIndex !== 0 && (
+                                        <IconButton
+                                            sx={{
+                                                position: 'absolute',
+                                                left: 10,
+                                                top: '50%',
+                                                transform: 'translateY(-50%)',
+                                                bgcolor: 'background.paper',
+                                                boxShadow: 2,
+                                                '&:hover': { bgcolor: 'background.paper', opacity: 0.9 }
+                                            }}
+                                            onClick={handlePrevImage}
+                                        >
+                                            <ChevronLeftIcon />
+                                        </IconButton>
+                                    )}
+
+                                    {(images.length !== 1 && currentImageIndex !== images.length - 1) && (
+                                        <IconButton
+                                            sx={{
+                                                position: 'absolute',
+                                                right: 10,
+                                                top: '50%',
+                                                transform: 'translateY(-50%)',
+                                                bgcolor: 'background.paper',
+                                                boxShadow: 2,
+                                                '&:hover': { bgcolor: 'background.paper', opacity: 0.9 }
+                                            }}
+                                            onClick={handleNextImage}
+                                        >
+                                            <ChevronRightIcon />
+                                        </IconButton>
+                                    )}
+
+                                    <Box
+                                        sx={{
+                                            position: 'absolute',
+                                            top: 10,
+                                            right: 15,
+                                            display: 'flex',
+                                            gap: 1,
+                                        }}
+                                    >
+                                        <IconButton
+                                            size="small"
+                                            onClick={() => handleRemoveImage(currentImageIndex)}
+                                            sx={{
+                                                bgcolor: 'error.main',
+                                                color: 'white',
+                                                '&:hover': {
+                                                    bgcolor: 'error.dark'
+                                                }
+                                            }}
+                                        >
+                                            <DeleteIcon fontSize="small" />
+                                        </IconButton>
+                                        <IconButton
+                                            size="small"
+                                            component="label"
+                                            sx={{
+                                                bgcolor: 'info.main',
+                                                color: 'white',
+                                                '&:hover': {
+                                                    bgcolor: 'info.dark'
+                                                }
+                                            }}
+                                        >
+                                            <EditIcon fontSize="small" />
+                                            <input
+                                                type="file"
+                                                accept="image/*"
+                                                hidden
+                                                onChange={(e) => handleReplaceImage(currentImageIndex, e)}
+                                            />
+                                        </IconButton>
+                                    </Box>
+
+                                    <Box
+                                        sx={{
+                                            position: 'absolute',
+                                            bottom: 16,
+                                            left: '50%',
+                                            transform: 'translateX(-50%)',
+                                            display: 'flex',
+                                            gap: 1
+                                        }}
+                                    >
+                                        {images.length !== 1 && images.map((_, index) => (
+                                            <Box
+                                                key={index}
+                                                sx={{
+                                                    width: 7,
+                                                    height: 7,
+                                                    borderRadius: '50%',
+                                                    bgcolor: index === currentImageIndex ? 'primary.main' : 'grey.300',
+                                                    cursor: 'pointer',
+                                                    transition: 'all 0.2s',
+                                                    '&:hover': {
+                                                        transform: 'scale(1.2)',
+                                                        bgcolor: index === currentImageIndex ? 'primary.dark' : 'grey.400'
+                                                    }
+                                                }}
+                                                onClick={() => setCurrentImageIndex(index)}
+                                            />
+                                        ))}
+                                    </Box>
+                                </Paper>
+
+                                <Typography
+                                    variant="body2"
+                                    sx={{
+                                        fontSize: "12px",
+                                        textAlign: 'center',
+                                        mt: 2,
+                                        color: 'text.secondary',
+                                        fontStyle: 'italic'
+                                    }}
+                                >
+                                    Image {currentImageIndex + 1} of {images.length}
+                                </Typography>
+                            </Box>
+                        </Box>
+                    )}
+
+                    <Box sx={{ width: '100%', my: 2 }}>
                         <Button
                             variant="contained"
                             component="label"
@@ -592,6 +597,45 @@ const MerchandiseCreationPage = () => {
                                 variant="outlined"
                                 InputProps={{
                                     sx: { borderRadius: 2, fontSize: "13px" }
+                                }}
+                            />
+                        </Grid>
+
+                        <Grid width="100%">
+                            <Box sx={{ mb: 1 }}>
+                                <Typography sx={{
+                                    fontSize: "16px",
+                                    fontWeight: 600,
+                                    display: 'flex',
+                                    alignItems: 'center'
+                                }}>
+                                    💎 Diamonds Required per Redemption <RequiredAsterisk />
+                                </Typography>
+                                <Typography variant="body2" color='text.secondary' fontSize="12px" mt={0.5}>
+                                    ⚠️ Enter the number of diamonds students must use to redeem this merchandise.
+                                </Typography>
+                            </Box>
+                            <TextField
+                                fullWidth
+                                placeholder='Enter the number of diamonds required for redemption...'
+                                value={diamondsNeeded ? diamondsNeeded : ''}
+                                onChange={(e) => setDiamondsNeeded(e.target.value)}
+                                error={!!errors.diamondsToRedeem}
+                                helperText={errors.diamondsToRedeem}
+                                type="number"
+                                required
+                                variant="outlined"
+                                InputProps={{
+                                    sx: {
+                                        borderRadius: 2,
+                                        fontSize: "13px",
+                                        '& input::-webkit-outer-spin-button, & input::-webkit-inner-spin-button': {
+                                            display: 'none'
+                                        },
+                                        '& input[type=number]': {
+                                            MozAppearance: 'textfield'
+                                        },
+                                    },
                                 }}
                             />
                         </Grid>

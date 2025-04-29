@@ -1,43 +1,37 @@
-import {
-    CheckCircleOutline as CheckCircleOutlineIcon,
-    EmojiEvents as EmojiEventsIcon,
-    Games as GamesIcon,
-    HourglassEmpty as HourglassEmptyIcon,
-    Numbers as NumbersIcon
-} from '@mui/icons-material';
-import { alpha, Avatar, Box, Chip, LinearProgress, Typography, useTheme } from '@mui/material';
+import React, { useEffect, useState } from 'react'
+import { alpha, Avatar, Box, Button, Chip, Paper, Typography, useTheme } from '@mui/material';
 import { DataGrid } from '@mui/x-data-grid';
-import React, { useEffect } from 'react';
-import EmptyTableRows from '../../General/EmptyTableRows';
 
-const QuestProgressTable = ({ activeTab, progress, questType = '', completionTarget = 0, isLoading }) => {
+import {
+    Block as BlockIcon,
+    Numbers as NumbersIcon,
+    QuestionMark as QuestionMarkIcon,
+    Redeem as RedeemIcon,
+    TaskAlt as TaskAltIcon,
+    Undo as UndoIcon,
+} from '@mui/icons-material';
+
+import Loader from '../General/Loader';
+
+import { db } from '../../utils/firebaseConfig';
+import { collection, query, where, orderBy, onSnapshot, doc, getDoc, updateDoc } from 'firebase/firestore';
+import EmptyTableRows from '../General/EmptyTableRows';
+
+const RedemptionListTable = ({ redemptionList, merchandiseCategory, activeTab, isLoading }) => {
     const theme = useTheme();
 
-    const FACULTY_MAPPING = {
-        1: "FACA",
-        2: "FBE",
-        3: "FCSHD",
-        4: "FCSIT",
-        5: "FEB",
-        6: "FELC",
-        7: "FENG",
-        8: "FMSH",
-        9: "FRST",
-        10: "FSSH",
-    };
-
     const commonHeaderStyle = {
-        height: '40px',
+        height: '46px',
         display: 'flex',
         alignItems: 'center',
-        justifyContent: 'center',
+        justifyContent: 'flex-start',
         px: 1.5,
         borderRadius: '8px',
         bgcolor: alpha(theme.palette.background.default, 0.7),
         mb: 1
     };
 
-    const progressColumns = () => {
+    const redemptionColumns = () => {
         // Common theme colors for consistent styling
         const primaryLight = alpha(theme.palette.primary.main, 0.08);
         const primaryMedium = alpha(theme.palette.primary.main, 0.15);
@@ -130,7 +124,7 @@ const QuestProgressTable = ({ activeTab, progress, questType = '', completionTar
                 )
             },
             {
-                field: 'fullName',
+                field: 'studentName',
                 headerName: 'Student',
                 flex: 1,
                 headerAlign: 'center',
@@ -138,13 +132,13 @@ const QuestProgressTable = ({ activeTab, progress, questType = '', completionTar
                 renderHeader: () => (
                     <Box sx={enhancedHeaderStyle}>
                         <Typography {...headerTypographyStyle}>
-                            Participant
+                            Student
                         </Typography>
                     </Box>
                 ),
                 renderCell: (params) => {
                     const { row } = params;
-                    const { fullName, profilePicture } = row;
+                    const { studentName, profilePicture } = row;
 
                     return (
                         <Box sx={{
@@ -211,7 +205,7 @@ const QuestProgressTable = ({ activeTab, progress, questType = '', completionTar
                                         maxWidth: '90%'
                                     }}
                                 >
-                                    {fullName}
+                                    {studentName}
                                 </Typography>
                             </Box>
                         </Box>
@@ -219,15 +213,15 @@ const QuestProgressTable = ({ activeTab, progress, questType = '', completionTar
                 }
             },
             {
-                field: 'facultyID',
-                headerName: 'Faculty',
-                width: 120,
+                field: 'redemptionID',
+                headerName: 'Redemption ID',
+                width: 200,
                 headerAlign: 'center',
                 align: 'center',
                 renderHeader: () => (
                     <Box sx={enhancedHeaderStyle}>
                         <Typography {...headerTypographyStyle}>
-                            Faculty
+                            Redemption ID
                         </Typography>
                     </Box>
                 ),
@@ -235,14 +229,88 @@ const QuestProgressTable = ({ activeTab, progress, questType = '', completionTar
                     <Box
                         sx={{
                             width: '100%',
-                            py: 2,
+                            height: '100%',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            borderRadius: '6px',
+                            transition: 'all 0.2s ease',
+                        }}
+                    >
+                        <Typography
+                            variant="body1"
+                            fontWeight="600"
+                            fontSize="0.85rem"
+                        >
+                            {params.value}
+                        </Typography>
+                    </Box>
+                )
+            },
+            {
+                field: 'quantity',
+                headerName: 'Quantity',
+                width: 100,
+                headerAlign: 'center',
+                align: 'center',
+                renderHeader: () => (
+                    <Box sx={enhancedHeaderStyle}>
+                        <Typography {...headerTypographyStyle}>
+                            Quantity
+                        </Typography>
+                    </Box>
+                ),
+                renderCell: (params) => (
+                    <Box
+                        sx={{
+                            width: '100%',
+                            height: '100%',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            borderRadius: '6px',
+                            transition: 'all 0.2s ease',
+                        }}
+                    >
+                        <Typography
+                            variant="body1"
+                            fontWeight="600"
+                            fontSize="0.85rem"
+                        >
+                            {params.value}
+                        </Typography>
+                    </Box>
+                )
+            }
+        ];
+
+        // Add size column if merchandiseCategory is Clothing
+        if (merchandiseCategory === "Clothing") {
+            baseColumns.splice(4, 0, {
+                field: 'selectedSize',
+                headerName: 'Size',
+                width: 100,
+                headerAlign: 'center',
+                align: 'center',
+                renderHeader: () => (
+                    <Box sx={enhancedHeaderStyle}>
+                        <Typography {...headerTypographyStyle}>
+                            Size
+                        </Typography>
+                    </Box>
+                ),
+                renderCell: (params) => (
+                    <Box
+                        sx={{
+                            width: '100%',
+                            height: '100%',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
                         }}
                     >
                         <Chip
-                            label={FACULTY_MAPPING[params.value]}
+                            label={params.value}
                             variant="outlined"
                             size="small"
                             sx={{
@@ -260,156 +328,196 @@ const QuestProgressTable = ({ activeTab, progress, questType = '', completionTar
                         />
                     </Box>
                 )
-            },
-        ];
+            });
+        }
 
-        if (progress.every(p => p.isCompleted === true)) {
-            baseColumns.splice(3, 0, {
-                field: 'rewardsClaimed',
-                headerName: 'Rewards Claimed',
+        const columnLength = baseColumns.length;
+
+        if (activeTab === 0) {
+            baseColumns.splice(columnLength, 0, {
+                field: 'actions',
+                type: 'actions',
+                headerName: 'Action',
                 width: 200,
                 headerAlign: 'center',
                 align: 'center',
+                sortable: false,
+                filterable: false,
                 renderHeader: () => (
                     <Box sx={enhancedHeaderStyle}>
                         <Typography {...headerTypographyStyle}>
-                            Rewards Claimed
+                            Action
                         </Typography>
                     </Box>
                 ),
                 renderCell: (params) => (
-                    <Box
-                        sx={{
-                            width: '100%',
-                            py: 2,
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                        }}
-                    >
-                        <Chip
-                            label={params.value ? "Claimed" : "Unclaimed"}
-                            color={params.value ? "success" : "default"}
-                            size="small"
+                    <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+                        <Button
+                            variant='contained'
+                            color="warning"
+                            size='medium'
+                            disableElevation
+                            startIcon={
+                                <Box
+                                    sx={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                    }}
+                                >
+                                    <TaskAltIcon fontSize='small' />
+                                </Box>
+                            }
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                markAsCollected(params.row.id);
+                            }}
                             sx={{
-                                fontWeight: 600,
-                                minWidth: '100px',
-                                fontSize: '0.75rem',
-                                borderRadius: '6px',
-                                '& .MuiChip-label': {
-                                    padding: '0 12px',
-                                },
-                                boxShadow: params.value
-                                    ? `0 2px 5px ${alpha(theme.palette.success.main, 0.25)}`
-                                    : `0 1px 3px ${alpha(theme.palette.grey[400], 0.2)}`,
-                                transition: 'all 0.2s ease',
+                                fontWeight: '600',
+                                whiteSpace: 'nowrap',
+                                minWidth: 'auto',
+                                maxHeight: 30,
+                                py: 1,
+                                px: 2,
+                                borderRadius: '12px',
+                                textTransform: 'none',
+                                transition: 'all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1)',
                                 '&:hover': {
-                                    transform: 'translateY(-2px)',
-                                    boxShadow: params.value
-                                        ? `0 3px 8px ${alpha(theme.palette.success.main, 0.3)}`
-                                        : `0 2px 5px ${alpha(theme.palette.grey[400], 0.3)}`
+                                    transform: 'translateY(-1px)',
+                                    backgroundColor: alpha(theme.palette.warning.main, 0.85)
+                                },
+                                '&:active': {
+                                    transform: 'scale(0.98)',
+                                    transition: 'all 0.1s ease-in-out'
                                 }
                             }}
-                            icon={params.value ?
-                                <CheckCircleOutlineIcon fontSize="small" /> :
-                                <HourglassEmptyIcon fontSize="small" />
-                            }
-                        />
+                        >
+                            <Typography sx={{
+                                fontWeight: 600,
+                                fontSize: '0.75rem',
+                                letterSpacing: '0.01em'
+                            }}>
+                                Mark as Collected
+                            </Typography>
+                        </Button>
                     </Box>
                 )
             });
-        }
-
-        if (questType === "networking" && progress.every(p => p.isCompleted === false)) {
-            baseColumns.splice(3, 0, {
-                field: 'progress',
-                headerName: 'Connections Made',
-                width: 300,
+        } else {
+            baseColumns.splice(columnLength, 0, {
+                field: 'actions',
+                type: 'actions',
+                headerName: 'Action',
+                width: 200,
                 headerAlign: 'center',
                 align: 'center',
+                sortable: false,
+                filterable: false,
                 renderHeader: () => (
                     <Box sx={enhancedHeaderStyle}>
                         <Typography {...headerTypographyStyle}>
-                            Connections Made
+                            Action
                         </Typography>
                     </Box>
                 ),
-                renderCell: (params) => {
-                    // Calculate percentage for progress display
-                    const target = completionTarget; // Assuming target is 5 connections
-                    const percentage = Math.min(100, (params.value / target) * 100);
-
-                    return (
-                        <Box
+                renderCell: (params) => (
+                    <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+                        <Button
+                            variant='contained'
+                            color="error"
+                            size='medium'
+                            disableElevation
+                            startIcon={
+                                <Box
+                                    sx={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                    }}
+                                >
+                                    <TaskAltIcon fontSize='small' />
+                                </Box>
+                            }
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                markAsUncollected(params.row.id);
+                            }}
                             sx={{
-                                width: '90%',
-                                py: 1.5,
-                                display: 'flex',
-                                flexDirection: 'column',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                gap: 0.5
+                                fontWeight: '600',
+                                whiteSpace: 'nowrap',
+                                minWidth: 'auto',
+                                maxHeight: 30,
+                                py: 1,
+                                px: 2,
+                                borderRadius: '12px',
+                                textTransform: 'none',
+                                transition: 'all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1)',
+                                '&:hover': {
+                                    backgroundColor: alpha(theme.palette.error.main, 0.85)
+                                },
+                                '&:active': {
+                                    transform: 'scale(0.98)',
+                                    transition: 'all 0.1s ease-in-out'
+                                }
                             }}
                         >
-                            <Box sx={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'space-between',
-                                width: '100%',
-                                mb: 0.5
+                            <Typography sx={{
+                                fontWeight: 600,
+                                fontSize: '0.75rem',
+                                letterSpacing: '0.01em'
                             }}>
-                                <Typography
-                                    variant="body2"
-                                    fontWeight="600"
-                                    color={theme.palette.primary.main}
-                                >
-                                    {params.value} / {target}
-                                </Typography>
-                                <Typography
-                                    variant="caption"
-                                    fontWeight="500"
-                                    color="text.secondary"
-                                >
-                                    {percentage.toFixed(0)}%
-                                </Typography>
-                            </Box>
-                            <LinearProgress
-                                variant="determinate"
-                                value={percentage}
-                                sx={{
-                                    width: '100%',
-                                    height: 8,
-                                    borderRadius: 2,
-                                    backgroundColor: alpha(theme.palette.primary.main, 0.1),
-                                    '& .MuiLinearProgress-bar': {
-                                        borderRadius: 2,
-                                        backgroundImage: `linear-gradient(90deg, ${theme.palette.primary.main}, ${theme.palette.primary.light})`,
-                                        boxShadow: `0 1px 3px ${alpha(theme.palette.primary.main, 0.3)}`
-                                    }
-                                }}
-                            />
-                        </Box>
-                    );
-                }
+                                Mark as Uncollected
+                            </Typography>
+                        </Button>
+                    </Box>
+                )
             });
         }
 
         return baseColumns;
     };
 
+    const markAsUncollected = async (id) => {
+        try {
+            const redemptionRef = doc(db, "redemption", id);
+
+            await updateDoc(redemptionRef, {
+                collected: false,
+            })
+        } catch (error) {
+            console.error("Error when undoing redemption collected status", error)
+        }
+    }
+
+    const markAsCollected = async (id) => {
+        try {
+            const redemptionRef = doc(db, "redemption", id);
+
+            await updateDoc(redemptionRef, {
+                collected: true,
+            })
+        } catch (error) {
+            console.error("Error when updating redemption collected status", error)
+        }
+    }
+
+    if (isLoading) {
+        return (
+            <Loader loadingText='Loading redemption list...' />
+        );
+    }
+
     return (
         <Box
             sx={{
-                width: '100%',
-                borderRadius: '16px',
+                width: 'auto',
+                borderRadius: '20px',
                 overflow: 'hidden',
-                boxShadow: (theme) => `0 10px 30px ${alpha(theme.palette.common.black, 0.07)}`,
-                background: (theme) => `linear-gradient(165deg, 
-            ${alpha(theme.palette.background.paper, 0.95)}, 
-            ${alpha(theme.palette.background.paper, 1)} 60%,
-            ${alpha(theme.palette.primary.light, 0.05)} 120%)`,
-                border: (theme) => `1px solid ${alpha(theme.palette.divider, 0.06)}`,
-                backdropFilter: 'blur(12px)',
+                boxShadow: (theme) => `0 20px 40px ${alpha(theme.palette.common.black, 0.08)}`,
+                background: (theme) => `linear-gradient(145deg, 
+                                    ${alpha(theme.palette.background.paper, 0.98)}, 
+                                    ${alpha(theme.palette.background.paper, 1)} 50%,
+                                    ${alpha(theme.palette.primary.light, 0.07)} 130%)`,
+                border: (theme) => `1px solid ${alpha(theme.palette.divider, 0.05)}`,
+                backdropFilter: 'blur(16px)',
                 position: 'relative',
                 '&::before': {
                     content: '""',
@@ -417,18 +525,18 @@ const QuestProgressTable = ({ activeTab, progress, questType = '', completionTar
                     top: 0,
                     left: 0,
                     right: 0,
-                    height: '4px',
+                    height: '3px',
                     background: (theme) => `linear-gradient(90deg, 
-                ${theme.palette.primary.main}, 
-                ${alpha(theme.palette.primary.light, 0.8)} 70%, 
-                ${alpha(theme.palette.background.paper, 0.3)})`,
+                                                ${alpha(theme.palette.primary.main, 0.2)}, 
+                                                ${alpha(theme.palette.primary.light, 0.9)} 50%, 
+                                                ${alpha(theme.palette.background.paper, 0.6)})`,
                     zIndex: 5
                 }
             }}
         >
             <Box
                 sx={{
-                    height: 400,
+                    height: 450,
                     width: '100%',
                     position: 'relative',
                     '& .MuiDataGrid-root': {
@@ -660,8 +768,8 @@ const QuestProgressTable = ({ activeTab, progress, questType = '', completionTar
                 }}
             >
                 <DataGrid
-                    rows={progress}
-                    columns={progressColumns()}
+                    rows={redemptionList}
+                    columns={redemptionColumns()}
                     loading={isLoading}
                     disableRowSelectionOnClick
                     disableColumnResize={true}
@@ -679,17 +787,17 @@ const QuestProgressTable = ({ activeTab, progress, questType = '', completionTar
                             if (activeTab === 0) {
                                 return (
                                     <EmptyTableRows
-                                        icon={<GamesIcon />}
-                                        title="No One's Finished... Yet"
-                                        subtitle="Students haven't completed this quest. You can remind them to check it out!"
+                                        icon={<BlockIcon />}
+                                        title="No Pending Collections"
+                                        subtitle="All students have collected their merchandise, or no recipients have been assigned yet."
                                     />
                                 )
                             } else {
                                 return (
                                     <EmptyTableRows
-                                        icon={<EmojiEventsIcon />}
-                                        title="Quest Conquered"
-                                        subtitle="All eligible students have completed this challenge."
+                                        icon={<QuestionMarkIcon />}
+                                        title="No Collections Yet"
+                                        subtitle="No students have come to collect their merchandise or been added to the collected list."
                                     />
                                 )
                             }
@@ -744,7 +852,7 @@ const QuestProgressTable = ({ activeTab, progress, questType = '', completionTar
                 />
             </Box>
         </Box>
-    )
-}
+    );
+};
 
-export default QuestProgressTable;
+export default RedemptionListTable;

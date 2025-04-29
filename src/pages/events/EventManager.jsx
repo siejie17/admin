@@ -1,22 +1,27 @@
 import React, { useState, useEffect } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
 import { Box, Tabs, Tab, Typography, IconButton, Tooltip, Card, Button, useTheme, useMediaQuery, Stack } from '@mui/material';
 import {
-    ArrowBack as ArrowBackIcon, BoyOutlined as BoyOutlinedIcon,
-    Cancel as CancelIcon, EventBusy as EventBusyIcon,
-    FeedOutlined as FeedOutlinedIcon, InfoOutlined as InfoOutlinedIcon,
-    PlayArrow as PlayArrowIcon, QrCode as QrCodeIcon,
-    QrCode2Outlined as QrCode2OutlinedIcon, SportsEsportsOutlined as SportsEsportsOutlinedIcon
+    ArrowBack as ArrowBackIcon, 
+    BoyOutlined as BoyOutlinedIcon,
+    Cancel as CancelIcon, 
+    EventBusy as EventBusyIcon,
+    FeedOutlined as FeedOutlinedIcon, 
+    InfoOutlined as InfoOutlinedIcon,
+    PlayArrow as PlayArrowIcon, 
+    QrCode as QrCodeIcon,
+    QrCode2Outlined as QrCode2OutlinedIcon, 
+    SportsEsportsOutlined as SportsEsportsOutlinedIcon
 } from '@mui/icons-material';
 
 import ActionsDialog from '../../components/General/ActionsDialog';
-import EventDetailsManager from '../../components/Events/Details/EventDetailsManager';
-import QuestManager from '../../components/Events/QuestManager';
-import ParticipantManager from '../../components/Events/ParticipantManager';
-import AttendanceManager from '../../components/Events/AttendanceManager';
+import DetailsManager from '../../components/Events/Details/DetailsManager';
+import QuestManager from '../../components/Events/Quest/QuestManager';
+import ParticipantManager from '../../components/Events/Participant/ParticipantManager';
+import AttendanceManager from '../../components/Events/Attendance/AttendanceManager';
 import FeedbackManager from '../../components/Events/Feedback/FeedbackManager';
 
 import CryptoJS from 'crypto-js';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 import { doc, getDoc, onSnapshot, updateDoc } from 'firebase/firestore';
 import { db } from '../../utils/firebaseConfig';
@@ -28,10 +33,6 @@ const EventManager = () => {
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
     const isExtraSmall = useMediaQuery('(max-width:480px)');
-
-    // Menu state for mobile dropdown
-    const [mobileMenuAnchor, setMobileMenuAnchor] = useState(null);
-    const menuOpen = Boolean(mobileMenuAnchor);
 
     const [eventName, setEventName] = useState('');
     const [eventStatus, setEventStatus] = useState('');
@@ -167,10 +168,6 @@ const EventManager = () => {
             backgroundColor: 'rgba(0, 0, 0, 0.03)',
             color: 'primary.dark',
         }
-    };
-
-    const handleTabChange = (event, newValue) => {
-        setActiveTab(newValue);
     };
 
     const handleQRShowing = async () => {
@@ -457,7 +454,7 @@ const EventManager = () => {
                 <Box sx={{ width: '100%', borderBottom: '1px solid rgba(176, 174, 174, 0)' }}>
                     <Tabs
                         value={activeTab}
-                        onChange={handleTabChange}
+                        onChange={(event, newValue) => setActiveTab(newValue)}
                         variant={isMobile ? "scrollable" : "fullWidth"}
                         scrollButtons={isMobile ? "auto" : false}
                         aria-label="event-details-tabs"
@@ -500,7 +497,7 @@ const EventManager = () => {
                         aria-labelledby={`merchandise-tab-0`}
                         sx={{ px: 3, minHeight: '100%', height: '100%', overflowY: 'auto' }}
                     >
-                        {activeTab === 0 && <EventDetailsManager eventID={eventID} />}
+                        {activeTab === 0 && <DetailsManager eventID={eventID} />}
                     </Box>
 
                     <Box
@@ -520,7 +517,7 @@ const EventManager = () => {
                         aria-labelledby={`event-tab-2`}
                         sx={{ p: 3 }}
                     >
-                        {activeTab === 2 && <ParticipantManager eventID={eventID} />}
+                        {activeTab === 2 && <ParticipantManager eventID={eventID} eventName={eventName.replace(/\s+/g, '-')} />}
                     </Box>
 
                     <Box
@@ -530,7 +527,7 @@ const EventManager = () => {
                         aria-labelledby={`event-tab-3`}
                         sx={{ px: 3, minHeight: '100%', height: '100%', overflowY: 'auto' }}
                     >
-                        {activeTab === 3 && <AttendanceManager eventID={eventID} />}
+                        {activeTab === 3 && <AttendanceManager eventID={eventID} eventName={eventName.replace(/\s+/g, '-')} />}
                     </Box>
 
                     <Box
@@ -540,7 +537,7 @@ const EventManager = () => {
                         aria-labelledby={`event-tab-4`}
                         sx={{ px: 3, minHeight: '100%', height: '100%', overflowY: 'auto' }}
                     >
-                        {activeTab === 4 && <FeedbackManager eventID={eventID} eventName={eventName} />}
+                        {activeTab === 4 && <FeedbackManager eventID={eventID} eventName={eventName.replace(/\s+/g, '-')} />}
                     </Box>
                 </Box>
                 <ActionsDialog dialogOpen={dialogOpen} setDialogOpen={setDialogOpen} dialogContent={dialogContent} />

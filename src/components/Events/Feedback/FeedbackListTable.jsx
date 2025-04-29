@@ -1,14 +1,15 @@
-import { Numbers as NumbersIcon } from '@mui/icons-material';
+import { Feedback as FeedbackIcon, Numbers as NumbersIcon } from '@mui/icons-material';
 import { alpha, Avatar, Box, Typography, useTheme } from '@mui/material';
 import { DataGrid } from '@mui/x-data-grid';
 import React from 'react';
 import Loader from '../../General/Loader';
+import EmptyTableRows from '../../General/EmptyTableRows';
 
 const FeedbackListTable = ({ feedbackList, isLoading }) => {
     const theme = useTheme();
 
     const commonHeaderStyle = {
-        height: '40px',
+        height: '30px',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -112,8 +113,7 @@ const FeedbackListTable = ({ feedbackList, isLoading }) => {
             headerName: 'Participant',
             flex: 1,
             headerAlign: 'center',
-            align: 'left',
-            minWidth: 200,
+            minWidth: 220,
             renderHeader: () => (
                 <Box sx={enhancedHeaderStyle}>
                     <Typography {...headerTypographyStyle}>
@@ -130,10 +130,11 @@ const FeedbackListTable = ({ feedbackList, isLoading }) => {
                         display: 'flex',
                         alignItems: 'center',
                         width: '100%',
-                        p: 1.5,
+                        py: 1.5,
+                        pl: 1,
                         gap: 1.5,
-                        overflow: 'hidden',
                         transition: 'all 0.2s ease',
+                        overflow: 'hidden',
                         '&:hover': {
                             transform: 'translateX(4px)',
                         }
@@ -142,6 +143,7 @@ const FeedbackListTable = ({ feedbackList, isLoading }) => {
                             sx={{
                                 width: 25,
                                 height: 25,
+                                flexShrink: 0,
                                 bgcolor: primaryMedium,
                                 color: theme.palette.primary.dark,
                                 fontWeight: 600,
@@ -170,11 +172,10 @@ const FeedbackListTable = ({ feedbackList, isLoading }) => {
                         </Avatar>
                         <Box sx={{
                             flexGrow: 1,
+                            minWidth: 0,
                             borderLeft: `3px solid ${alpha(theme.palette.primary.main, 0)}`,
                             pl: 1,
                             transition: 'all 0.2s ease',
-                            width: '100%', // Add this
-                            minWidth: 0,
                             '&:hover': {
                                 borderLeft: `3px solid ${alpha(theme.palette.primary.main, 0.6)}`,
                             }
@@ -185,11 +186,11 @@ const FeedbackListTable = ({ feedbackList, isLoading }) => {
                                 color="text.primary"
                                 sx={{
                                     lineHeight: 1.2,
-                                    fontSize: '0.8rem',
+                                    fontSize: '0.75rem',
                                     overflow: 'hidden',
                                     textOverflow: 'ellipsis',
                                     whiteSpace: 'nowrap',
-                                    maxWidth: '90%'
+                                    maxWidth: '100%'
                                 }}
                             >
                                 {participantName}
@@ -345,7 +346,7 @@ const FeedbackListTable = ({ feedbackList, isLoading }) => {
         >
             <Box
                 sx={{
-                    height: 300,
+                    height: 350,
                     width: '100%',
                     position: 'relative',
                     '& .MuiDataGrid-root': {
@@ -637,6 +638,15 @@ const FeedbackListTable = ({ feedbackList, isLoading }) => {
                                 marginBottom: 1,
                             },
                         }
+                    }}
+                    slots={{
+                        noRowsOverlay: () => (
+                            <EmptyTableRows 
+                                icon={<FeedbackIcon />}
+                                title="Waiting for Feedback"
+                                subtitle="No feedback has been submitted. Encourage students to share their thoughts."
+                            />
+                        )
                     }}
                 />
             </Box>

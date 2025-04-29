@@ -1,7 +1,7 @@
 import React from 'react';
-import { Box, Stack, Typography, useTheme } from '@mui/material';
+import { Stack, Typography, useTheme } from '@mui/material';
 
-const LikertScaleItem = ({ value, label, icon, color }) => {
+const LikertScaleItem = ({ value, label, color }) => {
     const theme = useTheme();
 
     return (
@@ -16,20 +16,6 @@ const LikertScaleItem = ({ value, label, icon, color }) => {
                 borderRadius: 2,
             }}
         >
-            {/* Icon at top */}
-            {/* <Box
-                sx={{
-                    color: color,
-                    display: 'flex',
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    height: 40
-                }}
-            >
-                {React.cloneElement(icon, { sx: { fontSize: '1.25rem' } })}
-            </Box> */}
-
-            {/* Number in middle */}
             <Typography
                 variant="h6"
                 sx={{
@@ -40,8 +26,6 @@ const LikertScaleItem = ({ value, label, icon, color }) => {
             >
                 {value}
             </Typography>
-
-            {/* Label at bottom */}
             <Typography
                 variant="body2"
                 sx={{

@@ -1,11 +1,12 @@
 import { Alert, alpha, Avatar, Box, Button, Chip, Snackbar, Typography, useTheme } from '@mui/material';
-import { InboxOutlined, Numbers as NumbersIcon, TaskAlt as TaskAltIcon } from '@mui/icons-material';
+import { CheckCircleOutline as CheckCircleOutlineIcon, GroupOff as GroupOffIcon, Numbers as NumbersIcon, TaskAlt as TaskAltIcon } from '@mui/icons-material';
 import React, { useState } from 'react';
 import { DataGrid } from '@mui/x-data-grid';
 import { collection, doc, getDocs, increment, query, serverTimestamp, updateDoc, where } from 'firebase/firestore';
 import { db } from '../../../utils/firebaseConfig';
+import EmptyTableRows from '../../General/EmptyTableRows';
 
-const AttendanceListTable = ({ participants, eventID = "", isLoading }) => {
+const AttendanceListTable = ({ participants, eventID = "", activeTab, isLoading }) => {
     const theme = useTheme();
 
     const [snackbarOpen, setSnackbarOpen] = useState(false);
@@ -525,7 +526,7 @@ const AttendanceListTable = ({ participants, eventID = "", isLoading }) => {
         >
             <Box
                 sx={{
-                    height: 300,
+                    height: 350,
                     width: '100%',
                     position: 'relative',
                     '& .MuiDataGrid-root': {
@@ -774,60 +775,25 @@ const AttendanceListTable = ({ participants, eventID = "", isLoading }) => {
                     getRowId={(row) => row.id}
                     getRowHeight={() => 50}
                     slots={{
-                        noRowsOverlay: () => (
-                            <Box
-                                sx={{
-                                    display: 'flex',
-                                    flexDirection: 'column',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    height: '100%',
-                                    px: '24px',
-                                    py: '12px'
-                                }}
-                            >
-                                <Box
-                                    sx={{
-                                        width: '80px',
-                                        height: '80px',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        borderRadius: '50%',
-                                        backgroundColor: (theme) => alpha(theme.palette.primary.main, 0.08),
-                                        marginBottom: '16px',
-                                    }}
-                                >
-                                    <InboxOutlined
-                                        sx={{
-                                            fontSize: '32px',
-                                            color: (theme) => alpha(theme.palette.primary.main, 0.6),
-                                        }}
+                        noRowsOverlay: () => {
+                            if (activeTab === 0) {
+                                return (
+                                    <EmptyTableRows
+                                        icon={<GroupOffIcon />}
+                                        title="No Attendees"
+                                        subtitle="No students have attended this event yet. Attendance records will show up here once marked."
                                     />
-                                </Box>
-                                <Typography
-                                    variant="h6"
-                                    sx={{
-                                        fontWeight: 600,
-                                        marginBottom: '8px',
-                                        color: 'text.primary',
-                                    }}
-                                >
-                                    {participants.every(participant => participant.isAttended === true) ? "No Attendees Yet" : "No Absentees"}
-                                </Typography>
-                                <Typography
-                                    variant="body2"
-                                    sx={{
-                                        color: 'text.secondary',
-                                        textAlign: 'center',
-                                        maxWidth: '280px',
-                                        marginBottom: '16px',
-                                    }}
-                                >
-                                    All participants attended the event.
-                                </Typography>
-                            </Box>
-                        ),
+                                )
+                            } else {
+                                return (
+                                    <EmptyTableRows
+                                        icon={<CheckCircleOutlineIcon />}
+                                        title="No Absentees"
+                                        subtitle="Great news! All registered students have attended the event."
+                                    />
+                                )
+                            }
+                        }
                     }}
                     sx={{
                         '& .MuiCircularProgress-root': {
