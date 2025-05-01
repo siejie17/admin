@@ -1,131 +1,25 @@
-import { Alert, alpha, Avatar, Box, Button, Chip, Snackbar, Typography, useTheme } from '@mui/material';
-import { CheckCircleOutline as CheckCircleOutlineIcon, FilterListOff as FilterListOffIcon, GroupOff as GroupOffIcon, Numbers as NumbersIcon, TaskAlt as TaskAltIcon } from '@mui/icons-material';
-import React, { useState } from 'react';
+import React from 'react';
+import { alpha, Avatar, Box, Chip, Typography, useTheme } from '@mui/material';
 import { DataGrid } from '@mui/x-data-grid';
-import { collection, doc, getDocs, increment, query, serverTimestamp, updateDoc, where } from 'firebase/firestore';
-import { db } from '../../../utils/firebaseConfig';
-import EmptyTableRows from '../../General/EmptyTableRows';
+import { EmojiEvents as EmojiEventsIcon, FilterListOff as FilterListOffIcon } from '@mui/icons-material';
 
-const AttendanceListTable = ({ participants, eventID = "", activeTab, isLoading }) => {
+import EmptyTableRows from '../General/EmptyTableRows';
+
+const OverviewTable = ({ overviewList, isLoading }) => {
     const theme = useTheme();
 
-    const [snackbarOpen, setSnackbarOpen] = useState(false);
-    const [snackbarContent, setSnackbarContent] = useState({
-        msg: '',
-        type: ''
-    })
-
-    const FACULTY_MAPPING = {
-        1: "FACA",
-        2: "FBE",
-        3: "FCSHD",
-        4: "FCSIT",
-        5: "FEB",
-        6: "FELC",
-        7: "FENG",
-        8: "FMSH",
-        9: "FRST",
-        10: "FSSH",
-    };
-
     const commonHeaderStyle = {
-        height: '40px',
+        height: '46px',
         display: 'flex',
         alignItems: 'center',
-        justifyContent: 'center',
+        justifyContent: 'flex-start',
         px: 1.5,
         borderRadius: '8px',
         bgcolor: alpha(theme.palette.background.default, 0.7),
         mb: 1
     };
 
-    const handleVerifyAttendance = async (studentID, id) => {
-        try {
-            const registrationRef = doc(db, "registration", id);
-
-            await updateDoc(registrationRef, {
-                isAttended: true,
-                attendanceScannedTime: serverTimestamp()
-            });
-
-            const questQuery = query(collection(db, "quest"), where("eventID", "==", eventID));
-            const questSnapshot = await getDocs(questQuery);
-
-            if (questSnapshot.empty) {
-                console.error("Something went wrong when retrieving event quest.");
-                return;
-            }
-
-            const questDoc = questSnapshot.docs[0];
-            const questListID = questDoc.id;
-
-            const questListRef = collection(db, "quest", questListID, "questList");
-            const attendanceQuestQuery = query(questListRef, where("questType", "==", "attendance"));
-            const attendanceQuestSnapshot = await getDocs(attendanceQuestQuery);
-
-            if (attendanceQuestSnapshot.empty) {
-                console.error("Something went wrong when retrieving event attendance quest.");
-                return;
-            }
-
-            const attendanceQuestDoc = attendanceQuestSnapshot.docs[0];
-            const attendanceQuestID = attendanceQuestDoc.id;
-
-            const userQuestQuery = query(collection(db, "questProgress"), where("eventID", "==", eventID), where("studentID", "==", studentID));
-            const userQuestSnapshot = await getDocs(userQuestQuery);
-
-            if (userQuestSnapshot.empty) {
-                console.error("Something went wrong when retrieving user quest list.");
-                return;
-            }
-
-            const userQuestDoc = userQuestSnapshot.docs[0];
-            const userQuestID = userQuestDoc.id;
-
-            console.log(userQuestID, attendanceQuestID);
-
-            const userAttendanceQuestQuery = query(collection(db, "questProgress", userQuestID, "questProgressList"), where("questID", "==", attendanceQuestID));
-            const userAttendanceQuestSnapshot = await getDocs(userAttendanceQuestQuery);
-
-            if (userAttendanceQuestSnapshot.empty) {
-                console.error("Something went wrong when retrieving user attendance quest progress.");
-                return;
-            }
-
-            const userAttendanceQuestDoc = userAttendanceQuestSnapshot.docs[0];
-            const userAttendanceQuestID = userAttendanceQuestDoc.id;
-            const { isCompleted, progress, rewardsClaimed } = userAttendanceQuestDoc.data();
-
-            const userAttendanceQuestRef = doc(db, "questProgress", userQuestID, "questProgressList", userAttendanceQuestID);
-
-            if (!isCompleted && progress === 0 && !rewardsClaimed) {
-                await updateDoc(userAttendanceQuestRef, {
-                    isCompleted: true,
-                    progress: increment(1)
-                })
-
-                setSnackbarContent({
-                    msg: "Student's attendance and the corresponding quest status is updated successfully.",
-                    type: 'success'
-                })
-                setSnackbarOpen(true);
-            } else {
-                setSnackbarContent({
-                    msg: "Student's attendance status is updated successfully.",
-                    type: 'success'
-                })
-                setSnackbarOpen(true);
-            }
-        } catch (err) {
-            setSnackbarContent({
-                msg: "Something went wrong when updating student's attendance and quest status.",
-                type: 'error'
-            })
-            setSnackbarOpen(true);
-        }
-    }
-
-    const attendanceColumns = () => {
+    const overviewColumns = () => {
         // Common theme colors for consistent styling
         const primaryLight = alpha(theme.palette.primary.main, 0.08);
         const primaryMedium = alpha(theme.palette.primary.main, 0.15);
@@ -166,17 +60,14 @@ const AttendanceListTable = ({ participants, eventID = "", activeTab, isLoading 
             {
                 field: 'bil',
                 headerName: '#',
-                width: 80,
+                width: 100,
                 align: 'center',
+                headerAlign: 'center',
                 renderHeader: () => (
-                    <Box sx={{ ...commonHeaderStyle, justifyContent: 'center' }}>
-                        <NumbersIcon
-                            fontSize="small"
-                            sx={{
-                                opacity: 0.8,
-                                color: theme.palette.primary.main
-                            }}
-                        />
+                    <Box sx={enhancedHeaderStyle}>
+                        <Typography {...headerTypographyStyle}>
+                            Rank
+                        </Typography>
                     </Box>
                 ),
                 renderCell: (params) => (
@@ -219,14 +110,14 @@ const AttendanceListTable = ({ participants, eventID = "", activeTab, isLoading 
             },
             {
                 field: 'fullName',
-                headerName: 'Student',
+                headerName: 'Student Name',
                 flex: 1,
                 headerAlign: 'center',
                 minWidth: 220,
                 renderHeader: () => (
                     <Box sx={enhancedHeaderStyle}>
                         <Typography {...headerTypographyStyle}>
-                            Participant
+                            Student
                         </Typography>
                     </Box>
                 ),
@@ -327,45 +218,10 @@ const AttendanceListTable = ({ participants, eventID = "", activeTab, isLoading 
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            borderRadius: '6px',
-                            transition: 'all 0.2s ease',
-                        }}
-                    >
-                        <Typography
-                            variant="body1"
-                            fontWeight="600"
-                            fontSize="0.85rem"
-                        >
-                            {params.value}
-                        </Typography>
-                    </Box>
-                )
-            },
-            {
-                field: 'facultyID',
-                headerName: 'Faculty',
-                width: 120,
-                headerAlign: 'center',
-                align: 'center',
-                renderHeader: () => (
-                    <Box sx={enhancedHeaderStyle}>
-                        <Typography {...headerTypographyStyle}>
-                            Faculty
-                        </Typography>
-                    </Box>
-                ),
-                renderCell: (params) => (
-                    <Box
-                        sx={{
-                            width: '100%',
-                            height: '100%',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
                         }}
                     >
                         <Chip
-                            label={FACULTY_MAPPING[params.value]}
+                            label={params.value}
                             variant="outlined"
                             size="small"
                             sx={{
@@ -385,15 +241,50 @@ const AttendanceListTable = ({ participants, eventID = "", activeTab, isLoading 
                 )
             },
             {
-                field: 'email',
-                headerName: 'Email',
-                minWidth: 250,
+                field: 'registrations',
+                headerName: 'Attended Events',
+                width: 150,
                 headerAlign: 'center',
                 align: 'center',
                 renderHeader: () => (
                     <Box sx={enhancedHeaderStyle}>
                         <Typography {...headerTypographyStyle}>
-                            Email
+                            Attended Events
+                        </Typography>
+                    </Box>
+                ),
+                renderCell: (params) => (
+                    <Box
+                        sx={{
+                            width: '100%',
+                            height: '100%',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            borderRadius: '6px',
+                            transition: 'all 0.2s ease',
+                        }}
+                    >
+                        <Typography
+                            variant="body1"
+                            fontWeight="600"
+                            fontSize="0.85rem"
+                        >
+                            {params.value}
+                        </Typography>
+                    </Box>
+                )
+            },
+            {
+                field: 'totalPointsGained',
+                headerName: 'Total Points Gained',
+                width: 175,
+                headerAlign: 'center',
+                align: 'center',
+                renderHeader: () => (
+                    <Box sx={enhancedHeaderStyle}>
+                        <Typography {...headerTypographyStyle}>
+                            Total Points Gained
                         </Typography>
                     </Box>
                 ),
@@ -419,93 +310,22 @@ const AttendanceListTable = ({ participants, eventID = "", activeTab, isLoading 
                     </Box>
                 )
             }
-        ];
-
-        if (participants.every(participant => participant.isAttended === false)) {
-            baseColumns.splice(5, 0, {
-                field: 'actions',
-                type: 'actions',
-                headerName: 'Action',
-                width: 280,
-                headerAlign: 'center',
-                align: 'center',
-                sortable: false,
-                filterable: false,
-                renderHeader: () => (
-                    <Box sx={enhancedHeaderStyle}>
-                        <Typography {...headerTypographyStyle}>
-                            Actions
-                        </Typography>
-                    </Box>
-                ),
-                renderCell: (params) => (
-                    <Box sx={{ display: 'flex', justifyContent: 'center' }}>
-                        <Button
-                            variant='contained'
-                            color="warning"
-                            size='medium'
-                            disableElevation
-                            startIcon={
-                                <Box
-                                    sx={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                    }}
-                                >
-                                    <TaskAltIcon fontSize='small' />
-                                </Box>
-                            }
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                handleVerifyAttendance(params.row.studentID, params.row.id);
-                            }}
-                            sx={{
-                                fontWeight: '600',
-                                whiteSpace: 'nowrap',
-                                minWidth: 'auto',
-                                maxHeight: 30,
-                                py: 1,
-                                px: 2,
-                                borderRadius: '12px',
-                                textTransform: 'none',
-                                transition: 'all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1)',
-                                '&:hover': {
-                                    transform: 'translateY(-1px)',
-                                    backgroundColor: alpha(theme.palette.warning.main, 0.85)
-                                },
-                                '&:active': {
-                                    transform: 'scale(0.98)',
-                                    transition: 'all 0.1s ease-in-out'
-                                }
-                            }}
-                        >
-                            <Typography sx={{
-                                fontWeight: 600,
-                                fontSize: '0.75rem',
-                                letterSpacing: '0.01em'
-                            }}>
-                                Manual Attendance
-                            </Typography>
-                        </Button>
-                    </Box>
-                )
-            });
-        }
+        ]
 
         return baseColumns;
-    }
+    };
 
     return (
         <Box
             sx={{
-                width: '100%',
+                width: 'auto',
                 borderRadius: '20px',
                 overflow: 'hidden',
                 boxShadow: (theme) => `0 20px 40px ${alpha(theme.palette.common.black, 0.08)}`,
                 background: (theme) => `linear-gradient(145deg, 
-                            ${alpha(theme.palette.background.paper, 0.98)}, 
-                            ${alpha(theme.palette.background.paper, 1)} 50%,
-                            ${alpha(theme.palette.primary.light, 0.07)} 130%)`,
+                                    ${alpha(theme.palette.background.paper, 0.98)}, 
+                                    ${alpha(theme.palette.background.paper, 1)} 50%,
+                                    ${alpha(theme.palette.primary.light, 0.07)} 130%)`,
                 border: (theme) => `1px solid ${alpha(theme.palette.divider, 0.05)}`,
                 backdropFilter: 'blur(16px)',
                 position: 'relative',
@@ -517,16 +337,16 @@ const AttendanceListTable = ({ participants, eventID = "", activeTab, isLoading 
                     right: 0,
                     height: '3px',
                     background: (theme) => `linear-gradient(90deg, 
-                                                    ${alpha(theme.palette.primary.main, 0.2)}, 
-                                                    ${alpha(theme.palette.primary.light, 0.9)} 50%, 
-                                                    ${alpha(theme.palette.background.paper, 0.6)})`,
+                                                ${alpha(theme.palette.primary.main, 0.2)}, 
+                                                ${alpha(theme.palette.primary.light, 0.9)} 50%, 
+                                                ${alpha(theme.palette.background.paper, 0.6)})`,
                     zIndex: 5
                 }
             }}
         >
             <Box
                 sx={{
-                    height: 350,
+                    height: 600,
                     width: '100%',
                     position: 'relative',
                     '& .MuiDataGrid-root': {
@@ -544,8 +364,8 @@ const AttendanceListTable = ({ participants, eventID = "", activeTab, isLoading 
                             right: 0,
                             height: '20px',
                             background: (theme) => `linear-gradient(to top, 
-                                        ${alpha(theme.palette.background.paper, 1)}, 
-                                        ${alpha(theme.palette.background.paper, 0)})`,
+                                                    ${alpha(theme.palette.background.paper, 1)}, 
+                                                    ${alpha(theme.palette.background.paper, 0)})`,
                             pointerEvents: 'none',
                             zIndex: 3
                         }
@@ -564,10 +384,10 @@ const AttendanceListTable = ({ participants, eventID = "", activeTab, isLoading 
                             right: '6px',
                             height: '1px',
                             background: (theme) => `linear-gradient(90deg, 
-                                        ${alpha(theme.palette.divider, 0)}, 
-                                        ${alpha(theme.palette.divider, 0.25)} 20%, 
-                                        ${alpha(theme.palette.divider, 0.25)} 80%, 
-                                        ${alpha(theme.palette.divider, 0)})`,
+                                                    ${alpha(theme.palette.divider, 0)}, 
+                                                    ${alpha(theme.palette.divider, 0.25)} 20%, 
+                                                    ${alpha(theme.palette.divider, 0.25)} 80%, 
+                                                    ${alpha(theme.palette.divider, 0)})`,
                         }
                     },
                     '& .MuiDataGrid-columnHeaderTitle': {
@@ -592,9 +412,7 @@ const AttendanceListTable = ({ participants, eventID = "", activeTab, isLoading 
                         display: 'flex',
                         justifyContent: 'center',
                         '&:hover': {
-                            backgroundColor: (theme) => alpha(theme.palette.primary.main, 0.05),
                             transform: 'translateY(-1px) scale(1.005)',
-                            boxShadow: (theme) => `0 8px 20px ${alpha(theme.palette.common.black, 0.05)}`,
                             zIndex: 2,
                             '&::after': {
                                 opacity: 1,
@@ -609,10 +427,10 @@ const AttendanceListTable = ({ participants, eventID = "", activeTab, isLoading 
                             width: '96%',
                             height: '1px',
                             background: (theme) => `linear-gradient(90deg, 
-                                        ${alpha(theme.palette.divider, 0)}, 
-                                        ${alpha(theme.palette.divider, 0.12)} 20%, 
-                                        ${alpha(theme.palette.divider, 0.12)} 80%, 
-                                        ${alpha(theme.palette.divider, 0)})`,
+                                                    ${alpha(theme.palette.divider, 0)}, 
+                                                    ${alpha(theme.palette.divider, 0.12)} 20%, 
+                                                    ${alpha(theme.palette.divider, 0.12)} 80%, 
+                                                    ${alpha(theme.palette.divider, 0)})`,
                             opacity: 0.6,
                             transition: 'all 0.3s ease',
                             transform: 'scaleX(0.8)',
@@ -749,8 +567,8 @@ const AttendanceListTable = ({ participants, eventID = "", activeTab, isLoading 
                 }}
             >
                 <DataGrid
-                    rows={participants}
-                    columns={attendanceColumns()}
+                    rows={overviewList}
+                    columns={overviewColumns()}
                     loading={isLoading}
                     disableRowSelectionOnClick
                     disableColumnResize={true}
@@ -764,25 +582,13 @@ const AttendanceListTable = ({ participants, eventID = "", activeTab, isLoading 
                     getRowId={(row) => row.id}
                     getRowHeight={() => 50}
                     slots={{
-                        noRowsOverlay: () => {
-                            if (activeTab === 0) {
-                                return (
-                                    <EmptyTableRows
-                                        icon={<GroupOffIcon />}
-                                        title="No Attendees"
-                                        subtitle="No students have attended this event yet. Attendance records will show up here once marked."
-                                    />
-                                )
-                            } else {
-                                return (
-                                    <EmptyTableRows
-                                        icon={<CheckCircleOutlineIcon />}
-                                        title="No Absentees"
-                                        subtitle="Great news! All registered students have attended the event."
-                                    />
-                                )
-                            }
-                        },
+                        noRowsOverlay: () => (
+                            <EmptyTableRows
+                                icon={<EmojiEventsIcon />}
+                                title="No Participation Data Available"
+                                subtitle="No student participation records have been logged yet, or all records have been filtered out."
+                            />
+                        ),
                         noResultsOverlay: () => (
                             <EmptyTableRows
                                 icon={<FilterListOffIcon />}
@@ -809,9 +615,9 @@ const AttendanceListTable = ({ participants, eventID = "", activeTab, isLoading 
                                 width: '200%',
                                 height: '100%',
                                 background: (theme) => `linear-gradient(90deg, 
-                                                    transparent, 
-                                                    ${alpha(theme.palette.background.paper, 0.2)}, 
-                                                    transparent)`,
+                                                                        transparent, 
+                                                                        ${alpha(theme.palette.background.paper, 0.2)}, 
+                                                                        transparent)`,
                                 animation: 'shimmer 2s infinite',
                                 '@keyframes shimmer': {
                                     '0%': {
@@ -839,23 +645,8 @@ const AttendanceListTable = ({ participants, eventID = "", activeTab, isLoading 
                     }}
                 />
             </Box>
-
-            <Snackbar
-                anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-                open={snackbarOpen}
-                autoHideDuration={4000}
-                onClose={() => setSnackbarOpen(false)}
-            >
-                <Alert
-                    severity={snackbarContent.type}
-                    variant="filled"
-                    sx={{ width: '100%' }}
-                >
-                    {snackbarContent.msg}
-                </Alert>
-            </Snackbar>
         </Box>
     )
 }
 
-export default AttendanceListTable;
+export default OverviewTable;

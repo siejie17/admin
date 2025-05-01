@@ -3,13 +3,13 @@ import { initializeAuth, browserLocalPersistence, setPersistence } from 'firebas
 import { getFirestore } from 'firebase/firestore';
 
 const firebaseConfig = {
-  apiKey: "AIzaSyBGl0o9TF3EZEQsxjKeNWsaHKc5GC1b_G8",
-  authDomain: "uniexp-bfc54.firebaseapp.com",
-  databaseURL: "https://uniexp-bfc54-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "uniexp-bfc54",
-  storageBucket: "uniexp-bfc54.firebasestorage.app",
-  messagingSenderId: "376632403855",
-  appId: "1:376632403855:web:56e01d139eb2a3ffae8dfa"
+  apiKey: import.meta.env.VITE_DB_API_KEY,
+  authDomain: import.meta.env.VITE_DB_AUTH_DOMAIN,
+  databaseURL: import.meta.env.VITE_DB_URL,
+  projectId: import.meta.env.VITE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_APP_ID
 };
 
 // Initialize Firebase app

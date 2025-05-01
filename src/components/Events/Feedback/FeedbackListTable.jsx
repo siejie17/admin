@@ -1,4 +1,4 @@
-import { Feedback as FeedbackIcon, Numbers as NumbersIcon } from '@mui/icons-material';
+import { Feedback as FeedbackIcon, FilterListOff as FilterListOffIcon, Numbers as NumbersIcon } from '@mui/icons-material';
 import { alpha, Avatar, Box, Typography, useTheme } from '@mui/material';
 import { DataGrid } from '@mui/x-data-grid';
 import React from 'react';
@@ -359,7 +359,7 @@ const FeedbackListTable = ({ feedbackList, isLoading }) => {
                         '&::after': {
                             content: '""',
                             position: 'absolute',
-                            bottom: 60, // Height of footer
+                            bottom: 50, // Height of footer
                             left: 0,
                             right: 0,
                             height: '20px',
@@ -369,16 +369,6 @@ const FeedbackListTable = ({ feedbackList, isLoading }) => {
                             pointerEvents: 'none',
                             zIndex: 3
                         }
-                    },
-                    '& .MuiDataGrid-cell': {
-                        pb: 2,
-                        fontSize: '0.95rem',
-                        fontWeight: 500,
-                        justifyContent: "flex-start",
-                        borderBottom: 'none',
-                        color: (theme) => theme.palette.text.primary,
-                        padding: '18px 16px',
-                        transition: 'color 0.2s ease',
                     },
                     '& .MuiDataGrid-columnHeaders': {
                         borderBottom: 'none',
@@ -421,7 +411,6 @@ const FeedbackListTable = ({ feedbackList, isLoading }) => {
                         transition: 'all 0.28s cubic-bezier(0.4, 0, 0.2, 1)',
                         display: 'flex',
                         justifyContent: 'center',
-                        position: 'relative',
                         '&:hover': {
                             backgroundColor: (theme) => alpha(theme.palette.primary.main, 0.05),
                             transform: 'translateY(-1px) scale(1.005)',
@@ -641,10 +630,17 @@ const FeedbackListTable = ({ feedbackList, isLoading }) => {
                     }}
                     slots={{
                         noRowsOverlay: () => (
-                            <EmptyTableRows 
+                            <EmptyTableRows
                                 icon={<FeedbackIcon />}
                                 title="Waiting for Feedback"
                                 subtitle="No feedback has been submitted. Encourage students to share their thoughts."
+                            />
+                        ),
+                        noResultsOverlay: () => (
+                            <EmptyTableRows
+                                icon={<FilterListOffIcon />}
+                                title="No Results Found"
+                                subtitle="Your current filter criteria didn't match any records. Try adjusting your filters to see more results."
                             />
                         )
                     }}

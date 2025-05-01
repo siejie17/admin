@@ -16,6 +16,8 @@ import Loader from './components/General/Loader.jsx';
 import AttendanceQR from './components/Events/Attendance/AttendanceQR.jsx';
 import QuestDetails from './components/Events/Quest/QuestDetails.jsx';
 import MerchandiseManagerPage from './pages/merchandise/MerchandiseManagerPage.jsx';
+import LeaderboardPage from './pages/leaderboard/LeaderboardPage.jsx';
+import OverviewPage from './pages/overview/OverviewPage.jsx';
 
 function App() {
   const { user, loading } = useAuth();
@@ -30,11 +32,10 @@ function App() {
         {user ? (
           <>
             <Route element={<AppLayout />}>
-              {/* Events Routes */}
               <Route path="/event" element={<EventListingPage />} />
-
-              {/* Merchandise Routes */}
               <Route path="/merchandise" element={<MerchandiseListingPage />} />
+              <Route path="/leaderboard" element={<LeaderboardPage />} />
+              <Route path="/overview" element={<OverviewPage />} />
             </Route>
 
             <Route path="/event/create-event" element={<EventCreationPage />} />

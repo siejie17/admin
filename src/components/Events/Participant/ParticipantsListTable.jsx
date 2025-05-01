@@ -1,4 +1,4 @@
-import { Close, Numbers as NumbersIcon, PersonAddDisabled as PersonAddDisabledIcon, TaskAlt as TaskAltIcon, VerifiedUser as VerifiedUserIcon, Visibility } from '@mui/icons-material';
+import { Close, FilterListOff as FilterListOffIcon, Numbers as NumbersIcon, PersonAddDisabled as PersonAddDisabledIcon, TaskAlt as TaskAltIcon, VerifiedUser as VerifiedUserIcon, Visibility } from '@mui/icons-material';
 import { Alert, alpha, Avatar, Box, Button, Chip, Dialog, DialogContent, DialogTitle, IconButton, Snackbar, Typography, useTheme } from '@mui/material';
 import { DataGrid } from '@mui/x-data-grid';
 import { doc, updateDoc } from 'firebase/firestore';
@@ -523,7 +523,7 @@ const ParticipantsListTable = ({ participants, activeTab, isLoading }) => {
                         '&::after': {
                             content: '""',
                             position: 'absolute',
-                            bottom: 60, // Height of footer
+                            bottom: 50, // Height of footer
                             left: 0,
                             right: 0,
                             height: '20px',
@@ -533,16 +533,6 @@ const ParticipantsListTable = ({ participants, activeTab, isLoading }) => {
                             pointerEvents: 'none',
                             zIndex: 3
                         }
-                    },
-                    '& .MuiDataGrid-cell': {
-                        pb: 2,
-                        fontSize: '0.95rem',
-                        fontWeight: 500,
-                        justifyContent: "flex-start",
-                        borderBottom: 'none',
-                        color: (theme) => theme.palette.text.primary,
-                        padding: '18px 16px',
-                        transition: 'color 0.2s ease',
                     },
                     '& .MuiDataGrid-columnHeaders': {
                         borderBottom: 'none',
@@ -585,7 +575,6 @@ const ParticipantsListTable = ({ participants, activeTab, isLoading }) => {
                         transition: 'all 0.28s cubic-bezier(0.4, 0, 0.2, 1)',
                         display: 'flex',
                         justifyContent: 'center',
-                        position: 'relative',
                         '&:hover': {
                             backgroundColor: (theme) => alpha(theme.palette.primary.main, 0.05),
                             transform: 'translateY(-1px) scale(1.005)',
@@ -778,7 +767,14 @@ const ParticipantsListTable = ({ participants, activeTab, isLoading }) => {
 
                                 )
                             }
-                        }
+                        },
+                        noResultsOverlay: () => (
+                            <EmptyTableRows
+                                icon={<FilterListOffIcon />}
+                                title="No Results Found"
+                                subtitle="Your current filter criteria didn't match any records. Try adjusting your filters to see more results."
+                            />
+                        )
                     }}
                     sx={{
                         '& .MuiCircularProgress-root': {

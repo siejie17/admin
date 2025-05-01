@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
-import { Box, Card, Chip, CircularProgress, Container, Fade, Grid, Typography, useTheme } from '@mui/material';
+import { Box, Card, Chip, CircularProgress, Container, Fade, Grid, Typography } from '@mui/material';
 import QRCode from 'react-qr-code';
 import { AccessTime as AccessTimeIcon, Event as EventIcon, Refresh as RefreshIcon } from '@mui/icons-material';
 import CryptoJS from 'crypto-js';
@@ -11,7 +11,9 @@ import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../../../utils/firebaseConfig';
 
 const AttendanceQR = () => {
-    const theme = useTheme();
+    const adminSecretKey = import.meta.env.VITE_ADMIN_SECRET_KEY;
+    const QRSecretKey = import.meta.env.VITE_QR_SECRET_KEY;
+
     const location = useLocation();
 
     const [eventID, setEventID] = useState('');
@@ -45,7 +47,7 @@ const AttendanceQR = () => {
         const jsonString = JSON.stringify(dataToEncrypt);
         const encrypted = CryptoJS.AES.encrypt(
             jsonString,
-            "UniEXP_Admin"
+            QRSecretKey
         ).toString();
 
         return encrypted;
@@ -90,7 +92,7 @@ const AttendanceQR = () => {
 
         if (encryptedId && eventName) {
             try {
-                const bytes = CryptoJS.AES.decrypt(encryptedId, "UniEXP_Admin");
+                const bytes = CryptoJS.AES.decrypt(encryptedId, adminSecretKey);
                 const decryptedID = bytes.toString(CryptoJS.enc.Utf8);
 
                 setEventID(decryptedID);

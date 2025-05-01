@@ -58,6 +58,8 @@ const DetailsCreation = ({
     pinpoint,
     setPinpoint,
     images,
+    currentImageIndex,
+    setCurrentImageIndex,
     requiresCapacity,
     setRequiresCapacity,
     capacity,
@@ -73,8 +75,6 @@ const DetailsCreation = ({
 }) => {
     const theme = useTheme();
     const now = dayjs();
-
-    const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
     // Navigation
     const navigate = useNavigate();

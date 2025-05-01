@@ -27,6 +27,8 @@ import { doc, getDoc, onSnapshot, updateDoc } from 'firebase/firestore';
 import { db } from '../../utils/firebaseConfig';
 
 const EventManager = () => {
+    const secretKey = import.meta.env.VITE_ADMIN_SECRET_KEY;
+    
     const location = useLocation();
     const navigate = useNavigate();
 
@@ -62,7 +64,7 @@ const EventManager = () => {
     const getDecryptedID = () => {
         const params = new URLSearchParams(location.search);
         let id = params.get('id');
-        return CryptoJS.AES.decrypt(id, "UniEXP_Admin").toString(CryptoJS.enc.Utf8);
+        return CryptoJS.AES.decrypt(id, secretKey).toString(CryptoJS.enc.Utf8);
     }
 
     const [activeTab, setActiveTab] = useState(getTabFromUrl());

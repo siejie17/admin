@@ -1,13 +1,15 @@
+import React from 'react';
+import { alpha, Avatar, Box, Chip, LinearProgress, Typography, useTheme } from '@mui/material';
 import {
     CheckCircleOutline as CheckCircleOutlineIcon,
     EmojiEvents as EmojiEventsIcon,
+    FilterListOff as FilterListOffIcon,
     Games as GamesIcon,
     HourglassEmpty as HourglassEmptyIcon,
     Numbers as NumbersIcon
 } from '@mui/icons-material';
-import { alpha, Avatar, Box, Chip, LinearProgress, Typography, useTheme } from '@mui/material';
 import { DataGrid } from '@mui/x-data-grid';
-import React, { useEffect } from 'react';
+
 import EmptyTableRows from '../../General/EmptyTableRows';
 
 const QuestProgressTable = ({ activeTab, progress, questType = '', completionTarget = 0, isLoading }) => {
@@ -441,7 +443,7 @@ const QuestProgressTable = ({ activeTab, progress, questType = '', completionTar
                         '&::after': {
                             content: '""',
                             position: 'absolute',
-                            bottom: 60, // Height of footer
+                            bottom: 50, // Height of footer
                             left: 0,
                             right: 0,
                             height: '20px',
@@ -451,16 +453,6 @@ const QuestProgressTable = ({ activeTab, progress, questType = '', completionTar
                             pointerEvents: 'none',
                             zIndex: 3
                         }
-                    },
-                    '& .MuiDataGrid-cell': {
-                        pb: 2,
-                        fontSize: '0.95rem',
-                        fontWeight: 500,
-                        justifyContent: "flex-start",
-                        borderBottom: 'none',
-                        color: (theme) => theme.palette.text.primary,
-                        padding: '18px 16px',
-                        transition: 'color 0.2s ease',
                     },
                     '& .MuiDataGrid-columnHeaders': {
                         borderBottom: 'none',
@@ -503,7 +495,6 @@ const QuestProgressTable = ({ activeTab, progress, questType = '', completionTar
                         transition: 'all 0.28s cubic-bezier(0.4, 0, 0.2, 1)',
                         display: 'flex',
                         justifyContent: 'center',
-                        position: 'relative',
                         '&:hover': {
                             transform: 'translateY(-1px) scale(1.005)',
                             zIndex: 2,
@@ -694,6 +685,13 @@ const QuestProgressTable = ({ activeTab, progress, questType = '', completionTar
                                 )
                             }
                         },
+                        noResultsOverlay: () => (
+                            <EmptyTableRows
+                                icon={<FilterListOffIcon />}
+                                title="No Results Found"
+                                subtitle="Your current filter criteria didn't match any records. Try adjusting your filters to see more results."
+                            />
+                        )
                     }}
                     sx={{
                         '& .MuiCircularProgress-root': {

@@ -21,6 +21,8 @@ import Diamond from '../../assets/icons/diamond.png';
 const MerchandiseListState = ({ merchandises }) => {
     const theme = useTheme();
 
+    const secretKey = import.meta.env.VITE_ADMIN_SECRET_KEY;
+
     return (
         <Grid
             container
@@ -32,7 +34,7 @@ const MerchandiseListState = ({ merchandises }) => {
             }}
         >
             {merchandises.map((merch) => {
-                const encryptedID = CryptoJS.AES.encrypt(merch.id, "UniEXP_Admin").toString();
+                const encryptedID = CryptoJS.AES.encrypt(merch.id, secretKey).toString();
 
                 return (
                     <Grid key={merch.id}>

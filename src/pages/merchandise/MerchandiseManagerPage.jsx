@@ -28,7 +28,6 @@ import { doc, getDoc, onSnapshot, updateDoc } from 'firebase/firestore';
 import { db } from '../../utils/firebaseConfig';
 import Loader from '../../components/General/Loader';
 import ActionsDialog from '../../components/General/ActionsDialog';
-import RedemptionListTable from '../../components/Merchandises/RedemptionListTable';
 import RedemptionTabs from '../../components/Merchandises/RedemptionTabs';
 
 const MerchandiseManagerPage = () => {
@@ -37,6 +36,8 @@ const MerchandiseManagerPage = () => {
     const [merchandiseName, setMerchandiseName] = useState('');
     const [merchandiseAvailability, setMerchandiseAvailability] = useState(true);
     const [isLoading, setIsLoading] = useState(true);
+
+    const secretKey = import.meta.env.VITE_ADMIN_SECRET_KEY;
 
     const location = useLocation();
     const navigate = useNavigate();
@@ -87,7 +88,7 @@ const MerchandiseManagerPage = () => {
     const getDecryptedID = () => {
         const params = new URLSearchParams(location.search);
         let merchandiseID = params.get('id');
-        return CryptoJS.AES.decrypt(merchandiseID, "UniEXP_Admin").toString(CryptoJS.enc.Utf8);
+        return CryptoJS.AES.decrypt(merchandiseID, secretKey).toString(CryptoJS.enc.Utf8);
     }
 
     useEffect(() => {

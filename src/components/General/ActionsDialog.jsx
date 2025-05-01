@@ -46,7 +46,7 @@ const ActionsDialog = ({ dialogOpen, setDialogOpen, dialogContent }) => {
                     alignItems: 'center'
                 }}
             >
-                <Typography variant="h6" component="h2" fontWeight={600}>
+                <Typography fontWeight={600}>
                     {dialogContent.title}
                 </Typography>
             </DialogTitle>

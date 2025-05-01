@@ -549,7 +549,7 @@ const RedemptionListTable = ({ redemptionList, merchandiseCategory, activeTab, i
                         '&::after': {
                             content: '""',
                             position: 'absolute',
-                            bottom: 60, // Height of footer
+                            bottom: 50, // Height of footer
                             left: 0,
                             right: 0,
                             height: '20px',
@@ -564,7 +564,6 @@ const RedemptionListTable = ({ redemptionList, merchandiseCategory, activeTab, i
                         pb: 2,
                         fontSize: '0.95rem',
                         fontWeight: 500,
-                        justifyContent: "flex-start",
                         borderBottom: 'none',
                         color: (theme) => theme.palette.text.primary,
                         padding: '18px 16px',

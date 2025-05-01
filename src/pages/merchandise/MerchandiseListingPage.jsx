@@ -1,21 +1,21 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Box, 
-  Typography, 
-  Button, 
-  Pagination,
-  Paper, 
-  Chip, 
-  useMediaQuery, 
-  useTheme, 
-  Fade,
-  alpha,
-  Tooltip,
-  Stack
+import {
+    Box,
+    Typography,
+    Button,
+    Pagination,
+    Paper,
+    Chip,
+    useMediaQuery,
+    useTheme,
+    Fade,
+    alpha,
+    Tooltip,
+    Stack
 } from '@mui/material';
-import { Add as AddIcon, Storefront as StorefrontIcon } from '@mui/icons-material';
+import { Add as AddIcon, Redeem as RedeemIcon, Storefront as StorefrontIcon } from '@mui/icons-material';
 
-import { Link as RouterLink, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { collection, query, orderBy, limit, startAfter, where, onSnapshot } from 'firebase/firestore';
 
 import { getItem } from '../../utils/localStorage';
@@ -23,377 +23,349 @@ import { db } from '../../utils/firebaseConfig';
 
 import MerchandiseListState from '../../components/Merchandises/MerchandiseListState';
 import Loader from '../../components/General/Loader';
+import EmptyList from '../../components/General/EmptyList';
 
-const Merchandise = () => {
-  const [merchandises, setMerchandises] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [lastVisible, setLastVisible] = useState(null);
-  const [hasMore, setHasMore] = useState(true);
+const MerchandiseListingPage = () => {
+    const [merchandises, setMerchandises] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const [page, setPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
+    const [lastVisible, setLastVisible] = useState(null);
+    const [hasMore, setHasMore] = useState(true);
 
-  const navigate = useNavigate();
-  const merchandisesPerPage = 6;
+    const navigate = useNavigate();
+    const merchandisesPerPage = 6;
 
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-  const isExtraSmall = useMediaQuery(theme.breakpoints.down('xs'));
+    const theme = useTheme();
+    const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+    const isExtraSmall = useMediaQuery(theme.breakpoints.down('xs'));
 
-  const fetchMerchandises = async (isFirstPage = false) => {
-    try {
-      const adminData = await getItem("admin");
-      const parsedAdminData = JSON.parse(adminData);
+    const fetchMerchandises = async (isFirstPage = false) => {
+        try {
+            const adminData = await getItem("admin");
+            const parsedAdminData = JSON.parse(adminData);
 
-      // Get total count for pagination
-      const countQuery = query(
-        collection(db, "merchandise"),
-        where("adminID", "==", parsedAdminData.facultyID)
-      );
+            // Get total count for pagination
+            const countQuery = query(
+                collection(db, "merchandise"),
+                where("adminID", "==", parsedAdminData.facultyID)
+            );
 
-      // First set up a listener for the count to update totalPages dynamically
-      const countUnsubscribe = onSnapshot(countQuery, (countSnapshot) => {
-        const totalMerchandises = countSnapshot.size;
-        setTotalPages(Math.ceil(totalMerchandises / merchandisesPerPage));
-      }, (error) => {
-        console.error("Error in count snapshot:", error);
-        setError("Failed to get merchandise count.");
-      });
+            // First set up a listener for the count to update totalPages dynamically
+            const countUnsubscribe = onSnapshot(countQuery, (countSnapshot) => {
+                const totalMerchandises = countSnapshot.size;
+                setTotalPages(Math.ceil(totalMerchandises / merchandisesPerPage));
+            }, (error) => {
+                console.error("Error in count snapshot:", error);
+                setError("Failed to get merchandise count.");
+            });
 
-      let merchandisesQuery;
+            let merchandisesQuery;
 
-      if (isFirstPage) {
-        merchandisesQuery = query(
-          collection(db, "merchandise"),
-          where("adminID", "==", parsedAdminData.facultyID),
-          orderBy("name", "asc"),
-          limit(merchandisesPerPage)
-        );
-      } else if (lastVisible) {
-        merchandisesQuery = query(
-          collection(db, "merchandise"),
-          where("adminID", "==", parsedAdminData.facultyID),
-          orderBy("name", "asc"),
-          startAfter(lastVisible),
-          limit(merchandisesPerPage)
-        );
-      } else {
-        // Return if we're not on the first page and don't have a last document
-        setLoading(false);
-        return { countUnsubscribe, dataUnsubscribe: () => { } };
-      }
+            if (isFirstPage) {
+                merchandisesQuery = query(
+                    collection(db, "merchandise"),
+                    where("adminID", "==", parsedAdminData.facultyID),
+                    orderBy("name", "asc"),
+                    limit(merchandisesPerPage)
+                );
+            } else if (lastVisible) {
+                merchandisesQuery = query(
+                    collection(db, "merchandise"),
+                    where("adminID", "==", parsedAdminData.facultyID),
+                    orderBy("name", "asc"),
+                    startAfter(lastVisible),
+                    limit(merchandisesPerPage)
+                );
+            } else {
+                // Return if we're not on the first page and don't have a last document
+                setLoading(false);
+                return { countUnsubscribe, dataUnsubscribe: () => { } };
+            }
 
-      const dataUnsubscribe = onSnapshot(merchandisesQuery, (snapshot) => {
-        if (snapshot.empty) {
-          setHasMore(false);
-          setMerchandises([]);
-        } else {
-          // Get the last visible document for pagination
-          const lastDoc = snapshot.docs[snapshot.docs.length - 1];
-          setLastVisible(lastDoc);
+            const dataUnsubscribe = onSnapshot(merchandisesQuery, (snapshot) => {
+                if (snapshot.empty) {
+                    setHasMore(false);
+                    setMerchandises([]);
+                } else {
+                    // Get the last visible document for pagination
+                    const lastDoc = snapshot.docs[snapshot.docs.length - 1];
+                    setLastVisible(lastDoc);
 
-          const merchList = snapshot.docs.map((doc) => ({
-            id: doc.id,
-            ...doc.data()
-          }));
+                    const merchList = snapshot.docs.map((doc) => ({
+                        id: doc.id,
+                        ...doc.data()
+                    }));
 
-          setMerchandises(merchList);
-          setHasMore(snapshot.docs.length >= merchandisesPerPage);
+                    setMerchandises(merchList);
+                    setHasMore(snapshot.docs.length >= merchandisesPerPage);
+                }
+
+                setLoading(false);
+            }, (error) => {
+                console.error("Error in data snapshot:", error);
+                setError("Failed to load merchandises. Please try again later.");
+                setLoading(false);
+            });
+
+            return { countUnsubscribe, dataUnsubscribe };
+        } catch (error) {
+            console.error("Error fetching merchandises:", error);
+            setError("Failed to load merchandises. Please try again later.");
+            setLoading(false);
+            return { countUnsubscribe: () => { }, dataUnsubscribe: () => { } };
         }
-
-        setLoading(false);
-      }, (error) => {
-        console.error("Error in data snapshot:", error);
-        setError("Failed to load merchandises. Please try again later.");
-        setLoading(false);
-      });
-
-      return { countUnsubscribe, dataUnsubscribe };
-    } catch (error) {
-      console.error("Error fetching merchandises:", error);
-      setError("Failed to load merchandises. Please try again later.");
-      setLoading(false);
-      return { countUnsubscribe: () => { }, dataUnsubscribe: () => { } };
     }
-  }
 
-  useEffect(() => {
-    let unsubscribes = { countUnsubscribe: () => { }, dataUnsubscribe: () => { } };
+    useEffect(() => {
+        let unsubscribes = { countUnsubscribe: () => { }, dataUnsubscribe: () => { } };
 
-    fetchMerchandises(true)
-      .then(result => {
-        unsubscribes = result;
-      })
-      .catch(error => {
-        console.error("Error in listener setup:", error);
-        setError("Failed to initialize merchandise listeners.");
-        setLoading(false);
-      });
+        fetchMerchandises(true)
+            .then(result => {
+                unsubscribes = result;
+            })
+            .catch(error => {
+                console.error("Error in listener setup:", error);
+                setError("Failed to initialize merchandise listeners.");
+                setLoading(false);
+            });
 
-    return () => {
-      unsubscribes.countUnsubscribe();
-      unsubscribes.dataUnsubscribe();
-    }
-  }, []);
+        return () => {
+            unsubscribes.countUnsubscribe();
+            unsubscribes.dataUnsubscribe();
+        }
+    }, []);
 
-  // Handle page change
-  const handlePageChange = (event, value) => {
-    setPage(value);
+    // Handle page change
+    const handlePageChange = (event, value) => {
+        setPage(value);
 
-    let unsubscribes = { countUnsubscribe: () => { }, dataUnsubscribe: () => { } };
+        let unsubscribes = { countUnsubscribe: () => { }, dataUnsubscribe: () => { } };
 
-    if (value === 1) {
-      fetchMerchandises(true)
-        .then(result => {
-          unsubscribes = result;
-        })
-        .catch(error => {
-          console.error("Error in listener setup:", error);
-          setError("Failed to initialize merchandise listeners.");
-          setLoading(false);
-        });
-    } else {
-      fetchMerchandises(false)
-        .then(result => {
-          unsubscribes = result;
-        })
-        .catch(error => {
-          console.error("Error in listener setup:", error);
-          setError("Failed to initialize merchandise listeners.");
-          setLoading(false);
-        });
-    }
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+        if (value === 1) {
+            fetchMerchandises(true)
+                .then(result => {
+                    unsubscribes = result;
+                })
+                .catch(error => {
+                    console.error("Error in listener setup:", error);
+                    setError("Failed to initialize merchandise listeners.");
+                    setLoading(false);
+                });
+        } else {
+            fetchMerchandises(false)
+                .then(result => {
+                    unsubscribes = result;
+                })
+                .catch(error => {
+                    console.error("Error in listener setup:", error);
+                    setError("Failed to initialize merchandise listeners.");
+                    setLoading(false);
+                });
+        }
+        window.scrollTo({ top: 0, behavior: 'smooth' });
 
-    return () => {
-      unsubscribes.countUnsubscribe();
-      unsubscribes.dataUnsubscribe();
-    }
-  };
+        return () => {
+            unsubscribes.countUnsubscribe();
+            unsubscribes.dataUnsubscribe();
+        }
+    };
 
-  return (
-    <Box
-      sx={{
-        maxWidth: "100%",
-        pb: 3,
-      }}
-    >
-      <Box
-        sx={{
-          display: 'flex',
-          flexDirection: isExtraSmall ? 'column' : 'row',//{ xs: 'column', sm: 'row' },
-          alignItems: isExtraSmall ? 'flex-start' : 'center',
-          py: { xs: 1, sm: 1.5 },
-          px: { xs: 2, sm: 3.5 },
-          gap: { xs: 2, sm: 0 },
-          mb: 4,
-          borderBottom: '1px solid rgba(0, 0, 0, 0.06)'
-        }}
-      >
-        {/* Header with Back Button */}
+    return (
         <Box
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            flexGrow: 1,
-            minWidth: 0,
-          }}
-        >
-          <Box sx={{ display: 'flex', alignItems: 'center' }}>
-            <Box
-              sx={{
-                backgroundColor: alpha(theme.palette.primary.main, 0.08),
-                color: theme.palette.primary.dark,
-                borderRadius: 2,
-                p: 1.25,
-                mr: 2,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                flexShrink: 0, // Prevent icon from shrinking
-              }}
-            >
-              <StorefrontIcon
-                sx={{
-                  fontSize: { xs: 18, sm: 22 },
-                  color: theme.palette.primary.dark
-                }}
-              />
-            </Box>
-
-            <Box sx={{
-              display: 'flex',
-              alignItems: 'center',
-              minWidth: 0, // Important for text overflow
-              flexWrap: { xs: 'nowrap', sm: 'wrap' }, // Allow wrapping on smaller screens
-            }}>
-              <Typography
-                variant="h5"
-                component="h1"
-                fontWeight="700"
-                sx={{
-                  fontSize: { xs: '1.25rem', sm: '1.5rem' },
-                  letterSpacing: '-0.01em',
-                  mr: 1.5,
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: { xs: 'nowrap', sm: 'normal' }, // Only allow wrapping on sm+
-                }}
-              >
-                My Merchandises
-              </Typography>
-
-              <Tooltip title="Total merchandises managed by admin" arrow placement="top">
-                <Chip
-                  label={merchandises.length}
-                  size="small"
-                  color="primary"
-                  sx={{
-                    height: 24,
-                    fontWeight: 600,
-                    borderRadius: 4,
-                    bgcolor: alpha(theme.palette.primary.main, 0.12),
-                    color: theme.palette.primary.main,
-                    border: 'none',
-                  }}
-                />
-              </Tooltip>
-            </Box>
-          </Box>
-        </Box>
-
-        {/* Action Buttons */}
-        <Stack
-          direction={isExtraSmall ? "column" : "row"}
-          spacing={1.5}
-          sx={{
-            mb: { xs: 2, sm: 0 },
-            ml: { xs: 1, sm: 0 },
-            width: { xs: '100%', sm: 'auto' },
-            // flexShrink: 0,
-          }}
-        >
-          <Button
-            fullWidth
-            variant="contained"
-            startIcon={<AddIcon fontSize='small' />}
-            onClick={() => navigate('/merchandise/create-merchandise')}
-            size={isMobile ? "small" : "medium"}
             sx={{
-              borderRadius: 2,
-              textTransform: 'none',
-              fontWeight: 600,
-              backgroundImage: `linear-gradient(135deg, rgba(33, 150, 243, 0.8), ${theme.palette.primary.main})`,
-              fontSize: '12px',
-              py: 1,
-              boxShadow: 2,
-              whiteSpace: 'nowrap', // Prevent button text from wrapping
-              '&:hover': {
-                backgroundImage: `linear-gradient(135deg, rgba(33, 150, 243, 0.9), ${theme.palette.primary.dark})`,
-                boxShadow: 3,
-                transform: 'translateY(-1px)',
-                transition: 'all 0.2s ease',
-              },
+                maxWidth: "100%",
+                pb: 3,
             }}
-            aria-label="add event button"
-          >
-            Add Merchandise
-          </Button>
-        </Stack>
-      </Box>
-
-      {/* Content Area */}
-      {loading ? <Loader loadingText='Loading merchandise...' />
-        : merchandises.length === 0 ? (
-          <>
-            <StorefrontIcon
-              sx={{
-                fontSize: 56,
-                mb: 2,
-                color: theme.palette.text.disabled
-              }}
-            />
-            <Typography variant="h6" gutterBottom>
-              No merchandise items yet
-            </Typography>
-            <Typography variant="body2" color="text.secondary" paragraph>
-              Create your first merchandise item to get started
-            </Typography>
-            <Button
-              variant="outlined"
-              color="primary"
-              startIcon={<AddIcon />}
-              component={RouterLink}
-              to="/merchandise/create-merchandise"
-              sx={{
-                mt: 1,
-                borderRadius: 2,
-                textTransform: 'none',
-                fontWeight: 600
-              }}
-            >
-              Create Merchandise
-            </Button>
-          </>
-        ) : (
-          <>
-            <Fade in={true}>
-              <Box>
-                <MerchandiseListState merchandises={merchandises} />
-              </Box>
-            </Fade>
-
-            <Box sx={{
-              display: 'flex',
-              justifyContent: 'flex-end', // Changed from 'center' to 'flex-end' to align to the right
-              position: 'fixed', // Make it fixed positioned
-              bottom: 40, // Distance from the bottom
-              right: 40, // Distance from the right
-              zIndex: 1000, // Ensure it stays on top of other content
-            }}>
-              <Paper
-                elevation={3} // Increased elevation for better floating appearance
+        >
+            <Box
                 sx={{
-                  py: 1,
-                  px: 1.5,
-                  borderRadius: 3,
-                  backgroundColor: theme.palette.background.paper,
-                  border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
-                  backdropFilter: 'blur(8px)',
-                  boxShadow: `0 4px 12px ${alpha(theme.palette.common.black, 0.08)}`, // Added shadow for floating effect
+                    display: 'flex',
+                    flexDirection: isExtraSmall ? 'column' : 'row',//{ xs: 'column', sm: 'row' },
+                    alignItems: isExtraSmall ? 'flex-start' : 'center',
+                    py: { xs: 1, sm: 2 },
+                    px: { xs: 2, sm: 3.5 },
+                    gap: { xs: 2, sm: 0 },
+                    mb: 4,
+                    borderBottom: '1px solid rgba(0, 0, 0, 0.06)'
                 }}
-              >
-                <Pagination
-                  count={totalPages || 1}
-                  page={page}
-                  onChange={handlePageChange}
-                  color="primary"
-                  size={isMobile ? "small" : "medium"}
-                  showFirstButton
-                  showLastButton
-                  sx={{
-                    '& .MuiPaginationItem-root': {
-                      color: 'black',
-                      borderRadius: 1.5,
-                      mx: { xs: 0.2, sm: 0.5 },
-                      fontWeight: 500,
-                      fontSize: { xs: '0.875rem', sm: '0.9rem' }
-                    },
-                    '& .Mui-selected': {
-                      fontWeight: 700,
-                      backgroundColor: alpha(theme.palette.primary.main, 0.1),
-                      '&:hover': {
-                        backgroundColor: alpha(theme.palette.primary.main, 0.2),
-                      }
-                    }
-                  }}
-                />
-              </Paper>
+            >
+                {/* Header with Back Button */}
+                <Box
+                    sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        flexGrow: 1,
+                        minWidth: 0,
+                    }}
+                >
+                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                        <Box
+                            sx={{
+                                backgroundColor: alpha(theme.palette.primary.main, 0.08),
+                                color: theme.palette.primary.dark,
+                                borderRadius: 2,
+                                p: 1.25,
+                                mr: 2,
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                flexShrink: 0, // Prevent icon from shrinking
+                            }}
+                        >
+                            <StorefrontIcon
+                                sx={{
+                                    fontSize: { xs: 18, sm: 22 },
+                                    color: theme.palette.primary.dark
+                                }}
+                            />
+                        </Box>
+
+                        <Box sx={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            minWidth: 0, // Important for text overflow
+                            flexWrap: { xs: 'nowrap', sm: 'wrap' }, // Allow wrapping on smaller screens
+                        }}>
+                            <Typography
+                                variant="h5"
+                                component="h1"
+                                fontWeight="700"
+                                sx={{
+                                    fontSize: { xs: '1.25rem', sm: '1.5rem' },
+                                    letterSpacing: '-0.01em',
+                                    mr: 1.5,
+                                    overflow: 'hidden',
+                                    textOverflow: 'ellipsis',
+                                    whiteSpace: { xs: 'nowrap', sm: 'normal' }, // Only allow wrapping on sm+
+                                }}
+                            >
+                                My Merchandises
+                            </Typography>
+
+                            <Tooltip title="Total merchandises managed by admin" arrow placement="top">
+                                <Chip
+                                    label={merchandises.length}
+                                    size="small"
+                                    color="primary"
+                                    sx={{
+                                        height: 24,
+                                        fontWeight: 600,
+                                        borderRadius: 4,
+                                        bgcolor: alpha(theme.palette.primary.main, 0.12),
+                                        color: theme.palette.primary.main,
+                                        border: 'none',
+                                    }}
+                                />
+                            </Tooltip>
+                        </Box>
+                    </Box>
+                </Box>
+
+                {/* Action Buttons */}
+                <Stack
+                    direction={isExtraSmall ? "column" : "row"}
+                    spacing={1.5}
+                    sx={{
+                        mb: { xs: 2, sm: 0 },
+                        ml: { xs: 1, sm: 0 },
+                        width: { xs: '100%', sm: 'auto' },
+                        // flexShrink: 0,
+                    }}
+                >
+                    <Button
+                        fullWidth
+                        variant="contained"
+                        startIcon={<AddIcon fontSize='small' />}
+                        onClick={() => navigate('/merchandise/create-merchandise')}
+                        size={isMobile ? "small" : "medium"}
+                        sx={{
+                            borderRadius: 2,
+                            textTransform: 'none',
+                            fontWeight: 600,
+                            backgroundImage: `linear-gradient(135deg, rgba(33, 150, 243, 0.8), ${theme.palette.primary.main})`,
+                            fontSize: '12px',
+                            py: 1,
+                            boxShadow: 2,
+                            whiteSpace: 'nowrap', // Prevent button text from wrapping
+                            '&:hover': {
+                                backgroundImage: `linear-gradient(135deg, rgba(33, 150, 243, 0.9), ${theme.palette.primary.dark})`,
+                                boxShadow: 3,
+                                transform: 'translateY(-1px)',
+                                transition: 'all 0.2s ease',
+                            },
+                        }}
+                        aria-label="add event button"
+                    >
+                        Add Merch
+                    </Button>
+                </Stack>
             </Box>
-          </>
-        )}
-    </Box>
-  )
+
+            {/* Content Area */}
+            {loading ? <Loader loadingText='Loading merchandises...' />
+                : merchandises.length === 0 ? (
+                    <EmptyList icon={<RedeemIcon />} title="No Merchandises Available" subtitle="There are currently no merchandises managed by you." info="Merchandises that you create will appear here. You can manage, edit, and track all your merchandises from this dashboard." />
+                ) : (
+                    <>
+                        <Fade in={true}>
+                            <Box>
+                                <MerchandiseListState merchandises={merchandises} />
+                            </Box>
+                        </Fade>
+
+                        <Box sx={{
+                            display: 'flex',
+                            justifyContent: 'flex-end', // Changed from 'center' to 'flex-end' to align to the right
+                            position: 'fixed', // Make it fixed positioned
+                            bottom: 40, // Distance from the bottom
+                            right: 40, // Distance from the right
+                            zIndex: 1000, // Ensure it stays on top of other content
+                        }}>
+                            <Paper
+                                elevation={3} // Increased elevation for better floating appearance
+                                sx={{
+                                    py: 1,
+                                    px: 1.5,
+                                    borderRadius: 3,
+                                    backgroundColor: theme.palette.background.paper,
+                                    border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+                                    backdropFilter: 'blur(8px)',
+                                    boxShadow: `0 4px 12px ${alpha(theme.palette.common.black, 0.08)}`, // Added shadow for floating effect
+                                }}
+                            >
+                                <Pagination
+                                    count={totalPages || 1}
+                                    page={page}
+                                    onChange={handlePageChange}
+                                    color="primary"
+                                    size={isMobile ? "small" : "medium"}
+                                    showFirstButton
+                                    showLastButton
+                                    sx={{
+                                        '& .MuiPaginationItem-root': {
+                                            color: 'black',
+                                            borderRadius: 1.5,
+                                            mx: { xs: 0.2, sm: 0.5 },
+                                            fontWeight: 500,
+                                            fontSize: { xs: '0.875rem', sm: '0.9rem' }
+                                        },
+                                        '& .Mui-selected': {
+                                            fontWeight: 700,
+                                            backgroundColor: alpha(theme.palette.primary.main, 0.1),
+                                            '&:hover': {
+                                                backgroundColor: alpha(theme.palette.primary.main, 0.2),
+                                            }
+                                        }
+                                    }}
+                                />
+                            </Paper>
+                        </Box>
+                    </>
+                )}
+        </Box>
+    )
 }
 
-export default Merchandise
+export default MerchandiseListingPage;

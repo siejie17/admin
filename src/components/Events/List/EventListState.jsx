@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import {
     Box,
     Card,
@@ -23,6 +23,7 @@ import { format } from 'date-fns';
 
 const EventListState = ({ events }) => {
     const theme = useTheme();
+    const secretKey = import.meta.env.VITE_ADMIN_SECRET_KEY;
 
     // Format Firebase timestamp to readable date
     const formatTimestamp = (timestamp) => {
@@ -43,7 +44,7 @@ const EventListState = ({ events }) => {
             }}
         >
             {events.map((event) => {
-                const encryptedID = CryptoJS.AES.encrypt(event.id, "UniEXP_Admin").toString();
+                const encryptedID = CryptoJS.AES.encrypt(event.id, secretKey).toString();
 
                 return (
                     <Grid key={event.id}>
@@ -169,7 +170,7 @@ const EventListState = ({ events }) => {
                                             sx={{
                                                 bgcolor: 'primary.lighter',
                                                 borderRadius: 1.5,
-                                                px: 1,
+                                                px: 0.5,
                                                 display: 'flex',
                                                 justifyContent: 'center',
                                                 alignItems: 'center',
@@ -243,7 +244,7 @@ const EventListState = ({ events }) => {
                                             sx={{
                                                 bgcolor: 'primary.lighter',
                                                 borderRadius: 1.5,
-                                                px: 1,
+                                                px: 0.5,
                                                 display: 'flex',
                                                 justifyContent: 'center',
                                                 alignItems: 'center'

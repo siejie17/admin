@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Box, Button, Grid, Paper, Stack, Typography, useTheme } from '@mui/material';
 import { NumbersOutlined as NumbersOutlinedIcon, SportsEsports as SportsEsportsIcon, Task as TaskIcon, NoteAdd as NoteAddIcon } from '@mui/icons-material';
 
@@ -32,6 +32,10 @@ const QuestCreation = ({
         "networking": "rgba(156, 39, 176, 0.7)", // Purple
         "feedback": "rgba(244, 67, 54, 0.7)", // Red
     };
+
+    useEffect(() => {
+        window.scrollTo(0, 0);
+    }, []);
 
     return (
         <Box sx={{ pt: 1.5, px: 1.5 }}>

@@ -250,7 +250,7 @@ const QuestDetails = () => {
     }, [questData.questType]);
 
     const handleChange = (field, value) => {
-        if (field === "diamondsRewards" || field === "pointsRewards" || field === "completionNum") {
+        if (field === "diamondsRewards" || field === "pointsRewards" || field === "completionNum" || field === "maxEarlyBird") {
             if (value === '' || /^[0-9\b]+$/.test(value)) {
                 setFormData(prev => ({
                     ...prev,
@@ -287,12 +287,14 @@ const QuestDetails = () => {
         if (!formData.description) formErrors.description = "Quest description is required.";
         if (Number(formData.pointsRewards) <= 0) formErrors.pointsRewards = "Point rewards must be greater than 0 and not empty.";
         if (Number(formData.diamondsRewards) <= 0) formErrors.diamondsRewards = "Diamond rewards must be greater than 0 and not empty.";
-        if (formData.questType === "networking" || formData.questType === "earlyBird") {
+        if (formData.questType === "networking") {
             if (Number(formData.completionNum) <= 0) {
-                formErrors.completionNum =
-                    formData.questType === "networking"
-                        ? "Number of connections to make field is required."
-                        : "Maximum number of early bird attendees field is required.";
+                formErrors.completionNum = "Number of connections to make field is required."
+            }
+        }
+        if (formData.questType === "earlyBird") {
+            if (Number(formData.maxEarlyBird) <= 0) {
+                formErrors.maxEarlyBird = "Maximum number of early bird attendees field is required.";
             }
         }
         if (formData.questType === "q&a") {
@@ -720,10 +722,10 @@ const QuestDetails = () => {
                                     fullWidth
                                     name='completionNum'
                                     placeholder="Set the limit for how many early bird attendees can receive a reward"
-                                    value={formData.completionNum}
-                                    onChange={(e) => handleChange("completionNum", e.target.value)}
-                                    error={!!errors.completionNum}
-                                    helperText={errors.completionNum}
+                                    value={formData.maxEarlyBird}
+                                    onChange={(e) => handleChange("maxEarlyBird", e.target.value)}
+                                    error={!!errors.maxEarlyBird}
+                                    helperText={errors.maxEarlyBird}
                                     type="number"
                                     InputProps={{
                                         startAdornment: (

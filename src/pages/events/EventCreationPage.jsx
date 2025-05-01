@@ -31,6 +31,7 @@ const EventCreationPage = () => {
     const [pinpoint, setPinpoint] = useState();
     const [requiresCapacity, setRequiresCapacity] = useState(false);
     const [images, setImages] = useState([]);
+    const [currentImageIndex, setCurrentImageIndex] = useState(0);
     const [capacity, setCapacity] = useState('');
     const [requiresPaymentProof, setRequiresPaymentProof] = useState(false);
     const [errors, setErrors] = useState({});
@@ -142,6 +143,7 @@ const EventCreationPage = () => {
         const newImages = [...images];
         newImages.splice(index, 1);
         setImages(newImages);
+        setCurrentImageIndex((prev) => (prev > 0 ? prev - 1 : images.length - 1));
 
         if (newImages.length <= 4) {
             setErrors({ ...errors, images: null });
@@ -318,6 +320,8 @@ const EventCreationPage = () => {
                     pinpoint={pinpoint}
                     setPinpoint={setPinpoint}
                     images={images}
+                    currentImageIndex={currentImageIndex}
+                    setCurrentImageIndex={setCurrentImageIndex}
                     requiresCapacity={requiresCapacity}
                     setRequiresCapacity={setRequiresCapacity}
                     capacity={capacity}

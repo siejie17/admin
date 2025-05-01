@@ -14,11 +14,14 @@ import {
     useTheme,
     alpha,
     Button,
+    Avatar,
 } from "@mui/material";
 import {
     ChevronLeft as ChevronLeftIcon,
     Event as EventIcon,
+    Leaderboard as LeaderboardIcon,
     ShoppingBag as MerchandiseIcon,
+    Summarize as SummarizeIcon,
     Logout as LogoutIcon,
     Menu as MenuIcon
 } from "@mui/icons-material";
@@ -28,12 +31,15 @@ import Logo from '../assets/logo.png';
 
 import { signOut } from "firebase/auth";
 import { auth } from "../utils/firebaseConfig";
-import { removeItem } from '../utils/localStorage';
+import { getItem, removeItem } from '../utils/localStorage';
 
 const AppLayout = () => {
     const theme = useTheme();
     const location = useLocation();
     const navigate = useNavigate();
+
+    const [admin, setAdmin] = useState({});
+    const [isLoading, setIsLoading] = useState(true);
 
     // Responsive breakpoints
     const isExtraSmall = useMediaQuery('(max-width:600px)');
@@ -50,7 +56,9 @@ const AppLayout = () => {
 
     const menuItems = [
         { text: "Events", path: "/event", icon: <EventIcon /> },
-        { text: "Merchandise", path: "/merchandise", icon: <MerchandiseIcon /> },
+        { text: "Merchandises", path: "/merchandise", icon: <MerchandiseIcon /> },
+        { text: "Leaderboard", path: "/leaderboard", icon: <LeaderboardIcon /> },
+        { text: "Participation Stats", path: "/overview", icon: <SummarizeIcon /> },
     ];
 
     // Control drawer visibility on screen resize
@@ -79,6 +87,18 @@ const AppLayout = () => {
             window.removeEventListener('scroll', controlFloatingMenu);
         };
     }, [isSmall]);
+
+    useEffect(() => {
+        const fetchAdminProfile = async () => {
+            setIsLoading(true);
+            const adminData = await getItem("admin");
+            const parsedAdminData = JSON.parse(adminData);
+            setAdmin(parsedAdminData);
+            setIsLoading(false);
+        };
+
+        fetchAdminProfile();
+    }, []);
 
     const handleDrawerToggle = () => {
         if (isSmall) {
@@ -140,7 +160,7 @@ const AppLayout = () => {
                             variant="h6"
                             sx={{
                                 fontWeight: '800',
-                                color: 'primary.main',
+                                color: '#243861',
                                 letterSpacing: '-0.5px',
                                 fontSize: { xs: '1.1rem', sm: '1.25rem' }
                             }}
@@ -240,7 +260,7 @@ const AppLayout = () => {
                                         sx={{
                                             color: isActive ? 'primary.main' : 'text.secondary',
                                             minWidth: { xs: 32, sm: 36 },
-                                            fontSize: { xs: '1.1rem', sm: '1.25rem' },
+                                            fontSize: { xs: '0.8rem', sm: '1rem' },
                                         }}
                                     >
                                         {item.icon}
@@ -249,7 +269,7 @@ const AppLayout = () => {
                                         primary={item.text}
                                         primaryTypographyProps={{
                                             fontWeight: isActive ? 700 : 500,
-                                            fontSize: { xs: '0.85rem', sm: '0.95rem' },
+                                            fontSize: { xs: '0.75rem', sm: '0.85rem' },
                                             color: isActive ? 'primary.main' : 'text.primary',
                                         }}
                                     />
@@ -273,6 +293,61 @@ const AppLayout = () => {
             </Box>
 
             <Box sx={{ flexGrow: 1 }} />
+
+            {/* Profile Overview Section */}
+            {!isLoading && (
+                <Box
+                    sx={{
+                        p: { xs: 1, sm: 1.5 },
+                        mx: { xs: 2, sm: 2.5 },
+                        border: '1px solid',
+                        borderRadius: '12px',
+                        borderColor: theme => alpha(theme.palette.divider, 0.1),
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 1.25,
+                    }}
+                >
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                        <Avatar
+                            src={`data:image/png;base64,${admin.profilePicture}`}
+                            alt={admin.adminName}
+                            sx={{
+                                width: { xs: 24, sm: 30 },
+                                height: { xs: 24, sm: 30 },
+                            }}
+                        />
+                        <Box sx={{ flex: 1, overflow: 'hidden' }}>
+                            <Typography
+                                variant="body2"
+                                sx={{
+                                    fontWeight: 600,
+                                    fontSize: { xs: '0.65rem', sm: '0.75rem' },
+                                    color: 'text.primary',
+                                    whiteSpace: 'nowrap',
+                                    overflow: 'hidden',
+                                    textOverflow: 'ellipsis'
+                                }}
+                            >
+                                {admin.adminName}
+                            </Typography>
+                            <Typography
+                                variant="caption"
+                                sx={{
+                                    color: 'text.secondary',
+                                    fontSize: { xs: '0.55rem', sm: '0.6rem' },
+                                    display: 'block',
+                                    whiteSpace: 'nowrap',
+                                    overflow: 'hidden',
+                                    textOverflow: 'ellipsis'
+                                }}
+                            >
+                                {admin.email}
+                            </Typography>
+                        </Box>
+                    </Box>
+                </Box>
+            )}
 
             {/* Logout section */}
             <Box sx={{ p: { xs: 2, sm: 2.5 }, pb: 3 }}>
