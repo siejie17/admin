@@ -23,6 +23,9 @@ import {
 } from '@mui/icons-material';
 import { Link as RouterLink } from 'react-router-dom';
 import logo from '../../assets/logo.png';
+import { collection, getDocs, query, where } from 'firebase/firestore';
+import { auth, db } from '../../utils/firebaseConfig';
+import { sendPasswordResetEmail } from 'firebase/auth';
 
 const PasswordResetPage = () => {
     const [email, setEmail] = useState('');

@@ -37,7 +37,7 @@ const MetricCard = ({ title, subtitle, value, icon, color }) => {
       sx={{
         position: 'relative',
         minHeight: '50px',
-        minWidth: { xs: '308px' },
+        minWidth: { xs: '308px', sm: '400px' },
         width: '100%',
         height: '100%',
         mr: { xs: 3, lg: 8.5 },

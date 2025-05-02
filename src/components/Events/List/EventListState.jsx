@@ -105,9 +105,9 @@ const EventListState = ({ events }) => {
                                             backgroundColor:
                                                 event.status === 'Scheduled' ? alpha(theme.palette.primary.main, 0.9) :
                                                     event.status === 'Postponed' ? alpha(theme.palette.warning.main, 0.9) :
-                                                        event.status === 'Ongoing' ? alpha(theme.palette.success.main, 0.9) :
+                                                        event.status === 'Ongoing' ? alpha(theme.palette.secondary.main, 0.9) :
                                                             event.status === 'Cancelled' ? alpha(theme.palette.error.main, 0.9) :
-                                                                event.status === 'Completed' ? alpha(theme.palette.info.main, 0.9) :
+                                                                event.status === 'Completed' ? alpha(theme.palette.success.main, 0.9) :
                                                                     alpha(theme.palette.primary.main, 0.95),
                                             color: "#fff",
                                             height: 24,

@@ -98,8 +98,8 @@ const MerchandiseCreationPage = () => {
         let hasError = false;
 
         files.forEach(file => {
-            if (file.size > 50 * 1024) { // 50KB limit
-                setErrors({ ...errors, images: 'Images must be 50KB or less' });
+            if (file.size > 100 * 1024) { // 100KB limit
+                setErrors({ ...errors, images: 'Images must be 100KB or less' });
                 hasError = true;
                 return;
             }
@@ -144,8 +144,8 @@ const MerchandiseCreationPage = () => {
     const handleReplaceImage = (index, e) => {
         const file = e.target.files[0];
 
-        if (file.size > 50 * 1024) {
-            setErrors({ ...errors, images: 'Image must be 50KB or less' });
+        if (file.size > 100 * 1024) {
+            setErrors({ ...errors, images: 'Image must be 100KB or less' });
             return;
         }
 
@@ -348,7 +348,7 @@ const MerchandiseCreationPage = () => {
                                     📸 Merchandise Image <RequiredAsterisk />
                                 </Typography>
                                 <Typography variant="body2" color='text.secondary' fontSize="12px" mt={0.5}>
-                                    ⚠️ Upload up to 4 images (max 50KB each). The first uploaded image will be used as the thumbnail.
+                                    ⚠️ Upload up to 4 images (max 100KB each). The first uploaded image will be used as the thumbnail.
                                 </Typography>
                             </Box>
                         </Box>

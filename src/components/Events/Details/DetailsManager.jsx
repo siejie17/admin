@@ -328,8 +328,8 @@ const DetailsManager = ({ eventID }) => {
         let hasError = false;
 
         files.forEach(file => {
-            if (file.size > 50 * 1024) { // 50KB limit
-                setFormErrors({ ...formErrors, images: 'Image must be 50KB or less' });
+            if (file.size > 100 * 1024) { // 50KB limit
+                setFormErrors({ ...formErrors, images: 'Image must be 100KB or less' });
                 hasError = true;
                 return;
             }
@@ -382,8 +382,10 @@ const DetailsManager = ({ eventID }) => {
     const handleReplaceImage = (index, e) => {
         const file = e.target.files[0];
 
-        if (file.size > 50 * 1024) {
-            setFormErrors({ ...formErrors, images: 'Image must be 50KB or less' });
+        if (!file.size) return;
+
+        if (file.size > 100 * 1024) {
+            setFormErrors({ ...formErrors, images: 'Image must be 100KB or less' });
             return;
         }
 
@@ -464,7 +466,7 @@ const DetailsManager = ({ eventID }) => {
 
                 await updateDoc(doc(db, "event", eventID), formattedEventData);
 
-                if (changedFields.includes(images)) {
+                if (changedFields.includes("images")) {
                     const updateImagesQuery = query(collection(db, "eventImages"), where("eventID", "==", eventID));
                     const updateImagesSnapshot = await getDocs(updateImagesQuery);
 
@@ -475,6 +477,8 @@ const DetailsManager = ({ eventID }) => {
                         await updateDoc(imagesRef, { images });
                     }
                 }
+
+                setOriginalData(JSON.parse(JSON.stringify(formData)));
 
                 setSnackbarOpen(true);
                 setSnackbarContent({
@@ -559,7 +563,7 @@ const DetailsManager = ({ eventID }) => {
                             🖼️ Event Poster <RequiredAsterisk />
                         </Typography>
                         <Typography variant="body2" color='text.secondary' fontSize="12px" mt={0.5}>
-                            ⚠️ Upload up to 4 event posters (max 50KB each)
+                            ⚠️ Upload up to 4 event posters (max 100KB each)
                         </Typography>
                     </Box>
                 </Box>
@@ -855,7 +859,7 @@ const DetailsManager = ({ eventID }) => {
                     />
                 </Grid>
 
-                <Grid item xs={12} width="100%">
+                <Grid width="100%">
                     <Box sx={{ mb: 1 }}>
                         <Typography variant="h6" sx={{
                             fontSize: "16px",
@@ -884,7 +888,7 @@ const DetailsManager = ({ eventID }) => {
                 </Grid>
 
 
-                <Grid item xs={12} width="100%">
+                <Grid width="100%">
                     <Box sx={{ mb: 1 }}>
                         <Typography variant="h6" sx={{
                             fontSize: "16px",
@@ -923,7 +927,7 @@ const DetailsManager = ({ eventID }) => {
 
             <Grid container spacing={3} py={3}>
                 {/* Event Start Date & Time */}
-                <Grid item xs={12} width="100%">
+                <Grid width="100%">
                     <Box sx={{ mb: 2 }}>
                         <Typography variant="h6" sx={{
                             fontSize: "16px",
@@ -973,7 +977,7 @@ const DetailsManager = ({ eventID }) => {
                 </Grid>
 
                 {/* Event End Date & Time */}
-                <Grid item xs={12} width="100%">
+                <Grid width="100%">
                     <Box sx={{ mb: 2 }}>
                         <Typography variant="h6" sx={{
                             fontSize: "16px",
@@ -1024,7 +1028,7 @@ const DetailsManager = ({ eventID }) => {
                 </Grid>
 
                 {/* Registration Closing Date */}
-                <Grid item xs={12} width="100%">
+                <Grid width="100%">
                     <Box sx={{ mb: 2 }}>
                         <Typography variant="h6" sx={{
                             fontSize: "16px",

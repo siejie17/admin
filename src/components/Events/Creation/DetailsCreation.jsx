@@ -213,7 +213,7 @@ const DetailsCreation = ({
                             🖼️ Event Poster <RequiredAsterisk />
                         </Typography>
                         <Typography variant="body2" color='text.secondary' fontSize="12px" mt={0.5}>
-                            ⚠️ Upload up to 4 event posters (max 50KB each). The first uploaded image will be used as the event thumbnail.
+                            ⚠️ Upload up to 4 event posters (max 100KB each). The first uploaded image will be used as the event thumbnail.
                         </Typography>
                     </Box>
                 </Box>

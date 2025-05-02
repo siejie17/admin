@@ -58,7 +58,7 @@ const AppLayout = () => {
         { text: "Events", path: "/event", icon: <EventIcon /> },
         { text: "Merchandises", path: "/merchandise", icon: <MerchandiseIcon /> },
         { text: "Leaderboard", path: "/leaderboard", icon: <LeaderboardIcon /> },
-        { text: "Participation Stats", path: "/overview", icon: <SummarizeIcon /> },
+        { text: "Student Statistics", path: "/overview", icon: <SummarizeIcon /> },
     ];
 
     // Control drawer visibility on screen resize
@@ -118,6 +118,7 @@ const AppLayout = () => {
     const handleSignOut = async () => {
         await removeItem("admin");
         await signOut(auth);
+        navigate("/login");
     }
 
     // Drawer content component to avoid duplication

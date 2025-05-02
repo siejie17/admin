@@ -112,8 +112,8 @@ const EventCreationPage = () => {
         let hasError = false;
 
         files.forEach(file => {
-            if (file.size > 50 * 1024) { // 50KB limit
-                setErrors({ ...errors, images: 'Images must be 50KB or less' });
+            if (file.size > 100 * 1024) { // 100KB limit
+                setErrors({ ...errors, images: 'Images must be 100KB or less' });
                 hasError = true;
                 return;
             }
@@ -152,29 +152,37 @@ const EventCreationPage = () => {
 
     const handleReplaceImage = (index, e) => {
         const file = e.target.files[0];
-
-        if (file.size > 50 * 1024) {
-            setErrors({ ...errors, images: 'Image must be 50KB or less' });
+    
+        if (file.size > 100 * 1024) {
+            setErrors({ ...errors, images: 'Image must be 100KB or less' });
             return;
         }
-
+    
+        const existingImage = images[index];
+    
+        // Check if the selected image is the same (by name and size)
+        if (existingImage && file.preview === existingImage && file.size === existingImage.file.size) {
+            setErrors({ ...errors, images:'You have selected the same image.'});
+            return;
+        }
+    
         const reader = new FileReader();
         reader.onload = (event) => {
             const fullBase64 = event.target.result;
-
             const base64Data = fullBase64.split(',')[1];
-
+    
             const newImages = [...images];
             newImages[index] = {
                 file: file,
                 preview: base64Data,
                 name: file.name
             };
+    
             setImages(newImages);
             setErrors({ ...errors, images: null });
-        }
+        };
         reader.readAsDataURL(file);
-    };
+    };    
 
     const handleDetailsSubmit = (e) => {
         e.preventDefault();
@@ -485,7 +493,7 @@ const EventCreationPage = () => {
                                 icon={tab.icon}
                                 iconPosition="start"
                                 label={tab.label}
-                                disabled={index > 0 && !name}
+                                disabled={index > 0}
                                 sx={{
                                     ...tabSx,
                                     // Remove border from last tab

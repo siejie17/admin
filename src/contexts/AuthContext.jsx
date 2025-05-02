@@ -13,17 +13,18 @@ export const AuthProvider = ({ children }) => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       const adminData = await getItem("admin");
       const parsedAdminData = JSON.parse(adminData);
-      
+  
       if (parsedAdminData) {
-        setUser(parsedAdminData);
+        setUser(parsedAdminData); // optionally include currentUser.email or UID here
       } else {
-        setUser(null);
+        setUser(null); // maybe not an admin
       }
-
+  
       setLoading(false);
     });
+  
     return () => unsubscribe();
-  }, []);
+  }, []);  
 
   return <AuthContext.Provider value={{ user, loading }}>{children}</AuthContext.Provider>;
 };

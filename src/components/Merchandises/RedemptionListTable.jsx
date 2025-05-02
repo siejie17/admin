@@ -560,15 +560,6 @@ const RedemptionListTable = ({ redemptionList, merchandiseCategory, activeTab, i
                             zIndex: 3
                         }
                     },
-                    '& .MuiDataGrid-cell': {
-                        pb: 2,
-                        fontSize: '0.95rem',
-                        fontWeight: 500,
-                        borderBottom: 'none',
-                        color: (theme) => theme.palette.text.primary,
-                        padding: '18px 16px',
-                        transition: 'color 0.2s ease',
-                    },
                     '& .MuiDataGrid-columnHeaders': {
                         borderBottom: 'none',
                         backgroundColor: (theme) => alpha(theme.palette.background.default, 0.6),

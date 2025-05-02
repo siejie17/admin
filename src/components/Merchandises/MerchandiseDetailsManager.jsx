@@ -94,7 +94,7 @@ const MerchandiseDetailsManager = ({ merchandiseID }) => {
         return Object.keys(formData).filter(key => {
             if (Array.isArray(formData[key])) {
                 if (formData[key].length !== originalData[key]?.length) return true;
-                return formData[key].every((item, index) => item !== originalData[key][index]);
+                return !formData[key].every((item, index) => item === originalData[key][index]);
             }
 
             if (key === "diamondsToRedeem") {
@@ -106,16 +106,31 @@ const MerchandiseDetailsManager = ({ merchandiseID }) => {
     }, [originalData, formData]);
 
     const handleChange = (field, value) => {
-        setFormData(prev => ({
-            ...prev,
-            [field]: value
-        }));
+        if (field === "category") {
+            if (value === "Clothing") {
+                setFormData(prev => ({
+                    ...prev,
+                    [field]: value,
+                    sizes: []
+                }));
+            } else {
+                const { sizes, ...rest } = formData; // remove `sizes`
+                setFormData({
+                    ...rest,
+                    [field]: value
+                });
+            }
+        } else {
+            setFormData(prev => ({
+                ...prev,
+                [field]: value
+            }));
+        }        
     };
 
     // Handle array field additions (sizes)
     const handleArrayAdd = (field, value) => {
         if (!value.trim()) return;
-        if (formData[field].includes(value)) return;
 
         setFormData(prev => ({
             ...prev,
@@ -143,8 +158,8 @@ const MerchandiseDetailsManager = ({ merchandiseID }) => {
         let hasError = false;
 
         files.forEach(file => {
-            if (file.size > 50 * 1024) { // 50KB limit
-                setErrors({ ...errors, images: 'Images must be 50KB or less' });
+            if (file.size > 100 * 1024) { // 100KB limit
+                setErrors({ ...errors, images: 'Images must be 100KB or less' });
                 hasError = true;
                 return;
             }
@@ -185,8 +200,8 @@ const MerchandiseDetailsManager = ({ merchandiseID }) => {
     const handleReplaceImage = (index, e) => {
         const file = e.target.files[0];
 
-        if (file.size > 50 * 1024) {
-            setErrors({ ...errors, images: 'Image must be 50KB or less' });
+        if (file.size > 100 * 1024) {
+            setErrors({ ...errors, images: 'Image must be 100KB or less' });
             return;
         }
 
@@ -205,6 +220,10 @@ const MerchandiseDetailsManager = ({ merchandiseID }) => {
                 images: replaceImage
             }));
 
+            changedFields.includes("images");
+
+            console.log(changedFields.includes("images"))
+
             setErrors({ ...errors, images: null });
         }
         reader.readAsDataURL(file);
@@ -217,6 +236,7 @@ const MerchandiseDetailsManager = ({ merchandiseID }) => {
             const updates = {};
             changedFields.forEach(field => {
                 updates[field] = formData[field];
+                console.log(updates[field]);
             });
 
             const merchRef = doc(db, "merchandise", merchandiseID);
@@ -232,6 +252,8 @@ const MerchandiseDetailsManager = ({ merchandiseID }) => {
                     sizes: deleteField(),
                 });
             }
+
+            setOriginalData(JSON.parse(JSON.stringify(formData)));
 
             setSnackbarOpen(true);
             setSnackbarContent({ msg: 'Your merchandise updates were saved!', type: 'success' });
@@ -447,7 +469,7 @@ const MerchandiseDetailsManager = ({ merchandiseID }) => {
                                 📸 Merchandise Image <RequiredAsterisk />
                             </Typography>
                             <Typography variant="body2" color='text.secondary' fontSize="12px" mt={0.5}>
-                                ⚠️ Upload up to 4 images (max 50KB each). The first uploaded image will be used as the thumbnail.
+                                ⚠️ Upload up to 4 images (max 100KB each). The first uploaded image will be used as the thumbnail.
                             </Typography>
                         </Box>
                     </Box>
@@ -698,7 +720,7 @@ const MerchandiseDetailsManager = ({ merchandiseID }) => {
                             </FormControl>
 
                             {/* Sizes Preview */}
-                            {formData.sizes.length > 0 && (
+                            {formData.sizes && (
                                 <Box
                                     sx={{
                                         display: 'flex',
