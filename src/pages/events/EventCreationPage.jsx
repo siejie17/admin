@@ -233,6 +233,7 @@ const EventCreationPage = () => {
                 organiserID: parsedAdminData.facultyID,
                 requiresCapacity,
                 paymentProofRequired: requiresPaymentProof,
+                lastAdded: Timestamp.now(),
                 status: "Scheduled"
             };
 

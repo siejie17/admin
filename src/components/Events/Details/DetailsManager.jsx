@@ -1005,7 +1005,6 @@ const DetailsManager = ({ eventID }) => {
                             onChange={(newDate) => handleChange('eventEndDateTime', newDate)}
                             minDateTime={formData.eventStartDateTime?.add(1, "hour")}
                             disabled={!formData.eventStartDateTime}
-                            shouldDisableDate={(date) => formData.eventStartDateTime && date.isBefore(formData.eventStartDateTime)}
                             sx={{
                                 width: '100%',
                                 '& .MuiOutlinedInput-root': {
