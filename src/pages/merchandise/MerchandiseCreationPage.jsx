@@ -32,10 +32,10 @@ import {
     Inventory2 as Inventory2Icon,
     Publish as PublishIcon
 } from '@mui/icons-material';
+import imageCompression from 'browser-image-compression';
 
 import SnackbarComponent from '../../components/General/SnackbarComponent';
 
-import Diamond from '../../assets/icons/diamond.png';
 import RequiredAsterisk from '../../components/General/RequiredAsterisk';
 
 import { addDoc, collection } from 'firebase/firestore';
@@ -82,47 +82,52 @@ const MerchandiseCreationPage = () => {
         setSizes(sizes.filter((s) => s !== sizeToRemove));
     };
 
-    const handleImageChange = (e) => {
+    const handleImageChange = async (e) => {
         const files = Array.from(e.target.files);
-
         e.target.value = '';
 
-        console.log(files);
-
         if (images.length + files.length > 4) {
-            setErrors({ ...errors, images: 'Maximum 4 images allowed' });
+            setErrors(prev => ({ ...prev, images: 'Maximum 4 images allowed' }));
             return;
         }
 
+        const options = {
+            maxSizeMB: 0.1, // 100KB
+            maxWidthOrHeight: 1024,
+            useWebWorker: true,
+        };
+
         const newImages = [];
-        let hasError = false;
 
-        files.forEach(file => {
-            if (file.size > 100 * 1024) { // 100KB limit
-                setErrors({ ...errors, images: 'Images must be 100KB or less' });
-                hasError = true;
-                return;
-            }
+        try {
+            for (const file of files) {
+                const compressedFile = await imageCompression(file, options);
 
-            const reader = new FileReader();
-            reader.onload = (event) => {
-                const fullBase64 = event.target.result;
-
-                const base64Data = fullBase64.split(',')[1];
+                const base64Data = await new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                        const fullBase64 = event.target.result;
+                        const base64 = fullBase64.split(',')[1];
+                        resolve(base64);
+                    };
+                    reader.onerror = reject;
+                    reader.readAsDataURL(compressedFile);
+                });
 
                 newImages.push({
-                    file: file,
+                    file,
                     preview: base64Data,
                     name: file.name
                 });
+            }
 
-                if (newImages.length === files.length && !hasError) {
-                    setImages([...images, ...newImages]);
-                    setErrors({ ...errors, images: null });
-                }
-            };
-            reader.readAsDataURL(file);
-        });
+            setImages(prev => [...prev, ...newImages]);
+            setErrors(prev => ({ ...prev, images: null }));
+
+        } catch (error) {
+            console.error('Image compression or reading failed:', error);
+            setErrors(prev => ({ ...prev, images: 'Failed to process image(s)' }));
+        }
     };
 
     const handleRemoveImage = (index) => {
@@ -141,35 +146,48 @@ const MerchandiseCreationPage = () => {
         }
     };
 
-    const handleReplaceImage = (index, e) => {
+    const handleReplaceImage = async (index, e) => {
         const file = e.target.files[0];
+        if (!file) return;
 
-        if (file.size > 100 * 1024) {
-            setErrors({ ...errors, images: 'Image must be 100KB or less' });
-            return;
-        }
+        const options = {
+            maxSizeMB: 0.1, // 100KB
+            maxWidthOrHeight: 1024,
+            useWebWorker: true,
+        };
 
-        const reader = new FileReader();
-        reader.onload = (event) => {
-            const fullBase64 = event.target.result;
+        try {
+            const compressedFile = await imageCompression(file, options);
 
-            const base64Data = fullBase64.split(',')[1];
+            const base64Data = await new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    const fullBase64 = event.target.result;
+                    const base64 = fullBase64.split(',')[1];
+                    resolve(base64);
+                };
+                reader.onerror = reject;
+                reader.readAsDataURL(compressedFile);
+            });
 
             const newImages = [...images];
             newImages[index] = {
-                file: file,
+                file,
                 preview: base64Data,
-                name: file.name
+                name: file.name,
             };
+
             setImages(newImages);
-            setErrors({ ...errors, images: null });
+            setErrors(prev => ({ ...prev, images: null }));
+
+        } catch (error) {
+            console.error('Image compression or reading failed:', error);
+            setErrors(prev => ({ ...prev, images: 'Failed to process image' }));
         }
-        reader.readAsDataURL(file);
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-
         setSubmitted(true);
 
         const formErrors = {};
@@ -199,9 +217,7 @@ const MerchandiseCreationPage = () => {
                 available: true,
             }
 
-            if (category === "Clothing") {
-                merchMergedData.sizes = sizes;
-            }
+            if (category === "Clothing") merchMergedData.sizes = sizes;
 
             try {
                 const merchandiseRef = collection(db, "merchandise");
@@ -212,9 +228,9 @@ const MerchandiseCreationPage = () => {
                 setSnackbarContent({ msg: 'Merchandise created successfully!', type: 'success' });
                 setTimeout(() => {
                     navigate("/merchandise");
-                }, 2500)
+                }, 1500)
             } catch (error) {
-
+                console.error("Something went wrong when creating merchandise:", error);
             }
         }
     };
@@ -348,7 +364,7 @@ const MerchandiseCreationPage = () => {
                                     📸 Merchandise Image <RequiredAsterisk />
                                 </Typography>
                                 <Typography variant="body2" color='text.secondary' fontSize="12px" mt={0.5}>
-                                    ⚠️ Upload up to 4 images (max 100KB each). The first uploaded image will be used as the thumbnail.
+                                    ⚠️ Upload up to 4 images. The first uploaded image will be used as the merch thumbnail.
                                 </Typography>
                             </Box>
                         </Box>
@@ -376,7 +392,7 @@ const MerchandiseCreationPage = () => {
                                         alt={`Merchandise Image ${currentImageIndex + 1}`}
                                         sx={{
                                             maxWidth: '100%',
-                                            maxHeight: '90%',
+                                            maxHeight: images.length === 1 ? '100%' : '90%',
                                             objectFit: 'contain',
                                             borderRadius: '10px'
                                         }}

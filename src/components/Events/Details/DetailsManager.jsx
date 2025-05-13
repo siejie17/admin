@@ -43,6 +43,7 @@ import { db } from '../../../utils/firebaseConfig';
 import { collection, doc, getDocs, onSnapshot, query, Timestamp, updateDoc, where } from 'firebase/firestore';
 
 import dayjs from 'dayjs';
+import imageCompression from 'browser-image-compression';
 
 import Loader from '../../General/Loader';
 import RequiredAsterisk from '../../General/RequiredAsterisk';
@@ -317,8 +318,10 @@ const DetailsManager = ({ eventID }) => {
         }
     };
 
-    const handleImageChange = (e) => {
+    const handleImageChange = async (e) => {
         const files = Array.from(e.target.files);
+        e.target.value = '';
+        setFormErrors({ ...formErrors, images: '' });
 
         if (formData.images.length + files.length > 4) {
             setFormErrors({ ...formErrors, images: 'Maximum 4 images allowed' });
@@ -327,32 +330,46 @@ const DetailsManager = ({ eventID }) => {
 
         let hasError = false;
 
-        files.forEach(file => {
-            if (file.size > 100 * 1024) { // 50KB limit
-                setFormErrors({ ...formErrors, images: 'Image must be 100KB or less' });
-                hasError = true;
-                return;
-            }
+        const options = {
+            maxSizeMB: 0.1, // 100KB
+            maxWidthOrHeight: 1024,
+            useWebWorker: true,
+        };
 
-            setFormErrors({ ...formErrors, images: '' });
+        // setImageLoading(true);
 
-            const reader = new FileReader();
-            reader.onload = (event) => {
-                const fullBase64 = event.target.result;
+        try {
+            const newImages = [];
 
-                const base64Data = fullBase64.split(',')[1];
+            for (const file of files) {
+                const compressedFile = await imageCompression(file, options);
 
-                if (!hasError) {
-                    setFormData(prev => ({
-                        ...prev,
-                        images: [...prev.images, base64Data]
-                    }));
+                const base64Data = await new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = () => {
+                        const fullBase64 = reader.result;
+                        const base64 = fullBase64.split(',')[1];
+                        resolve(base64);
+                    };
+                    reader.onerror = reject;
+                    reader.readAsDataURL(compressedFile);
+                });
 
-                    changedFields.includes('images');
-                }
+                newImages.push(base64Data)
             };
-            reader.readAsDataURL(file);
-        });
+
+            if (!hasError) {
+                setFormData(prev => ({
+                    ...prev,
+                    images: [...prev.images, ...newImages]
+                }));
+
+                changedFields.includes('images');
+            }
+        } catch (error) {
+            console.error('Compression or preview error:', error);
+            setFormErrors(prev => ({ ...prev, images: 'Failed to process image(s)' }));
+        }
     };
 
     const handleImageRemove = (index) => {
@@ -379,36 +396,41 @@ const DetailsManager = ({ eventID }) => {
         }
     };
 
-    const handleReplaceImage = (index, e) => {
+    const handleReplaceImage = async (index, e) => {
         const file = e.target.files[0];
+        if (!file || !file.size) return;
 
-        if (!file.size) return;
-
-        if (file.size > 100 * 1024) {
-            setFormErrors({ ...formErrors, images: 'Image must be 100KB or less' });
-            return;
-        }
+        const options = {
+            maxSizeMB: 0.1, // 100KB
+            maxWidthOrHeight: 1024,
+            useWebWorker: true,
+        };
 
         setFormErrors({ ...formErrors, images: '' });
 
-        const reader = new FileReader();
-        reader.onload = (event) => {
-            const fullBase64 = event.target.result;
+        try {
+            const compressedFile = await imageCompression(file, options);
 
-            const base64Data = fullBase64.split(',')[1];
+            const base64Data = await new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    const fullBase64 = event.target.result;
+                    const base64 = fullBase64.split(',')[1];
+                    resolve(base64);
+                };
+                reader.onerror = reject;
+                reader.readAsDataURL(compressedFile);
+            });
 
-            const replaceImage = [...formData.images];
-
-            replaceImage[index] = base64Data;
-
-            setFormData(prev => ({
-                ...prev,
-                images: replaceImage
-            }));
-
-            changedFields.includes('images');
+            setFormData(prev => {
+                const updatedImages = [...prev.images];
+                updatedImages[index] = base64Data;
+                return { ...prev, images: updatedImages };
+            });
+        } catch (error) {
+            console.error('Image replace error:', error);
+            setFormErrors(prev => ({ ...prev, images: 'Failed to replace image' }));
         }
-        reader.readAsDataURL(file);
     };
 
     // Navigation handlers
@@ -563,7 +585,7 @@ const DetailsManager = ({ eventID }) => {
                             🖼️ Event Poster <RequiredAsterisk />
                         </Typography>
                         <Typography variant="body2" color='text.secondary' fontSize="12px" mt={0.5}>
-                            ⚠️ Upload up to 4 event posters (max 100KB each)
+                            ⚠️ Upload up to 4 event posters. The first poster will be used as the thumbnail.
                         </Typography>
                     </Box>
                 </Box>
@@ -955,6 +977,11 @@ const DetailsManager = ({ eventID }) => {
                             onChange={(newDate) => handleChange('eventStartDateTime', newDate)}
                             minDateTime={now}
                             shouldDisableDate={(date) => date.isBefore(now)}
+                            slotProps={{
+                                textField: {
+                                    error: false,
+                                },
+                            }}
                             sx={{
                                 width: '100%',
                                 '& .MuiOutlinedInput-root': {
@@ -1055,8 +1082,13 @@ const DetailsManager = ({ eventID }) => {
                             onChange={(newDate) => handleChange('registrationClosingDate', newDate)}
                             minDateTime={now}
                             maxDateTime={formData.eventStartDateTime?.subtract(1, "hour")}
-                            disabled={!formData.eventStartDateTime}
+                            disabled={originalData.eventStartDateTime === formData.eventStartDateTime && formData.registrationClosingDate.isBefore(now)}
                             shouldDisableDate={(date) => formData.eventStartDateTime && date.isAfter(formData.eventStartDateTime)}
+                            slotProps={{
+                                textField: {
+                                    error: false,
+                                },
+                            }}
                             sx={{
                                 width: '100%',
                                 '& .MuiOutlinedInput-root': {

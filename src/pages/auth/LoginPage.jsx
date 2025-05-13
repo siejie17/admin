@@ -41,7 +41,7 @@ const LoginPage = () => {
   const [errorSnackbarOpen, setErrorSnackbarOpen] = useState(false);
 
   // Blue-themed colors
-  const primaryColor = '#4A86E8'; // Bright blue
+  const primaryColor = '#6488cc'; // Bright blue
   const secondaryColor = '#1E3A8A'; // Deep navy blue
   const accentColor = '#93C5FD'; // Light sky blue
   const darkColor = '#0F2447'; // Dark blue-black

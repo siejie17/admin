@@ -19,7 +19,8 @@ const QuestCreation = ({
     questErrors,
     setQuestErrors,
     handleEventCreation,
-    handleBack
+    handleBack,
+    isNavigating
 }) => {
     const theme = useTheme();
 
@@ -38,7 +39,7 @@ const QuestCreation = ({
     }, []);
 
     return (
-        <Box sx={{ pt: 1.5, px: 1.5 }}>
+        <Box>
             <Paper
                 elevation={0}
                 sx={{
@@ -198,6 +199,7 @@ const QuestCreation = ({
                 >
                     <Button
                         onClick={handleBack}
+                        disabled={isNavigating}
                         variant="outlined"
                         color="inherit"
                         sx={{
@@ -223,6 +225,7 @@ const QuestCreation = ({
                     </Button>
                     <Button
                         onClick={handleEventCreation}
+                        disabled={isNavigating}
                         startIcon={<NoteAddIcon />}
                         variant="contained"
                         color="primary"

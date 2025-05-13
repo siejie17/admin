@@ -1,8 +1,9 @@
 import { deleteField, doc, onSnapshot, updateDoc } from 'firebase/firestore';
-import React, { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { db } from '../../utils/firebaseConfig';
-import { Alert, Box, Button, Chip, CircularProgress, FormControl, FormHelperText, Grid, IconButton, InputAdornment, MenuItem, Paper, Select, Snackbar, TextField, Tooltip, Typography, useTheme, Zoom } from '@mui/material';
+import { Box, Button, Chip, FormControl, FormHelperText, Grid, IconButton, InputAdornment, MenuItem, Paper, Select, TextField, Tooltip, Typography, useTheme, Zoom } from '@mui/material';
 import RequiredAsterisk from '../General/RequiredAsterisk';
+import imageCompression from 'browser-image-compression';
 
 import {
     Add as AddIcon,
@@ -16,7 +17,6 @@ import {
     Save as SaveIcon
 } from '@mui/icons-material';
 
-import Diamond from '../../assets/icons/diamond.png';
 import Loader from '../General/Loader';
 import SnackbarComponent from '../General/SnackbarComponent';
 
@@ -73,7 +73,6 @@ const MerchandiseDetailsManager = ({ merchandiseID }) => {
     const hasChanges = useMemo(() => {
         if (!originalData || !formData) return false;
 
-        // Use the same detailed comparison logic as changedFields
         return Object.keys(formData).some(key => {
             if (Array.isArray(formData[key])) {
                 if (formData[key].length !== originalData[key]?.length) return true;
@@ -125,7 +124,7 @@ const MerchandiseDetailsManager = ({ merchandiseID }) => {
                 ...prev,
                 [field]: value
             }));
-        }        
+        }
     };
 
     // Handle array field additions (sizes)
@@ -147,7 +146,7 @@ const MerchandiseDetailsManager = ({ merchandiseID }) => {
     };
 
     // Handle image upload and convert to base64
-    const handleImageUpload = (e) => {
+    const handleImageUpload = async (e) => {
         const files = Array.from(e.target.files);
 
         if (formData.images.length + files.length > 4) {
@@ -155,29 +154,43 @@ const MerchandiseDetailsManager = ({ merchandiseID }) => {
             return;
         }
 
-        let hasError = false;
+        const options = {
+            maxSizeMB: 0.1, // 100KB
+            maxWidthOrHeight: 1024,
+            useWebWorker: true,
+        };
 
-        files.forEach(file => {
-            if (file.size > 100 * 1024) { // 100KB limit
-                setErrors({ ...errors, images: 'Images must be 100KB or less' });
-                hasError = true;
-                return;
-            }
+        try {
+            for (const file of files) {
+                const compressedFile = await imageCompression(file, options);
 
-            const reader = new FileReader();
-            reader.onload = (event) => {
-                const fullBase64 = event.target.result;
-
-                const base64Data = fullBase64.split(',')[1];
+                const base64Data = await new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                        const fullBase64 = event.target.result;
+                        const base64 = fullBase64.split(',')[1];
+                        resolve(base64);
+                    };
+                    reader.onerror = reject;
+                    reader.readAsDataURL(compressedFile);
+                });
 
                 setFormData(prev => ({
                     ...prev,
                     images: [...prev.images, base64Data]
                 }));
+            }
 
-            };
-            reader.readAsDataURL(file);
-        });
+            if (!changedFields.includes("images")) {
+                changedFields.push("images");
+            }
+
+            setErrors(prev => ({ ...prev, images: null }));
+
+        } catch (error) {
+            console.error('Image compression or reading failed:', error);
+            setErrors(prev => ({ ...prev, images: 'Failed to process one or more images' }));
+        }
     };
 
     // Handle image removal
@@ -197,22 +210,31 @@ const MerchandiseDetailsManager = ({ merchandiseID }) => {
         }
     };
 
-    const handleReplaceImage = (index, e) => {
+    const handleReplaceImage = async (index, e) => {
         const file = e.target.files[0];
+        if (!file) return;
 
-        if (file.size > 100 * 1024) {
-            setErrors({ ...errors, images: 'Image must be 100KB or less' });
-            return;
-        }
+        const options = {
+            maxSizeMB: 0.1, // 100KB
+            maxWidthOrHeight: 1024,
+            useWebWorker: true,
+        };
 
-        const reader = new FileReader();
-        reader.onload = (event) => {
-            const fullBase64 = event.target.result;
+        try {
+            const compressedFile = await imageCompression(file, options);
 
-            const base64Data = fullBase64.split(',')[1];
+            const base64Data = await new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    const fullBase64 = event.target.result;
+                    const base64 = fullBase64.split(',')[1];
+                    resolve(base64);
+                };
+                reader.onerror = reject;
+                reader.readAsDataURL(compressedFile);
+            });
 
             const replaceImage = [...formData.images];
-
             replaceImage[index] = base64Data;
 
             setFormData(prev => ({
@@ -220,13 +242,16 @@ const MerchandiseDetailsManager = ({ merchandiseID }) => {
                 images: replaceImage
             }));
 
-            changedFields.includes("images");
+            if (!changedFields.includes("images")) {
+                changedFields.push("images");
+            }
 
-            console.log(changedFields.includes("images"))
+            setErrors(prev => ({ ...prev, images: null }));
 
-            setErrors({ ...errors, images: null });
+        } catch (error) {
+            console.error('Image compression or reading failed:', error);
+            setErrors(prev => ({ ...prev, images: 'Failed to process image' }));
         }
-        reader.readAsDataURL(file);
     };
 
     const handleEditSubmit = async (e) => {
@@ -264,22 +289,6 @@ const MerchandiseDetailsManager = ({ merchandiseID }) => {
         }
     }
 
-    const handleSuccessClose = (event, reason) => {
-        if (reason === 'clickaway') {
-            return;
-        }
-
-        setSuccessOpen(false);
-    };
-
-    const handleFailedClose = (event, reason) => {
-        if (reason === 'clickaway') {
-            return;
-        }
-
-        setFailedOpen(false);
-    };
-
     const handleAddSize = (e) => {
         handleArrayAdd("sizes", size);
         setSize('');
@@ -303,160 +312,6 @@ const MerchandiseDetailsManager = ({ merchandiseID }) => {
     return (
         <Box component="form" onSubmit={handleEditSubmit} noValidate sx={{ width: 'auto', minHeight: '500px', px: { xs: 2, md: 4 }, pt: { xs: 3, md: 5 }, pb: { xs: 8, sm: 10 } }}>
             <Box sx={{ width: '100%', mb: 1 }}>
-                {formData.images.length > 0 && (
-                    <Box sx={{ width: '100%', mb: 1 }}>
-                        <Box sx={{ width: '100%', position: 'relative' }}>
-                            <Paper
-                                elevation={2}
-                                sx={{
-                                    p: 1.5,
-                                    borderRadius: 3,
-                                    overflow: 'hidden',
-                                    position: 'relative',
-                                    height: 300,
-                                    display: 'flex',
-                                    justifyContent: 'center',
-                                    background: `linear-gradient(135deg, rgba(250, 250, 250, 0.5), ${theme.palette.common.white})`
-                                }}
-                            >
-                                <Box
-                                    component="img"
-                                    src={`data:image/jpeg;base64,${formData.images[currentImageIndex]}`}
-                                    alt={`Merchandise Image ${currentImageIndex + 1}`}
-                                    sx={{
-                                        maxWidth: '100%',
-                                        maxHeight: formData.images.length > 1 ? '90%' : '100%',
-                                        objectFit: 'contain',
-                                        borderRadius: '10px'
-                                    }}
-                                />
-
-                                {currentImageIndex !== 0 && (
-                                    <IconButton
-                                        sx={{
-                                            position: 'absolute',
-                                            left: 10,
-                                            top: '50%',
-                                            transform: 'translateY(-50%)',
-                                            bgcolor: 'background.paper',
-                                            boxShadow: 2,
-                                            '&:hover': { bgcolor: 'background.paper', opacity: 0.9 }
-                                        }}
-                                        onClick={handlePrevImage}
-                                    >
-                                        <ChevronLeftIcon />
-                                    </IconButton>
-                                )}
-
-                                {(formData.images.length !== 1 && currentImageIndex !== formData.images.length - 1) && (
-                                    <IconButton
-                                        sx={{
-                                            position: 'absolute',
-                                            right: 10,
-                                            top: '50%',
-                                            transform: 'translateY(-50%)',
-                                            bgcolor: 'background.paper',
-                                            boxShadow: 2,
-                                            '&:hover': { bgcolor: 'background.paper', opacity: 0.9 }
-                                        }}
-                                        onClick={handleNextImage}
-                                    >
-                                        <ChevronRightIcon />
-                                    </IconButton>
-                                )}
-
-                                <Box
-                                    sx={{
-                                        position: 'absolute',
-                                        top: 10,
-                                        right: 15,
-                                        display: 'flex',
-                                        gap: 1,
-                                    }}
-                                >
-                                    {formData.images.length > 1 && (
-                                        <IconButton
-                                            size="small"
-                                            onClick={() => handleImageRemove(currentImageIndex)}
-                                            sx={{
-                                                bgcolor: 'error.main',
-                                                color: 'white',
-                                                '&:hover': {
-                                                    bgcolor: 'error.dark'
-                                                }
-                                            }}
-                                        >
-                                            <DeleteIcon fontSize="small" />
-                                        </IconButton>
-                                    )}
-                                    <IconButton
-                                        size="small"
-                                        component="label"
-                                        sx={{
-                                            bgcolor: 'info.main',
-                                            color: 'white',
-                                            '&:hover': {
-                                                bgcolor: 'info.dark'
-                                            }
-                                        }}
-                                    >
-                                        <EditIcon fontSize="small" />
-                                        <input
-                                            type="file"
-                                            accept="image/*"
-                                            hidden
-                                            onChange={(e) => handleReplaceImage(currentImageIndex, e)}
-                                        />
-                                    </IconButton>
-                                </Box>
-
-                                <Box
-                                    sx={{
-                                        position: 'absolute',
-                                        bottom: 16,
-                                        left: '50%',
-                                        transform: 'translateX(-50%)',
-                                        display: 'flex',
-                                        gap: 1
-                                    }}
-                                >
-                                    {formData.images.length !== 1 && formData.images.map((_, index) => (
-                                        <Box
-                                            key={index}
-                                            sx={{
-                                                width: 7,
-                                                height: 7,
-                                                borderRadius: '50%',
-                                                bgcolor: index === currentImageIndex ? 'primary.main' : 'grey.300',
-                                                cursor: 'pointer',
-                                                transition: 'all 0.2s',
-                                                '&:hover': {
-                                                    transform: 'scale(1.2)',
-                                                    bgcolor: index === currentImageIndex ? 'primary.dark' : 'grey.400'
-                                                }
-                                            }}
-                                            onClick={() => setCurrentImageIndex(index)}
-                                        />
-                                    ))}
-                                </Box>
-                            </Paper>
-
-                            <Typography
-                                variant="body2"
-                                sx={{
-                                    fontSize: "12px",
-                                    textAlign: 'center',
-                                    mt: 2,
-                                    color: 'text.secondary',
-                                    fontStyle: 'italic'
-                                }}
-                            >
-                                Image {currentImageIndex + 1} of {formData.images.length}
-                            </Typography>
-                        </Box>
-                    </Box>
-                )}
-
                 <Box sx={{ width: '100%', mb: 1 }}>
                     <Box sx={{ width: '100%', mb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <Box>
@@ -469,9 +324,165 @@ const MerchandiseDetailsManager = ({ merchandiseID }) => {
                                 📸 Merchandise Image <RequiredAsterisk />
                             </Typography>
                             <Typography variant="body2" color='text.secondary' fontSize="12px" mt={0.5}>
-                                ⚠️ Upload up to 4 images (max 100KB each). The first uploaded image will be used as the thumbnail.
+                                ⚠️ Upload up to 4 images. The first uploaded image will be used as the thumbnail.
                             </Typography>
                         </Box>
+                    </Box>
+
+                    <Box sx={{ mb: 2 }}>
+                        {formData.images.length > 0 && (
+                            <Box sx={{ width: '100%', mb: 1 }}>
+                                <Box sx={{ width: '100%', position: 'relative' }}>
+                                    <Paper
+                                        elevation={2}
+                                        sx={{
+                                            p: 1.5,
+                                            borderRadius: 3,
+                                            overflow: 'hidden',
+                                            position: 'relative',
+                                            height: 300,
+                                            display: 'flex',
+                                            justifyContent: 'center',
+                                            background: `linear-gradient(135deg, rgba(250, 250, 250, 0.5), ${theme.palette.common.white})`
+                                        }}
+                                    >
+                                        <Box
+                                            component="img"
+                                            src={`data:image/jpeg;base64,${formData.images[currentImageIndex]}`}
+                                            alt={`Merchandise Image ${currentImageIndex + 1}`}
+                                            sx={{
+                                                maxWidth: '100%',
+                                                maxHeight: formData.images.length > 1 ? '90%' : '100%',
+                                                objectFit: 'contain',
+                                                borderRadius: '10px'
+                                            }}
+                                        />
+
+                                        {currentImageIndex !== 0 && (
+                                            <IconButton
+                                                sx={{
+                                                    position: 'absolute',
+                                                    left: 10,
+                                                    top: '50%',
+                                                    transform: 'translateY(-50%)',
+                                                    bgcolor: 'background.paper',
+                                                    boxShadow: 2,
+                                                    '&:hover': { bgcolor: 'background.paper', opacity: 0.9 }
+                                                }}
+                                                onClick={handlePrevImage}
+                                            >
+                                                <ChevronLeftIcon />
+                                            </IconButton>
+                                        )}
+
+                                        {(formData.images.length !== 1 && currentImageIndex !== formData.images.length - 1) && (
+                                            <IconButton
+                                                sx={{
+                                                    position: 'absolute',
+                                                    right: 10,
+                                                    top: '50%',
+                                                    transform: 'translateY(-50%)',
+                                                    bgcolor: 'background.paper',
+                                                    boxShadow: 2,
+                                                    '&:hover': { bgcolor: 'background.paper', opacity: 0.9 }
+                                                }}
+                                                onClick={handleNextImage}
+                                            >
+                                                <ChevronRightIcon />
+                                            </IconButton>
+                                        )}
+
+                                        <Box
+                                            sx={{
+                                                position: 'absolute',
+                                                top: 10,
+                                                right: 15,
+                                                display: 'flex',
+                                                gap: 1,
+                                            }}
+                                        >
+                                            {formData.images.length > 1 && (
+                                                <IconButton
+                                                    size="small"
+                                                    onClick={() => handleImageRemove(currentImageIndex)}
+                                                    sx={{
+                                                        bgcolor: 'error.main',
+                                                        color: 'white',
+                                                        '&:hover': {
+                                                            bgcolor: 'error.dark'
+                                                        }
+                                                    }}
+                                                >
+                                                    <DeleteIcon fontSize="small" />
+                                                </IconButton>
+                                            )}
+                                            <IconButton
+                                                size="small"
+                                                component="label"
+                                                sx={{
+                                                    bgcolor: 'info.main',
+                                                    color: 'white',
+                                                    '&:hover': {
+                                                        bgcolor: 'info.dark'
+                                                    }
+                                                }}
+                                            >
+                                                <EditIcon fontSize="small" />
+                                                <input
+                                                    type="file"
+                                                    accept="image/*"
+                                                    hidden
+                                                    onChange={(e) => handleReplaceImage(currentImageIndex, e)}
+                                                />
+                                            </IconButton>
+                                        </Box>
+
+                                        <Box
+                                            sx={{
+                                                position: 'absolute',
+                                                bottom: 16,
+                                                left: '50%',
+                                                transform: 'translateX(-50%)',
+                                                display: 'flex',
+                                                gap: 1
+                                            }}
+                                        >
+                                            {formData.images.length !== 1 && formData.images.map((_, index) => (
+                                                <Box
+                                                    key={index}
+                                                    sx={{
+                                                        width: 7,
+                                                        height: 7,
+                                                        borderRadius: '50%',
+                                                        bgcolor: index === currentImageIndex ? 'primary.main' : 'grey.300',
+                                                        cursor: 'pointer',
+                                                        transition: 'all 0.2s',
+                                                        '&:hover': {
+                                                            transform: 'scale(1.2)',
+                                                            bgcolor: index === currentImageIndex ? 'primary.dark' : 'grey.400'
+                                                        }
+                                                    }}
+                                                    onClick={() => setCurrentImageIndex(index)}
+                                                />
+                                            ))}
+                                        </Box>
+                                    </Paper>
+
+                                    <Typography
+                                        variant="body2"
+                                        sx={{
+                                            fontSize: "12px",
+                                            textAlign: 'center',
+                                            mt: 2,
+                                            color: 'text.secondary',
+                                            fontStyle: 'italic'
+                                        }}
+                                    >
+                                        Image {currentImageIndex + 1} of {formData.images.length}
+                                    </Typography>
+                                </Box>
+                            </Box>
+                        )}
                     </Box>
 
                     <Button

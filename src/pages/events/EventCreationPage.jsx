@@ -6,6 +6,8 @@ import {
 } from '@mui/icons-material';
 import React, { useState } from 'react';
 import { addDoc, collection, getDoc, Timestamp } from 'firebase/firestore';
+import imageCompression from 'browser-image-compression';
+
 import { db } from '../../utils/firebaseConfig';
 import QuestCreation from '../../components/Events/Creation/QuestCreation';
 import { getItem } from '../../utils/localStorage';
@@ -31,6 +33,7 @@ const EventCreationPage = () => {
     const [pinpoint, setPinpoint] = useState();
     const [requiresCapacity, setRequiresCapacity] = useState(false);
     const [images, setImages] = useState([]);
+    const [imageLoading, setImageLoading] = useState(false);
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
     const [capacity, setCapacity] = useState('');
     const [requiresPaymentProof, setRequiresPaymentProof] = useState(false);
@@ -62,6 +65,7 @@ const EventCreationPage = () => {
 
     // Navigation
     const navigate = useNavigate();
+    const [isNavigating, setIsNavigating] = useState(false);
 
     const CATEGORY_MAPPING = {
         "Academic": 1,
@@ -98,9 +102,8 @@ const EventCreationPage = () => {
         }
     };
 
-    const handleImageChange = (e) => {
+    const handleImageChange = async (e) => {
         const files = Array.from(e.target.files);
-
         e.target.value = '';
 
         if (images.length + files.length > 4) {
@@ -108,35 +111,43 @@ const EventCreationPage = () => {
             return;
         }
 
+        const options = {
+            maxSizeMB: 0.1, // 100KB
+            maxWidthOrHeight: 1024,
+            useWebWorker: true,
+        };
+
         const newImages = [];
-        let hasError = false;
 
-        files.forEach(file => {
-            if (file.size > 100 * 1024) { // 100KB limit
-                setErrors({ ...errors, images: 'Images must be 100KB or less' });
-                hasError = true;
-                return;
-            }
+        try {
+            for (const file of files) {
+                const compressedFile = await imageCompression(file, options);
 
-            const reader = new FileReader();
-            reader.onload = (event) => {
-                const fullBase64 = event.target.result;
-
-                const base64Data = fullBase64.split(',')[1];
-
-                newImages.push({
-                    file: file,
-                    preview: base64Data,
-                    name: file.name
+                const base64Data = await new Promise((resolve, reject) => {
+                    setImageLoading(true);
+                    const reader = new FileReader();
+                    reader.onload = () => {
+                        const fullBase64 = reader.result;
+                        const base64 = fullBase64.split(',')[1];
+                        resolve(base64);
+                    };
+                    reader.onerror = reject;
+                    reader.readAsDataURL(compressedFile);
                 });
 
-                if (newImages.length === files.length && !hasError) {
-                    setImages([...images, ...newImages]);
-                    setErrors({ ...errors, images: null });
-                }
-            };
-            reader.readAsDataURL(file);
-        });
+                newImages.push({
+                    file: compressedFile,
+                    preview: base64Data,
+                    name: compressedFile.name
+                });
+            }
+
+            setImages(prev => [...prev, ...newImages]);
+            setErrors(prev => ({ ...prev, images: null }));
+        } catch (error) {
+            console.error('Compression or preview error:', error);
+            setErrors(prev => ({ ...prev, images: 'Failed to process image(s)' }));
+        }
     };
 
     const handleRemoveImage = (index) => {
@@ -150,39 +161,46 @@ const EventCreationPage = () => {
         }
     };
 
-    const handleReplaceImage = (index, e) => {
+    const handleReplaceImage = async (index, e) => {
         const file = e.target.files[0];
-    
-        if (file.size > 100 * 1024) {
-            setErrors({ ...errors, images: 'Image must be 100KB or less' });
-            return;
-        }
-    
-        const existingImage = images[index];
-    
-        // Check if the selected image is the same (by name and size)
-        if (existingImage && file.preview === existingImage && file.size === existingImage.file.size) {
-            setErrors({ ...errors, images:'You have selected the same image.'});
-            return;
-        }
-    
-        const reader = new FileReader();
-        reader.onload = (event) => {
-            const fullBase64 = event.target.result;
-            const base64Data = fullBase64.split(',')[1];
-    
-            const newImages = [...images];
-            newImages[index] = {
-                file: file,
-                preview: base64Data,
-                name: file.name
-            };
-    
-            setImages(newImages);
-            setErrors({ ...errors, images: null });
+
+        // Image compression options
+        const options = {
+            maxSizeMB: 0.1, // 100KB
+            maxWidthOrHeight: 1024,
+            useWebWorker: true,
         };
-        reader.readAsDataURL(file);
-    };    
+
+        try {
+            // Compress the image
+            const compressedFile = await imageCompression(file, options);
+
+            // Convert the compressed file to base64
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                const fullBase64 = event.target.result;
+                const base64Data = fullBase64.split(',')[1];
+
+                // Create a new images array and update the image at the provided index
+                const newImages = [...images];
+                newImages[index] = {
+                    file: compressedFile,  // Store the compressed file
+                    preview: base64Data,   // Store the base64 string
+                    name: compressedFile.name,  // Update with the compressed file name
+                    loading: true,         // Set loading flag to true
+                };
+
+                setImages(newImages);  // Update state with the new image array
+                setErrors({ ...errors, images: null });  // Clear error state
+            };
+
+            // Read the compressed file as base64
+            reader.readAsDataURL(compressedFile);
+        } catch (error) {
+            console.error('Compression or preview error:', error);
+            setErrors({ ...errors, images: 'Failed to process image' });  // Set error state
+        }
+    };
 
     const handleDetailsSubmit = (e) => {
         e.preventDefault();
@@ -295,7 +313,10 @@ const EventCreationPage = () => {
                 severity: "success",
             });
             setSnackbarOpen(true);
-            navigate('/event');
+            setIsNavigating(true);
+            setTimeout(() => {
+                navigate('/event');
+            }, 1500);
         } catch (error) {
             setSnackbarContent({
                 msg: "Something went wrong. Please try again shortly.",
@@ -329,6 +350,9 @@ const EventCreationPage = () => {
                     pinpoint={pinpoint}
                     setPinpoint={setPinpoint}
                     images={images}
+                    setImages={setImages}
+                    imageLoading={imageLoading}
+                    setImageLoading={setImageLoading}
                     currentImageIndex={currentImageIndex}
                     setCurrentImageIndex={setCurrentImageIndex}
                     requiresCapacity={requiresCapacity}
@@ -366,6 +390,7 @@ const EventCreationPage = () => {
                     setQuestErrors={setQuestErrors}
                     handleEventCreation={handleEventCreation}
                     handleBack={handleBack}
+                    isNavigating={isNavigating}
                 />
             )
         }

@@ -265,7 +265,7 @@ const QuestProgressTable = ({ activeTab, progress, questType = '', completionTar
             },
         ];
 
-        if (progress.every(p => p.isCompleted === true)) {
+        if (activeTab === 0 && progress.every(p => p.isCompleted === true)) {
             baseColumns.splice(3, 0, {
                 field: 'rewardsClaimed',
                 headerName: 'Rewards Claimed',

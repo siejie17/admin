@@ -16,6 +16,7 @@
     "@mui/material": "^7.0.1",
     "@mui/x-data-grid": "^7.28.2",
     "@mui/x-date-pickers": "^7.28.3",
+    "browser-image-compression": "^2.0.2",
     "crypto-js": "^4.2.0",
     "date-fns": "^4.1.0",
     "dayjs": "^1.11.13",

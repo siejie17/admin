@@ -33,7 +33,7 @@ const PasswordResetPage = () => {
     const [isSubmitted, setIsSubmitted] = useState(false);
 
     // Blue-themed colors (same as login page)
-    const primaryColor = '#4A86E8'; // Bright blue
+    const primaryColor = '#6488cc'; // Bright blue
     const secondaryColor = '#1E3A8A'; // Deep navy blue
     const accentColor = '#93C5FD'; // Light sky blue
     const darkColor = '#0F2447'; // Dark blue-black
@@ -327,13 +327,10 @@ const PasswordResetPage = () => {
                                     <Link
                                         component={RouterLink}
                                         to="/login"
-                                        sx={{
-                                            color: 'white',
-                                        }}
                                     >
                                         <Button
                                             fullWidth
-                                            variant="contained"
+                                            variant="outlined"
                                             size="large"
                                             sx={{
                                                 py: 1.5,
@@ -341,11 +338,9 @@ const PasswordResetPage = () => {
                                                 fontWeight: 'bold',
                                                 textTransform: 'none',
                                                 fontSize: '1.1rem',
-                                                backgroundColor: '#D3D3D3',
                                                 boxShadow: `0 4px 12px rgba(229, 228, 226, 0.4)`,
                                                 transition: 'all 0.3s',
                                                 '&:hover': {
-                                                    backgroundColor: '#C0C0C0',
                                                     transform: 'scale(1.03)',
                                                     boxShadow: `0 6px 16px rgba(15, 36, 71, 0.4)`,
                                                 }

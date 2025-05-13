@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { alpha, Box, Button, Chip, Fade, FormControl, FormHelperText, Grid, IconButton, MenuItem, Paper, Select, Switch, TextField, Tooltip, Typography, useTheme } from '@mui/material'
+import { alpha, Box, Button, Chip, CircularProgress, Fade, FormControl, FormHelperText, Grid, IconButton, MenuItem, Paper, Select, Switch, TextField, Tooltip, Typography, useTheme } from '@mui/material'
 import { DateTimePicker, LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import dayjs from 'dayjs';
@@ -58,6 +58,9 @@ const DetailsCreation = ({
     pinpoint,
     setPinpoint,
     images,
+    setImages,
+    imageLoading,
+    setImageLoading,
     currentImageIndex,
     setCurrentImageIndex,
     requiresCapacity,
@@ -177,8 +180,9 @@ const DetailsCreation = ({
     };
 
     const hasAllFieldsFilled = useMemo(() => {
-        const fieldsFilled = name && description && category && startDateTime && endDateTime && registrationDate && location && pinpoint && images.length > 0;
-        
+        const fieldsFilled =
+            name && description && category && startDateTime && endDateTime && registrationDate && location && pinpoint && images.length > 0;
+
         if (requiresCapacity) {
             const capacityValid = (requiresCapacity && !isNaN(capacity) && capacity > 0);
 
@@ -213,13 +217,15 @@ const DetailsCreation = ({
                             🖼️ Event Poster <RequiredAsterisk />
                         </Typography>
                         <Typography variant="body2" color='text.secondary' fontSize="12px" mt={0.5}>
-                            ⚠️ Upload up to 4 event posters (max 100KB each). The first uploaded image will be used as the event thumbnail.
+                            ⚠️ Upload up to 4 event posters. The first uploaded image will be used as the event poster thumbnail.
                         </Typography>
                     </Box>
                 </Box>
-                {images.length > 0 && (
-                    <Box sx={{ width: '100%', mb: 1 }}>
-                        <Box sx={{ width: '100%', position: 'relative' }}>
+
+
+                <Box sx={{ width: '100%', mb: 1 }}>
+                    <Box sx={{ width: '100%', position: 'relative' }}>
+                        {(images.length > 0 || imageLoading) && (
                             <Paper
                                 elevation={2}
                                 sx={{
@@ -233,126 +239,151 @@ const DetailsCreation = ({
                                     background: `linear-gradient(135deg, rgba(250, 250, 250, 0.5), ${theme.palette.common.white})`
                                 }}
                             >
-                                <Box
-                                    component="img"
-                                    src={`data:image/jpeg;base64,${images[currentImageIndex].preview}`}
-                                    alt={`Event Poster ${currentImageIndex + 1}`}
-                                    sx={{
-                                        maxWidth: '100%',
-                                        maxHeight: '90%',
-                                        objectFit: 'contain',
-                                        borderRadius: '10px'
-                                    }}
-                                />
-
-                                {currentImageIndex !== 0 && (
-                                    <IconButton
-                                        sx={{
-                                            position: 'absolute',
-                                            left: 10,
-                                            top: '50%',
-                                            transform: 'translateY(-50%)',
-                                            bgcolor: 'background.paper',
-                                            boxShadow: 2,
-                                            '&:hover': { bgcolor: 'background.paper', opacity: 0.9 }
+                                {images.length > 0 && (
+                                    <Box
+                                        component="img"
+                                        src={`data:image/jpeg;base64,${images[currentImageIndex].preview}`}
+                                        alt={`Event Poster ${currentImageIndex + 1}`}
+                                        onLoad={() => {
+                                            setImageLoading(false)
                                         }}
-                                        onClick={handlePrevImage}
-                                    >
-                                        <ChevronLeftIcon />
-                                    </IconButton>
+                                        sx={{
+                                            maxWidth: '100%',
+                                            maxHeight: images.length === 1 ? '100%' : '90%',
+                                            objectFit: 'contain',
+                                            borderRadius: '10px',
+                                            opacity: 1, // Apply opacity for loading
+                                            transition: 'opacity 0.3s ease'
+                                        }}
+                                    />
                                 )}
 
-                                {(images.length !== 1 && currentImageIndex !== images.length - 1) && (
-                                    <IconButton
+                                {imageLoading && (
+                                    <CircularProgress
+                                        size={40}
                                         sx={{
                                             position: 'absolute',
-                                            right: 10,
-                                            top: '50%',
-                                            transform: 'translateY(-50%)',
-                                            bgcolor: 'background.paper',
-                                            boxShadow: 2,
-                                            '&:hover': { bgcolor: 'background.paper', opacity: 0.9 }
+                                            color: 'primary.main',
+                                            zIndex: 2
                                         }}
-                                        onClick={handleNextImage}
-                                    >
-                                        <ChevronRightIcon />
-                                    </IconButton>
+                                    />
                                 )}
 
-                                <Box
-                                    sx={{
-                                        position: 'absolute',
-                                        top: 10,
-                                        right: 15,
-                                        display: 'flex',
-                                        gap: 1,
-                                    }}
-                                >
-                                    <IconButton
-                                        size="small"
-                                        onClick={() => handleRemoveImage(currentImageIndex)}
-                                        sx={{
-                                            bgcolor: 'error.main',
-                                            color: 'white',
-                                            '&:hover': {
-                                                bgcolor: 'error.dark'
-                                            }
-                                        }}
-                                    >
-                                        <DeleteIcon fontSize="small" />
-                                    </IconButton>
-                                    <IconButton
-                                        size="small"
-                                        component="label"
-                                        sx={{
-                                            bgcolor: 'info.main',
-                                            color: 'white',
-                                            '&:hover': {
-                                                bgcolor: 'info.dark'
-                                            }
-                                        }}
-                                    >
-                                        <EditIcon fontSize="small" />
-                                        <input
-                                            type="file"
-                                            accept="image/*"
-                                            hidden
-                                            onChange={(e) => handleReplaceImage(currentImageIndex, e)}
-                                        />
-                                    </IconButton>
-                                </Box>
 
-                                <Box
-                                    sx={{
-                                        position: 'absolute',
-                                        bottom: 16,
-                                        left: '50%',
-                                        transform: 'translateX(-50%)',
-                                        display: 'flex',
-                                        gap: 1
-                                    }}
-                                >
-                                    {images.length !== 1 && images.map((_, index) => (
+                                {images.length > 0 && (
+                                    <>
+                                        {currentImageIndex !== 0 && (
+                                            <IconButton
+                                                sx={{
+                                                    position: 'absolute',
+                                                    left: 10,
+                                                    top: '50%',
+                                                    transform: 'translateY(-50%)',
+                                                    bgcolor: 'background.paper',
+                                                    boxShadow: 2,
+                                                    '&:hover': { bgcolor: 'background.paper', opacity: 0.9 }
+                                                }}
+                                                onClick={handlePrevImage}
+                                            >
+                                                <ChevronLeftIcon />
+                                            </IconButton>
+                                        )}
+
+                                        {(images.length !== 1 && currentImageIndex !== images.length - 1) && (
+                                            <IconButton
+                                                sx={{
+                                                    position: 'absolute',
+                                                    right: 10,
+                                                    top: '50%',
+                                                    transform: 'translateY(-50%)',
+                                                    bgcolor: 'background.paper',
+                                                    boxShadow: 2,
+                                                    '&:hover': { bgcolor: 'background.paper', opacity: 0.9 }
+                                                }}
+                                                onClick={handleNextImage}
+                                            >
+                                                <ChevronRightIcon />
+                                            </IconButton>
+                                        )}
+
                                         <Box
-                                            key={index}
                                             sx={{
-                                                width: 7,
-                                                height: 7,
-                                                borderRadius: '50%',
-                                                bgcolor: index === currentImageIndex ? 'primary.main' : 'grey.300',
-                                                cursor: 'pointer',
-                                                transition: 'all 0.2s',
-                                                '&:hover': {
-                                                    transform: 'scale(1.2)',
-                                                    bgcolor: index === currentImageIndex ? 'primary.dark' : 'grey.400'
-                                                }
+                                                position: 'absolute',
+                                                top: 10,
+                                                right: 15,
+                                                display: 'flex',
+                                                gap: 1,
                                             }}
-                                            onClick={() => setCurrentImageIndex(index)}
-                                        />
-                                    ))}
-                                </Box>
-                            </Paper>
+                                        >
+                                            <IconButton
+                                                size="small"
+                                                onClick={() => handleRemoveImage(currentImageIndex)}
+                                                sx={{
+                                                    bgcolor: 'error.main',
+                                                    color: 'white',
+                                                    '&:hover': {
+                                                        bgcolor: 'error.dark'
+                                                    }
+                                                }}
+                                            >
+                                                <DeleteIcon fontSize="small" />
+                                            </IconButton>
+                                            <IconButton
+                                                size="small"
+                                                component="label"
+                                                sx={{
+                                                    bgcolor: 'info.main',
+                                                    color: 'white',
+                                                    '&:hover': {
+                                                        bgcolor: 'info.dark'
+                                                    }
+                                                }}
+                                            >
+                                                <EditIcon fontSize="small" />
+                                                <input
+                                                    type="file"
+                                                    accept="image/*"
+                                                    hidden
+                                                    onChange={(e) => handleReplaceImage(currentImageIndex, e)}
+                                                />
+                                            </IconButton>
+                                        </Box>
 
+                                        <Box
+                                            sx={{
+                                                position: 'absolute',
+                                                bottom: 16,
+                                                left: '50%',
+                                                transform: 'translateX(-50%)',
+                                                display: 'flex',
+                                                gap: 1
+                                            }}
+                                        >
+                                            {images.length !== 1 && images.map((_, index) => (
+                                                <Box
+                                                    key={index}
+                                                    sx={{
+                                                        width: 7,
+                                                        height: 7,
+                                                        borderRadius: '50%',
+                                                        bgcolor: index === currentImageIndex ? 'primary.main' : 'grey.300',
+                                                        cursor: 'pointer',
+                                                        transition: 'all 0.2s',
+                                                        '&:hover': {
+                                                            transform: 'scale(1.2)',
+                                                            bgcolor: index === currentImageIndex ? 'primary.dark' : 'grey.400'
+                                                        }
+                                                    }}
+                                                    onClick={() => setCurrentImageIndex(index)}
+                                                />
+                                            ))}
+                                        </Box>
+                                    </>
+                                )}
+                            </Paper>
+                        )}
+
+                        {images.length > 0 && (
                             <Typography
                                 variant="body2"
                                 sx={{
@@ -365,51 +396,53 @@ const DetailsCreation = ({
                             >
                                 Image {currentImageIndex + 1} of {images.length}
                             </Typography>
-                        </Box>
+                        )}
                     </Box>
-                )}
+                </Box>
             </Box>
 
             {/* Event Poster Images Field - Full width row */}
             <Box sx={{ width: '100%', my: 2 }}>
-                <Button
-                    variant="contained"
-                    component="label"
-                    startIcon={<ImageIcon />}
-                    sx={{
-                        width: '100%',
-                        mb: 1.5,
-                        borderRadius: 3,
-                        py: 1.5,
-                        px: 4,
-                        background: 'linear-gradient(90deg, #3a7bd5, #3a6073)',
-                        boxShadow: '0 4px 10px rgba(58, 123, 213, 0.2)',
-                        transition: 'all 0.3s ease',
-                        fontWeight: 500,
-                        textTransform: 'none',
-                        fontSize: '0.875rem',
-                        '&:hover': {
-                            background: 'linear-gradient(90deg, #3a7bd5, #4a7b93)',
-                            transform: 'translateY(-1px)',
-                            boxShadow: '0 8px 15px rgba(58, 123, 213, 0.3)',
-                        },
-                        '&:disabled': {
-                            background: '#e0e0e0',
-                            color: '#9e9e9e',
-                            boxShadow: 'none',
-                        }
-                    }}
-                    disabled={images.length >= 4}
-                    color="primary"
-                >
-                    {images.length > 0 ? 'Add Another Poster' : 'Upload Event Poster'}
-                    <input
-                        type="file"
-                        accept="image/*"
-                        hidden
-                        onChange={handleImageChange}
-                    />
-                </Button>
+                {images.length <= 4 &&
+                    <Button
+                        variant="contained"
+                        component="label"
+                        startIcon={<ImageIcon />}
+                        sx={{
+                            width: '100%',
+                            mb: 1.5,
+                            borderRadius: 3,
+                            py: 1.5,
+                            px: 4,
+                            background: 'linear-gradient(90deg, #3a7bd5, #3a6073)',
+                            boxShadow: '0 4px 10px rgba(58, 123, 213, 0.2)',
+                            transition: 'all 0.3s ease',
+                            fontWeight: 500,
+                            textTransform: 'none',
+                            fontSize: '0.875rem',
+                            '&:hover': {
+                                background: 'linear-gradient(90deg, #3a7bd5, #4a7b93)',
+                                transform: 'translateY(-1px)',
+                                boxShadow: '0 8px 15px rgba(58, 123, 213, 0.3)',
+                            },
+                            '&:disabled': {
+                                background: '#e0e0e0',
+                                color: '#9e9e9e',
+                                boxShadow: 'none',
+                            }
+                        }}
+                        disabled={images.length >= 4}
+                        color="primary"
+                    >
+                        {images.length > 0 ? 'Add Another Poster' : 'Upload Event Poster'}
+                        <input
+                            type="file"
+                            accept="image/*"
+                            hidden
+                            onChange={handleImageChange}
+                        />
+                    </Button>
+                }
 
                 {errors.images && (
                     <FormHelperText error sx={{ ml: 1 }}>{errors.images}</FormHelperText>
@@ -443,7 +476,7 @@ const DetailsCreation = ({
                     />
                 </Grid>
 
-                <Grid item xs={12} width="100%">
+                <Grid width="100%">
                     <Box sx={{ mb: 1 }}>
                         <Typography variant="h6" sx={{
                             fontSize: "16px",
@@ -471,7 +504,7 @@ const DetailsCreation = ({
                     />
                 </Grid>
 
-                <Grid item xs={12} width="100%">
+                <Grid width="100%">
                     <Box sx={{ mb: 1 }}>
                         <Typography variant="h6" sx={{
                             fontSize: "16px",
@@ -572,7 +605,7 @@ const DetailsCreation = ({
 
             <Grid container spacing={3} py={3}>
                 {/* Event Start Date & Time */}
-                <Grid item xs={12} width="100%">
+                <Grid width="100%">
                     <Box sx={{ mb: 2 }}>
                         <Typography variant="h6" sx={{
                             fontSize: "16px",
@@ -623,7 +656,7 @@ const DetailsCreation = ({
                 </Grid>
 
                 {/* Event End Date & Time */}
-                <Grid item xs={12} width="100%">
+                <Grid width="100%">
                     <Box sx={{ mb: 2 }}>
                         <Typography variant="h6" sx={{
                             fontSize: "16px",
@@ -675,7 +708,7 @@ const DetailsCreation = ({
                 </Grid>
 
                 {/* Registration Closing Date */}
-                <Grid item xs={12} width="100%">
+                <Grid width="100%">
                     <Box sx={{ mb: 2 }}>
                         <Typography variant="h6" sx={{
                             fontSize: "16px",
@@ -943,7 +976,7 @@ const DetailsCreation = ({
                 )}
             </Box>
 
-            <Grid item xs={12} sx={{ mb: 2.5 }}>
+            <Grid sx={{ mb: 2.5 }}>
                 <Box sx={{ mb: 2 }}>
                     <Typography variant="h6" sx={{
                         fontSize: "16px",
@@ -1018,7 +1051,7 @@ const DetailsCreation = ({
                 )}
             </Grid>
 
-            <Grid item xs={12}>
+            <Grid>
                 <Box sx={{ mb: 2 }}>
                     <Typography variant="h6" sx={{
                         fontSize: "16px",
