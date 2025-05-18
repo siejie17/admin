@@ -211,7 +211,7 @@ const QuestManager = ({ eventID, eventName }) => {
 
       <Grid container spacing={{ xs: 2 }}>
         {quests.map(quest => (
-          <Grid key={quest.id}>
+          <Grid key={quest.id} size={{ xs: 12, sm: 6 }}>
             <MetricCard
               title={"Number of Participants Completed"}
               subtitle={quest.questName}

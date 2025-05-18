@@ -6,7 +6,7 @@ import React, { useState } from 'react'
 import { db } from '../../../utils/firebaseConfig';
 import EmptyTableRows from '../../General/EmptyTableRows';
 
-const ParticipantsListTable = ({ participants, activeTab, isLoading }) => {
+const ParticipantsListTable = ({ participants, activeTab, isLoading, paymentProofRequired = false }) => {
     const [openImageModal, setOpenImageModal] = useState(false);
     const [currentProof, setCurrentProof] = useState('');
 
@@ -363,7 +363,73 @@ const ParticipantsListTable = ({ participants, activeTab, isLoading }) => {
             },
         ];
 
-        if (participants.every(participant => participant.isVerified === false)) {
+        if (activeTab === 0 && paymentProofRequired) {
+            columns.splice(5, 0, {
+                field: 'actions',
+                type: 'actions',
+                headerName: 'Action',
+                width: 280,
+                headerAlign: 'center',
+                align: 'center',
+                sortable: false,
+                filterable: false,
+                renderHeader: () => (
+                    <Box sx={enhancedHeaderStyle}>
+                        <Typography {...headerTypographyStyle}>
+                            Action
+                        </Typography>
+                    </Box>
+                ),
+                renderCell: (params) => (
+                    <Box sx={{ display: 'flex', justifyContent: "center", alignItems: "center", gap: 1 }}>
+                        <Button
+                            variant="contained"
+                            color="info"
+                            size="medium"
+                            disableElevation
+                            startIcon={
+                                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                    <Visibility fontSize='small' />
+                                </Box>
+                            }
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                handleViewProof(params.row.paymentProofBase64);
+                            }}
+                            sx={{
+                                fontWeight: '600',
+                                whiteSpace: 'nowrap',
+                                minWidth: 'auto',
+                                maxHeight: 30,
+                                py: 1,
+                                px: 2,
+                                borderRadius: '12px',
+                                textTransform: 'none',
+                                transition: 'all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1)',
+                                '&:hover': {
+                                    transform: 'translateY(-1px)',
+                                    backgroundColor: alpha(theme.palette.info.main, 0.85)
+                                },
+                                '&:active': {
+                                    transform: 'scale(0.98)',
+                                    transition: 'all 0.1s ease-in-out'
+                                }
+                            }}
+                        >
+                            <Typography sx={{
+                                fontWeight: 600,
+                                fontSize: '0.75rem',
+                                letterSpacing: '0.01em'
+                            }}>
+                                View Proof
+                            </Typography>
+                        </Button>
+                    </Box>
+                )
+            })
+        }
+
+        if (activeTab === 1 && paymentProofRequired) {
             columns.splice(5, 0, {
                 field: 'actions',
                 type: 'actions',
@@ -845,7 +911,7 @@ const ParticipantsListTable = ({ participants, activeTab, isLoading }) => {
                     py: 2,
                     px: 3
                 }}>
-                    <Typography variant="h6" fontWeight="600">
+                    <Typography fontWeight="600">
                         Payment Proof
                     </Typography>
                     <IconButton

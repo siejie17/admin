@@ -52,6 +52,7 @@ import SnackbarComponent from '../../General/SnackbarComponent';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { MapContainer, Marker, TileLayer, useMapEvents } from 'react-leaflet';
+import { getItem } from '../../../utils/localStorage';
 
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
@@ -62,6 +63,8 @@ L.Icon.Default.mergeOptions({
 
 const DetailsManager = ({ eventID }) => {
     const theme = useTheme();
+
+    const [facultyID, setFacultyID] = useState("");
 
     const [originalData, setOriginalData] = useState({});
     const [formData, setFormData] = useState({
@@ -76,6 +79,9 @@ const DetailsManager = ({ eventID }) => {
         locationLatitude: 0,
         locationLongitude: 0,
         requiresCapacity: false,
+        isFacultyRestrict: false,
+        isYearRestrict: false,
+        yearsRestricted: [],
         capacity: '',
         paymentProofRequired: false,
         images: []
@@ -89,6 +95,7 @@ const DetailsManager = ({ eventID }) => {
         registrationClosingDate: '',
         locationName: '',
         pinpoint: '',
+        yearsRestricted: '',
         capacity: '',
         images: '',
     });
@@ -123,6 +130,19 @@ const DetailsManager = ({ eventID }) => {
         "Health & Wellness": 6,
         "Others": 7,
     }
+
+    const FACULTY_MAPPING = {
+        "1": "FACA",
+        "2": "FBE",
+        "3": "FCSHD",
+        "4": "FCSIT",
+        "5": "FEB",
+        "6": "FELC",
+        "7": "FENG",
+        "8": "FMHS",
+        "9": "FRST",
+        "10": "FSSH",
+    };
 
     const statusConfig = {
         Scheduled: {
@@ -178,21 +198,8 @@ const DetailsManager = ({ eventID }) => {
         useMapEvents({
             click: (e) => {
                 const { lat, lng } = e.latlng;
-                const currentErrors = { ...formErrors };
-
-                const minLat = 1.4581;
-                const maxLat = 1.4737;
-                const minLng = 110.4187;
-                const maxLng = 110.4557;
-
-                if (lat >= minLat && lat <= maxLat && lng >= minLng && lng <= maxLng) {
-                    handleChange('locationLatitude', parseFloat(lat.toFixed(4)));
-                    handleChange('locationLongitude', parseFloat(lng.toFixed(4)));
-                } else {
-                    currentErrors.pinpoint = "Please select a location within UNIMAS area.";
-                }
-
-                setFormErrors(currentErrors);
+                handleChange('locationLatitude', parseFloat(lat.toFixed(4)));
+                handleChange('locationLongitude', parseFloat(lng.toFixed(4)));
             }
         });
         return null;
@@ -254,16 +261,38 @@ const DetailsManager = ({ eventID }) => {
             capacity: '',
             images: '',
         });
+
+        const getFacultyID = async () => {
+            const adminData = await getItem("admin");
+            const parsedAdminData = JSON.parse(adminData);
+
+            setFacultyID((parsedAdminData.facultyID).toString());
+        }
+
+        getFacultyID();
     }, []);
 
     const hasChanges = useMemo(() => {
         if (!originalData || !formData) return false;
 
-        // Use the same detailed comparison logic as changedFields
         return Object.keys(formData).some(key => {
             if (Array.isArray(formData[key])) {
-                if (formData[key].length !== originalData[key]?.length) return true;
-                return !formData[key].every((item, index) => item === originalData[key][index]);
+                const originalArray = originalData[key] || [];
+                const formArray = formData[key];
+
+                if (key === "yearsRestricted") {
+                    // Compare as unordered sets (sorted)
+                    const sortedOriginal = [...originalArray].sort();
+                    const sortedForm = [...formArray].sort();
+
+                    if (sortedOriginal.length !== sortedForm.length) return true;
+
+                    return !sortedForm.every((item, index) => item === sortedOriginal[index]);
+                }
+
+                // Default array comparison (order-sensitive)
+                if (formArray.length !== originalArray.length) return true;
+                return !formArray.every((item, index) => item === originalArray[index]);
             }
 
             if (key === "capacity") {
@@ -300,18 +329,29 @@ const DetailsManager = ({ eventID }) => {
     }, [originalData, formData]);
 
     const handleChange = (field, value) => {
-        setFormData(prev => {
-            const updated = {
+        if (field === "yearsRestrcited") {
+            setFormData(prev => ({
                 ...prev,
-                [field]: value
-            };
+                yearsRestricted: value
+            }));
+        } else {
+            setFormData(prev => {
+                const updated = {
+                    ...prev,
+                    [field]: value
+                };
 
-            if (field === "requiresCapacity" && value === false) {
-                delete updated.capacity;
-            }
+                if (field === "isYearRestrict" && value === false) {
+                    updated.yearsRestricted = [];
+                }
 
-            return updated;
-        });
+                if (field === "requiresCapacity" && value === false) {
+                    delete updated.capacity;
+                }
+
+                return updated;
+            });
+        }
 
         if (value instanceof Date || dayjs.isDayjs(value)) {
             changedFields.includes(field);
@@ -335,8 +375,6 @@ const DetailsManager = ({ eventID }) => {
             maxWidthOrHeight: 1024,
             useWebWorker: true,
         };
-
-        // setImageLoading(true);
 
         try {
             const newImages = [];
@@ -1149,7 +1187,7 @@ const DetailsManager = ({ eventID }) => {
 
                 <Box
                     sx={{
-                        maxWidth: "85%",
+                        maxWidth: "95%",
                         mx: "auto",
                         overflow: "hidden",
                         borderRadius: 3,
@@ -1200,7 +1238,7 @@ const DetailsManager = ({ eventID }) => {
 
                     <Box
                         sx={{
-                            height: '250px',
+                            height: '500px',
                             position: 'relative',
                             '& .leaflet-container': {
                                 height: '100%',
@@ -1321,122 +1359,274 @@ const DetailsManager = ({ eventID }) => {
                     {formErrors.pinpoint && <FormHelperText sx={{ mt: 2 }} error>{formErrors.pinpoint}</FormHelperText>}
                 </Box>
 
-                {/* Attendance Capacity */}
-                <Grid item xs={12} sx={{ mb: 2.5 }}>
-                    <Box sx={{ mb: 2 }}>
-                        <Typography variant="h6" sx={{
-                            fontSize: "16px",
-                            fontWeight: 600,
-                            display: 'flex',
-                            alignItems: 'center'
-                        }}>
-                            👥 Attendance Capacity <RequiredAsterisk />
+                <Box sx={{ mb: 1 }}>
+                    <Box sx={{ mb: 3 }}>
+                        <Typography
+                            variant="h5"
+                            sx={{
+                                fontWeight: 700,
+                                fontSize: '20px',
+                                mb: 2,
+                                display: 'flex',
+                                alignItems: 'center',
+                            }}
+                        >
+                            🎯 Registration Restrictions
                         </Typography>
                     </Box>
 
-                    <Box
-                        sx={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            p: 2,
-                            borderRadius: 2,
-                            bgcolor: alpha(theme.palette.background.default, 0.6),
-                            border: `1px solid ${alpha(theme.palette.divider, 0.1)}`
-                        }}
-                    >
-                        <Switch
-                            checked={formData.requiresCapacity}
-                            onChange={() => handleChange('requiresCapacity', !formData.requiresCapacity)}
-                            color="primary"
-                        />
-                        <Box sx={{ ml: 2 }}>
-                            <Typography variant="subtitle1" fontWeight={500}>
-                                {formData.requiresCapacity ? "Set Capacity Limit" : "Unlimited Capacity"}
-                            </Typography>
-                            <Typography variant="body2" color="text.secondary">
-                                {formData.requiresCapacity
-                                    ? "Restrict maximum number of attendees"
-                                    : "Allow unlimited attendees to register"
-                                }
-                            </Typography>
-                        </Box>
-                        <Tooltip title="Setting a capacity limit will prevent registration once the maximum number of attendees is reached." arrow>
-                            <InfoIcon sx={{ ml: 'auto', color: 'text.secondary' }} />
-                        </Tooltip>
-                    </Box>
+                    <Box sx={{ border: `2px dotted ${alpha(theme.palette.divider, 0.4)}`, p: 4 }}>
+                        <Grid container spacing={2}>
+                            {/* Attendance Capacity */}
+                            <Grid size={{ xs: 12, md: 6 }}>
+                                <Box sx={{ mb: 2 }}>
+                                    <Typography variant="h6" sx={{
+                                        fontSize: "16px",
+                                        fontWeight: 600,
+                                        display: 'flex',
+                                        alignItems: 'center'
+                                    }}>
+                                        👥 Attendance Capacity <RequiredAsterisk />
+                                    </Typography>
+                                </Box>
 
-                    {formData.requiresCapacity && (
-                        <Box sx={{ mt: 2 }}>
-                            <TextField
-                                fullWidth
-                                placeholder="Enter attendance capacity"
-                                value={formData.capacity ? formData.capacity : ''}
-                                onChange={(e) => handleChange('capacity', e.target.value)}
-                                type="number"
-                                error={Boolean(formErrors.capacity)}
-                                helperText={formErrors.capacity}
-                                required
-                                variant="outlined"
-                                InputProps={{
-                                    sx: {
+                                <Box
+                                    sx={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        p: 2,
                                         borderRadius: 2,
-                                        fontSize: "13px",
-                                        '& input::-webkit-outer-spin-button, & input::-webkit-inner-spin-button': {
-                                            display: 'none'
-                                        },
-                                        '& input[type=number]': {
-                                            MozAppearance: 'textfield'
-                                        },
-                                    }
-                                }}
-                            />
-                        </Box>
-                    )}
-                </Grid>
+                                        bgcolor: alpha(theme.palette.background.default, 0.6),
+                                        border: `1px solid ${alpha(theme.palette.divider, 0.1)}`
+                                    }}
+                                >
+                                    <Switch
+                                        checked={formData.requiresCapacity}
+                                        onChange={() => handleChange('requiresCapacity', !formData.requiresCapacity)}
+                                        color="primary"
+                                    />
+                                    <Box sx={{ ml: 2 }}>
+                                        <Typography variant="subtitle1" fontWeight={500}>
+                                            {formData.requiresCapacity ? "Set Capacity Limit" : "Unlimited Capacity"}
+                                        </Typography>
+                                        <Typography variant="body2" color="text.secondary">
+                                            {formData.requiresCapacity
+                                                ? "Restrict maximum number of attendees"
+                                                : "Allow unlimited attendees to register"
+                                            }
+                                        </Typography>
+                                    </Box>
+                                    <Tooltip title="Setting a capacity limit will prevent registration once the maximum number of attendees is reached." arrow>
+                                        <InfoIcon sx={{ ml: 'auto', color: 'text.secondary' }} />
+                                    </Tooltip>
+                                </Box>
 
-                <Grid item xs={12}>
-                    <Box sx={{ mb: 2 }}>
-                        <Typography variant="h6" sx={{
-                            fontSize: "16px",
-                            fontWeight: 600,
-                            display: 'flex',
-                            alignItems: 'center'
-                        }}>
-                            🧾 Payment Proof Requirement <RequiredAsterisk />
-                        </Typography>
-                    </Box>
+                                {formData.requiresCapacity && (
+                                    <Box sx={{ mt: 2 }}>
+                                        <TextField
+                                            fullWidth
+                                            placeholder="Enter attendance capacity"
+                                            value={formData.capacity ? formData.capacity : ''}
+                                            onChange={(e) => handleChange('capacity', e.target.value)}
+                                            type="number"
+                                            error={Boolean(formErrors.capacity)}
+                                            helperText={formErrors.capacity}
+                                            required
+                                            variant="outlined"
+                                            InputProps={{
+                                                sx: {
+                                                    borderRadius: 2,
+                                                    fontSize: "13px",
+                                                    '& input::-webkit-outer-spin-button, & input::-webkit-inner-spin-button': {
+                                                        display: 'none'
+                                                    },
+                                                    '& input[type=number]': {
+                                                        MozAppearance: 'textfield'
+                                                    },
+                                                }
+                                            }}
+                                        />
+                                    </Box>
+                                )}
+                            </Grid>
 
-                    <Box
-                        sx={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            p: 2,
-                            borderRadius: 2,
-                            bgcolor: alpha(theme.palette.background.default, 0.6),
-                            border: `1px solid ${alpha(theme.palette.divider, 0.1)}`
-                        }}
-                    >
-                        <Switch
-                            checked={formData.paymentProofRequired}
-                            onChange={() => handleChange('paymentProofRequired', !formData.paymentProofRequired)}
-                            color="primary"
-                        />
-                        <Box sx={{ ml: 2 }}>
-                            <Typography variant="subtitle1" fontWeight={500} fontSize={15}>
-                                {formData.paymentProofRequired ? "Payment Verification Required" : "No Payment Verification"}
-                            </Typography>
-                            <Typography variant="body2" color="text.secondary" fontSize={12}>
-                                {formData.paymentProofRequired
-                                    ? "Students must upload payment proof (max 50KB)"
-                                    : "No payment documentation needed for registration"
-                                }
-                            </Typography>
-                        </Box>
-                        <Tooltip title="When enabled, students will be prompted to upload payment receipts (JPEG or PNG format, maximum 50KB)" arrow>
-                            <InfoIcon sx={{ ml: 'auto', color: 'text.secondary' }} />
-                        </Tooltip>
+                            <Grid size={{ xs: 12, md: 6 }}>
+                                <Box sx={{ mb: 2 }}>
+                                    <Typography
+                                        variant="h6"
+                                        sx={{
+                                            fontSize: "16px",
+                                            fontWeight: 600,
+                                            display: 'flex',
+                                            alignItems: 'center'
+                                        }}
+                                    >
+                                        🎓 Year of Study Restriction <RequiredAsterisk />
+                                    </Typography>
+                                </Box>
+
+                                <Box
+                                    sx={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        p: 2,
+                                        borderRadius: 2,
+                                        bgcolor: alpha(theme.palette.background.default, 0.6),
+                                        border: `1px solid ${alpha(theme.palette.divider, 0.1)}`
+                                    }}
+                                >
+                                    <Switch
+                                        checked={formData.isYearRestrict}
+                                        onChange={() => handleChange("isYearRestrict", !formData.isYearRestrict)}
+                                        color="primary"
+                                    />
+                                    <Box sx={{ ml: 2 }}>
+                                        <Typography variant="subtitle1" fontWeight={500} fontSize={15}>
+                                            {formData.isYearRestrict ? "Year Restriction Enabled" : "No Year Restriction"}
+                                        </Typography>
+                                        <Typography variant="body2" color="text.secondary" fontSize={12}>
+                                            {formData.isYearRestrict
+                                                ? "Only students in the selected years will be allowed to register"
+                                                : "Students from all years can participate"
+                                            }
+                                        </Typography>
+                                    </Box>
+                                    <Tooltip
+                                        title="Toggle this to restrict event participation to specific years of study"
+                                        arrow
+                                    >
+                                        <InfoIcon sx={{ ml: 'auto', color: 'text.secondary' }} />
+                                    </Tooltip>
+                                </Box>
+
+                                {formData.isYearRestrict && (
+                                    <Box sx={{ pt: 2 }}>
+                                        <FormControl fullWidth required>
+                                            <Select
+                                                multiple
+                                                displayEmpty
+                                                value={formData.yearsRestricted}
+                                                onChange={(e) => handleChange("yearsRestricted", e.target.value)}
+                                                renderValue={(selected = []) => {
+                                                    if (selected.length == 0) {
+                                                        return <div style={{ color: '#a9a9a9', fontSize: '13px' }}>Select year(s)</div>; // 👈 Placeholder text
+                                                    }
+                                                    return (
+                                                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                                                            {selected.map((value) => (
+                                                                <Chip key={value} label={`Year ${value}`} />
+                                                            ))}
+                                                        </Box>
+                                                    );
+                                                }}
+                                                sx={{ minHeight: 56 }}
+                                            >
+                                                {[1, 2, 3, 4, 5].map((year) => (
+                                                    <MenuItem key={year} value={year}>
+                                                        Year {year}
+                                                    </MenuItem>
+                                                ))}
+                                            </Select>
+                                        </FormControl>
+                                    </Box>
+                                )}
+                            </Grid>
+
+                            <Grid size={{ xs: 12, md: 6 }}>
+                                <Box sx={{ mb: 2 }}>
+                                    <Typography
+                                        variant="h6"
+                                        sx={{
+                                            fontSize: "16px",
+                                            fontWeight: 600,
+                                            display: 'flex',
+                                            alignItems: 'center'
+                                        }}
+                                    >
+                                        🏫 Faculty Restriction <RequiredAsterisk />
+                                    </Typography>
+                                </Box>
+
+                                <Box
+                                    sx={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        p: 2,
+                                        borderRadius: 2,
+                                        bgcolor: alpha(theme.palette.background.default, 0.6),
+                                        border: `1px solid ${alpha(theme.palette.divider, 0.1)}`
+                                    }}
+                                >
+                                    <Switch
+                                        checked={formData.isFacultyRestrict}
+                                        onChange={() => handleChange("isFacultyRestrict", !formData.isFacultyRestrict)}
+                                        color="primary"
+                                    />
+                                    <Box sx={{ ml: 2 }}>
+                                        <Typography variant="subtitle1" fontWeight={500} fontSize={15}>
+                                            {formData.isFacultyRestrict ? "Faculty Restriction Enabled" : "No Faculty Restriction"}
+                                        </Typography>
+                                        <Typography variant="body2" color="text.secondary" fontSize={12}>
+                                            {formData.isFacultyRestrict
+                                                ? `Only students from ${FACULTY_MAPPING[facultyID]} will be allowed to register`
+                                                : "Students from all faculties can participate"}
+                                        </Typography>
+                                    </Box>
+                                    <Tooltip
+                                        title={`Toggle this to restrict event participation to students from ${FACULTY_MAPPING[facultyID]}`}
+                                        arrow
+                                    >
+                                        <InfoIcon sx={{ ml: 'auto', color: 'text.secondary' }} />
+                                    </Tooltip>
+                                </Box>
+                            </Grid>
+
+                            <Grid size={{ xs: 12, md: 6 }}>
+                                <Box sx={{ mb: 2 }}>
+                                    <Typography variant="h6" sx={{
+                                        fontSize: "16px",
+                                        fontWeight: 600,
+                                        display: 'flex',
+                                        alignItems: 'center'
+                                    }}>
+                                        🧾 Payment Proof Requirement <RequiredAsterisk />
+                                    </Typography>
+                                </Box>
+
+                                <Box
+                                    sx={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        p: 2,
+                                        borderRadius: 2,
+                                        bgcolor: alpha(theme.palette.background.default, 0.6),
+                                        border: `1px solid ${alpha(theme.palette.divider, 0.1)}`
+                                    }}
+                                >
+                                    <Switch
+                                        checked={formData.paymentProofRequired}
+                                        onChange={() => handleChange('paymentProofRequired', !formData.paymentProofRequired)}
+                                        color="primary"
+                                    />
+                                    <Box sx={{ ml: 2 }}>
+                                        <Typography variant="subtitle1" fontWeight={500} fontSize={15}>
+                                            {formData.paymentProofRequired ? "Payment Verification Required" : "No Payment Verification"}
+                                        </Typography>
+                                        <Typography variant="body2" color="text.secondary" fontSize={12}>
+                                            {formData.paymentProofRequired
+                                                ? "Students must upload payment proof (max 50KB)"
+                                                : "No payment documentation needed for registration"
+                                            }
+                                        </Typography>
+                                    </Box>
+                                    <Tooltip title="When enabled, students will be prompted to upload payment receipts (JPEG or PNG format, maximum 50KB)" arrow>
+                                        <InfoIcon sx={{ ml: 'auto', color: 'text.secondary' }} />
+                                    </Tooltip>
+                                </Box>
+                            </Grid>
+                        </Grid>
                     </Box>
-                </Grid>
+                </Box>
 
                 <SnackbarComponent snackbarOpen={snackbarOpen} setSnackbarOpen={setSnackbarOpen} snackbarContent={snackbarContent} />
 

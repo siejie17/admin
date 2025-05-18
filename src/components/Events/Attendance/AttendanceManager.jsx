@@ -73,7 +73,7 @@ const AttendanceManager = ({ eventID, eventName }) => {
 
                         const studentData = studentDoc.data();
 
-                        return {
+                        const attendanceData = {
                             id: docSnap.id,
                             studentID,
                             fullName: `${studentData.firstName} ${studentData.lastName}`,
@@ -81,8 +81,15 @@ const AttendanceManager = ({ eventID, eventName }) => {
                             facultyID: studentData.facultyID,
                             yearOfStudy: studentData.yearOfStudy,
                             profilePicture: studentData.profilePicture,
-                            isAttended: regData.isAttended
+                            isAttended: regData.isAttended,
+                            manualAttended: regData.manualAttended
                         };
+
+                        if (attendanceData.manualAttended) {
+                            attendanceData.reason = regData.reason;
+                        }
+
+                        return attendanceData;
                     } catch (err) {
                         console.error("Error fetching user data:", err);
                         return null;
@@ -120,6 +127,8 @@ const AttendanceManager = ({ eventID, eventName }) => {
             "Email": attendee.email,
             "Year of Study": attendee.yearOfStudy,
             "Faculty": FACULTY_MAPPING[attendee.facultyID],
+            "Attendance Method": attendee.manualAttended ? "Manual" : "Quest",
+            "Reason (Manual Attendance)": attendee.manualAttended ? attendee.reason : "-"
         }));
 
         const worksheet = XLSX.utils.json_to_sheet(formattedData);
@@ -131,6 +140,8 @@ const AttendanceManager = ({ eventID, eventName }) => {
             { wch: 30 }, // Email
             { wch: 15 }, // Matric
             { wch: 20 }, // Faculty
+            { wch: 20 },
+            { wch: 50 }
         ];
 
         XLSX.utils.book_append_sheet(workbook, worksheet, 'Attendees');
@@ -185,7 +196,7 @@ const AttendanceManager = ({ eventID, eventName }) => {
             </Paper>
 
             <Grid container spacing={{ xs: 2 }}>
-                <Grid item>
+                <Grid size={{ xs: 12, sm: 6 }}>
                     <MetricCard
                         title="Total Number of"
                         subtitle="Attendees"
@@ -195,7 +206,7 @@ const AttendanceManager = ({ eventID, eventName }) => {
                     />
                 </Grid>
 
-                <Grid item>
+                <Grid size={{ xs: 12, sm: 6 }}>
                     <MetricCard
                         title="Total Number of"
                         subtitle="Absentees"
@@ -230,7 +241,7 @@ const AttendanceManager = ({ eventID, eventName }) => {
                         <EmojiPeopleIcon fontSize="small" />
                     </Box>
                     <Typography variant='h5' fontWeight="700" sx={{ lineHeight: 1.5, fontSize: "18px" }}>
-                        Attendees/Absentees List
+                        Attendance List
                     </Typography>
                 </Box>
 

@@ -319,6 +319,8 @@ const FeedbackListTable = ({ feedbackList, isLoading }) => {
         <Box
             sx={{
                 width: '100%',
+                maxWidth: '1000px',
+                margin: '0 auto',
                 borderRadius: '20px',
                 overflow: 'hidden',
                 boxShadow: (theme) => `0 20px 40px ${alpha(theme.palette.common.black, 0.08)}`,

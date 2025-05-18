@@ -31,6 +31,7 @@ const ActionsDialog = ({ dialogOpen, setDialogOpen, dialogContent }) => {
             keepMounted
             PaperProps={{
                 sx: {
+                    minWidth: 500,
                     borderRadius: 3,
                     boxShadow: '0 8px 32px rgba(0, 0, 0, 0.12)',
                     overflow: 'hidden'
@@ -54,9 +55,9 @@ const ActionsDialog = ({ dialogOpen, setDialogOpen, dialogContent }) => {
             <Divider />
 
             <DialogContent sx={{ p: '16px 24px 24px' }}>
-                <DialogContentText id="dialog-description" color="text.primary">
+                <Box id="dialog-description" color="text.primary">
                     {dialogContent.context}
-                </DialogContentText>
+                </Box>
             </DialogContent>
 
             <DialogActions sx={{ p: '6px 24px 24px', gap: 1 }}>

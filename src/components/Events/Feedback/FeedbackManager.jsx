@@ -204,7 +204,7 @@ const FeedbackManager = ({ eventID, eventName }) => {
             </Paper>
 
             <Grid container spacing={3}>
-                <Grid>
+                <Grid size={{ xs: 12, sm: 6 }}>
                     <MetricCard
                         title="Total Participants Who Submitted"
                         subtitle="Feedback Form"

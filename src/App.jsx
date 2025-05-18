@@ -1,4 +1,3 @@
-import React from 'react';
 import { Route, BrowserRouter as Router, Routes, Navigate } from 'react-router-dom';
 
 import AppLayout from "./layout/AppLayout";
@@ -18,6 +17,7 @@ import QuestDetails from './components/Events/Quest/QuestDetails.jsx';
 import MerchandiseManagerPage from './pages/merchandise/MerchandiseManagerPage.jsx';
 import LeaderboardPage from './pages/leaderboard/LeaderboardPage.jsx';
 import OverviewPage from './pages/overview/OverviewPage.jsx';
+import StatisticsPage from './pages/stats/StatisticsPage.jsx';
 
 function App() {
   const { user, loading } = useAuth();
@@ -32,6 +32,7 @@ function App() {
         {user ? (
           <>
             <Route element={<AppLayout />}>
+              <Route path="/statistics" element={<StatisticsPage />} />
               <Route path="/event" element={<EventListingPage />} />
               <Route path="/merchandise" element={<MerchandiseListingPage />} />
               <Route path="/leaderboard" element={<LeaderboardPage />} />
@@ -45,7 +46,7 @@ function App() {
 
             <Route path="/merchandise/details" element={<MerchandiseManagerPage />} />
             <Route path="/merchandise/create-merchandise" element={<MerchandiseCreationPage />} />
-            <Route path="*" element={<Navigate to="/event" />} />
+            <Route path="*" element={<Navigate to="/statistics" />} />
           </>
         ) : (
           <>

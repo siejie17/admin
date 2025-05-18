@@ -15,12 +15,14 @@ import {
     alpha,
     Button,
     Avatar,
+    Tooltip,
 } from "@mui/material";
 import {
     ChevronLeft as ChevronLeftIcon,
     Event as EventIcon,
     Leaderboard as LeaderboardIcon,
     ShoppingBag as MerchandiseIcon,
+    ShowChart as ShowChartIcon,
     Summarize as SummarizeIcon,
     Logout as LogoutIcon,
     Menu as MenuIcon
@@ -44,7 +46,6 @@ const AppLayout = () => {
     // Responsive breakpoints
     const isExtraSmall = useMediaQuery('(max-width:600px)');
     const isSmall = useMediaQuery(theme.breakpoints.down('sm'));
-    const isMedium = useMediaQuery(theme.breakpoints.down('md'));
 
     // Drawer states
     const [isDrawerOpen, setIsDrawerOpen] = useState(!isSmall);
@@ -55,10 +56,11 @@ const AppLayout = () => {
     const drawerWidth = isExtraSmall ? 250 : 270;
 
     const menuItems = [
+        { text: "Statistics", path: "/statistics", icon: <ShowChartIcon /> },
         { text: "Events", path: "/event", icon: <EventIcon /> },
         { text: "Merchandises", path: "/merchandise", icon: <MerchandiseIcon /> },
         { text: "Leaderboard", path: "/leaderboard", icon: <LeaderboardIcon /> },
-        { text: "Student Statistics", path: "/overview", icon: <SummarizeIcon /> },
+        { text: "Student Participation", path: "/overview", icon: <SummarizeIcon /> },
     ];
 
     // Control drawer visibility on screen resize
@@ -116,7 +118,7 @@ const AppLayout = () => {
     };
 
     const handleSignOut = async () => {
-        await removeItem("admin");
+        removeItem("admin");
         await signOut(auth);
         navigate("/login");
     }
@@ -451,27 +453,29 @@ const AppLayout = () => {
             >
                 {/* Desktop Menu Toggle (visible when drawer is closed) */}
                 {!isSmall && !isDrawerOpen && (
-                    <IconButton
-                        onClick={() => setIsDrawerOpen(true)}
-                        sx={{
-                            position: 'fixed',
-                            left: 20,
-                            bottom: 15,
-                            zIndex: 1100,
-                            background: `linear-gradient(90deg, #3a7bd5, #3a6073)`,
-                            color: '#fff',
-                            width: 40,
-                            height: 40,
-                            boxShadow: '0 4px 8px rgba(0, 0, 0, 0.15)',
-                            '&:hover': {
-                                transform: 'translateX(1px)',
-                            },
-                            transition: 'all 0.3s ease',
-                        }}
-                        aria-label="open sidebar"
-                    >
-                        <MenuIcon fontSize="small" />
-                    </IconButton>
+                    <Tooltip title="Open Sidebar" arrow placement="right">
+                        <IconButton
+                            onClick={() => setIsDrawerOpen(true)}
+                            sx={{
+                                position: 'fixed',
+                                left: 20,
+                                bottom: 15,
+                                zIndex: 1100,
+                                background: `linear-gradient(90deg, #3a7bd5, #3a6073)`,
+                                color: '#fff',
+                                width: 40,
+                                height: 40,
+                                boxShadow: '0 4px 8px rgba(0, 0, 0, 0.15)',
+                                '&:hover': {
+                                    transform: 'translateX(1px)',
+                                },
+                                transition: 'all 0.3s ease',
+                            }}
+                            aria-label="open sidebar"
+                        >
+                            <MenuIcon fontSize="small" />
+                        </IconButton>
+                    </Tooltip>
                 )}
 
                 {/* Floating Menu Button (Mobile Only) */}

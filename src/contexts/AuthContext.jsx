@@ -10,21 +10,23 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-      const adminData = await getItem("admin");
-      const parsedAdminData = JSON.parse(adminData);
-  
-      if (parsedAdminData) {
-        setUser(parsedAdminData); // optionally include currentUser.email or UID here
-      } else {
-        setUser(null); // maybe not an admin
-      }
-  
-      setLoading(false);
-    });
-  
-    return () => unsubscribe();
-  }, []);  
+    const checkAuth = async () => {
+      onAuthStateChanged(auth, async (currentUser) => {
+        const adminData = await getItem("admin");
+        const parsedAdminData = JSON.parse(adminData);
+
+        if (parsedAdminData) {
+          setUser(parsedAdminData); // optionally include currentUser.email or UID here
+        } else {
+          setUser(null); // maybe not an admin
+        }
+
+        setLoading(false);
+      });
+    }
+
+    checkAuth();
+  }, []);
 
   return <AuthContext.Provider value={{ user, loading }}>{children}</AuthContext.Provider>;
 };

@@ -210,7 +210,7 @@ const ParticipantManager = ({ eventID, eventName }) => {
 
             {/* Dashboard metrics grid */}
             <Grid container spacing={3} sx={{ mb: 3 }}>
-                <Grid>
+                <Grid size={{ xs: 12, sm: 6 }}>
                     <MetricCard
                         title="Total Number of"
                         subtitle="Registered Participants"
@@ -347,7 +347,7 @@ const ParticipantManager = ({ eventID, eventName }) => {
                         aria-labelledby={`participant-tab-0`}
                         sx={{ maxHeight: '100%' }}
                     >
-                        {activeTab === 0 && <ParticipantsListTable participants={verifiedParticipants} activeTab={activeTab} isLoading={isLoading} />}
+                        {activeTab === 0 && <ParticipantsListTable participants={verifiedParticipants} activeTab={activeTab} isLoading={isLoading} paymentProofRequired={paymentProofRequired} />}
                     </Box>
 
                     <Box
@@ -357,7 +357,7 @@ const ParticipantManager = ({ eventID, eventName }) => {
                         aria-labelledby={`participant-tab-1`}
                         sx={{ maxHeight: '100%' }}
                     >
-                        {activeTab === 1 && <ParticipantsListTable participants={unverifiedParticipants} activeTab={activeTab} isLoading={isLoading} />}
+                        {activeTab === 1 && <ParticipantsListTable participants={unverifiedParticipants} activeTab={activeTab} isLoading={isLoading} paymentProofRequired={paymentProofRequired} />}
                     </Box>
                 </>
             ) : (

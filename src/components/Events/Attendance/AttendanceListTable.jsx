@@ -1,19 +1,24 @@
-import { Alert, alpha, Avatar, Box, Button, Chip, Snackbar, Typography, useTheme } from '@mui/material';
+import { Alert, alpha, Avatar, Box, Button, Chip, Grid, Snackbar, TextField, Tooltip, Typography, useTheme } from '@mui/material';
 import { CheckCircleOutline as CheckCircleOutlineIcon, FilterListOff as FilterListOffIcon, GroupOff as GroupOffIcon, Numbers as NumbersIcon, TaskAlt as TaskAltIcon } from '@mui/icons-material';
 import React, { useState } from 'react';
 import { DataGrid } from '@mui/x-data-grid';
 import { collection, doc, getDocs, increment, query, serverTimestamp, updateDoc, where } from 'firebase/firestore';
 import { db } from '../../../utils/firebaseConfig';
 import EmptyTableRows from '../../General/EmptyTableRows';
+import RequiredAsterisk from '../../General/RequiredAsterisk';
+import ActionsDialog from '../../General/ActionsDialog';
 
 const AttendanceListTable = ({ participants, eventID = "", activeTab, isLoading }) => {
     const theme = useTheme();
+
+    const [selectedStudentID, setSelectedStudentID] = useState("");
+    const [selectedRegistrationID, setSelectedRegistrationID] = useState("");
 
     const [snackbarOpen, setSnackbarOpen] = useState(false);
     const [snackbarContent, setSnackbarContent] = useState({
         msg: '',
         type: ''
-    })
+    });
 
     const FACULTY_MAPPING = {
         1: "FACA",
@@ -39,12 +44,20 @@ const AttendanceListTable = ({ participants, eventID = "", activeTab, isLoading 
         mb: 1
     };
 
-    const handleVerifyAttendance = async (studentID, id) => {
+    const handleVerifyAttendance = async () => {
+        if (!reason) {
+            console.log("No reason")
+            setReasonError("This field cannot be empty!");
+            return;
+        }
+
         try {
-            const registrationRef = doc(db, "registration", id);
+            const registrationRef = doc(db, "registration", selectedRegistrationID);
 
             await updateDoc(registrationRef, {
                 isAttended: true,
+                manualAttended: true,
+                reason: reason,
                 attendanceScannedTime: serverTimestamp()
             });
 
@@ -71,7 +84,7 @@ const AttendanceListTable = ({ participants, eventID = "", activeTab, isLoading 
             const attendanceQuestDoc = attendanceQuestSnapshot.docs[0];
             const attendanceQuestID = attendanceQuestDoc.id;
 
-            const userQuestQuery = query(collection(db, "questProgress"), where("eventID", "==", eventID), where("studentID", "==", studentID));
+            const userQuestQuery = query(collection(db, "questProgress"), where("eventID", "==", eventID), where("studentID", "==", selectedStudentID));
             const userQuestSnapshot = await getDocs(userQuestQuery);
 
             if (userQuestSnapshot.empty) {
@@ -81,8 +94,6 @@ const AttendanceListTable = ({ participants, eventID = "", activeTab, isLoading 
 
             const userQuestDoc = userQuestSnapshot.docs[0];
             const userQuestID = userQuestDoc.id;
-
-            console.log(userQuestID, attendanceQuestID);
 
             const userAttendanceQuestQuery = query(collection(db, "questProgress", userQuestID, "questProgressList"), where("questID", "==", attendanceQuestID));
             const userAttendanceQuestSnapshot = await getDocs(userAttendanceQuestQuery);
@@ -122,8 +133,52 @@ const AttendanceListTable = ({ participants, eventID = "", activeTab, isLoading 
                 type: 'error'
             })
             setSnackbarOpen(true);
+        } finally {
+            setReason("");
+            setSelectedRegistrationID("");
+            setSelectedStudentID("")
+            setDialogOpen(false);
         }
     }
+
+    const [reason, setReason] = useState("");
+    const [reasonError, setReasonError] = useState("");
+
+    const [dialogOpen, setDialogOpen] = useState(false);
+    const dialogContent = {
+        title: "Manual Attendance",
+        context: (
+            <Box>
+                <Box sx={{ mb: 2 }}>
+                    <Typography
+                        sx={{
+                            fontSize: "16px",
+                            fontWeight: 600,
+                            display: "flex",
+                            alignItems: "center",
+                        }}
+                    >
+                        🏷️ Reason <RequiredAsterisk />
+                    </Typography>
+                </Box>
+                <TextField
+                    fullWidth
+                    placeholder="Enter reason..."
+                    value={reason}
+                    onChange={(e) => setReason(e.target.value)}
+                    error={!!reasonError}
+                    helperText={reasonError}
+                    required
+                    variant="outlined"
+                    InputProps={{
+                        sx: { borderRadius: 2, fontSize: "13px" },
+                    }}
+                />
+            </Box>
+        ),
+        action: () => handleVerifyAttendance()
+    };
+
 
     const attendanceColumns = () => {
         // Common theme colors for consistent styling
@@ -421,12 +476,65 @@ const AttendanceListTable = ({ participants, eventID = "", activeTab, isLoading 
             }
         ];
 
-        if (participants.every(participant => participant.isAttended === false)) {
+        if (activeTab === 0) {
+            baseColumns.splice(2, 0, {
+                field: 'manualAttended',
+                headerName: 'Method',
+                width: 130,
+                headerAlign: 'center',
+                align: 'center',
+                renderHeader: () => (
+                    <Box sx={enhancedHeaderStyle}>
+                        <Typography {...headerTypographyStyle}>
+                            Method
+                        </Typography>
+                    </Box>
+                ),
+                renderCell: (params) => {
+                    const { manualAttended, reason } = params.row;
+                    const isManual = manualAttended === true;
+                    const label = isManual ? 'Manual' : 'Quest';
+
+                    const chip = (
+                        <Chip
+                            label={label}
+                            size="small"
+                            sx={{
+                                fontWeight: 600,
+                                fontSize: '0.7rem',
+                                borderRadius: '6px',
+                                backgroundColor: isManual
+                                    ? alpha(theme.palette.warning.light, 0.15)
+                                    : alpha(theme.palette.success.light, 0.15),
+                                borderColor: isManual
+                                    ? alpha(theme.palette.warning.main, 0.4)
+                                    : alpha(theme.palette.success.main, 0.4),
+                                color: isManual
+                                    ? theme.palette.warning.dark
+                                    : theme.palette.success.dark,
+                                border: '1px solid',
+                                transition: 'all 0.2s ease-in-out'
+                            }}
+                        />
+                    );
+
+                    return isManual && reason ? (
+                        <Tooltip title={reason} arrow>
+                            {chip}
+                        </Tooltip>
+                    ) : (
+                        chip
+                    );
+                }
+            })
+        }
+
+        if (activeTab === 1) {
             baseColumns.splice(5, 0, {
                 field: 'actions',
                 type: 'actions',
                 headerName: 'Action',
-                width: 280,
+                width: 250,
                 headerAlign: 'center',
                 align: 'center',
                 sortable: false,
@@ -434,7 +542,7 @@ const AttendanceListTable = ({ participants, eventID = "", activeTab, isLoading 
                 renderHeader: () => (
                     <Box sx={enhancedHeaderStyle}>
                         <Typography {...headerTypographyStyle}>
-                            Actions
+                            Action
                         </Typography>
                     </Box>
                 ),
@@ -457,7 +565,11 @@ const AttendanceListTable = ({ participants, eventID = "", activeTab, isLoading 
                             }
                             onClick={(e) => {
                                 e.stopPropagation();
-                                handleVerifyAttendance(params.row.studentID, params.row.id);
+                                setReason(""); // optional: reset previous reason
+                                setReasonError("");
+                                setSelectedStudentID(params.row.studentID);
+                                setSelectedRegistrationID(params.row.id);
+                                setDialogOpen(true);
                             }}
                             sx={{
                                 fontWeight: '600',
@@ -854,6 +966,8 @@ const AttendanceListTable = ({ participants, eventID = "", activeTab, isLoading 
                     {snackbarContent.msg}
                 </Alert>
             </Snackbar>
+
+            <ActionsDialog dialogOpen={dialogOpen} setDialogOpen={setDialogOpen} dialogContent={dialogContent} />
         </Box>
     )
 }

@@ -4,7 +4,7 @@ import {
     EmojiEvents as EmojiEventsIcon,
     Event as EventIcon
 } from '@mui/icons-material';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { addDoc, collection, getDoc, Timestamp } from 'firebase/firestore';
 import imageCompression from 'browser-image-compression';
 
@@ -22,6 +22,8 @@ const EventCreationPage = () => {
     const [activeTab, setActiveTab] = useState(0);
     const [tabsEnabled, setTabsEnabled] = useState([true, false]);
 
+    const [facultyID, setFacultyID] = useState('');
+
     // Event Creation: Details
     const [name, setName] = useState('');
     const [description, setDescription] = useState('');
@@ -31,6 +33,9 @@ const EventCreationPage = () => {
     const [registrationDate, setRegistrationDate] = useState(null);
     const [location, setLocation] = useState('');
     const [pinpoint, setPinpoint] = useState();
+    const [isFacultyRestrict, setIsFacultyRestrict] = useState(false);
+    const [isYearRestrict, setIsYearRestrict] = useState(false);
+    const [selectedYears, setSelectedYears] = useState([]);
     const [requiresCapacity, setRequiresCapacity] = useState(false);
     const [images, setImages] = useState([]);
     const [imageLoading, setImageLoading] = useState(false);
@@ -38,6 +43,8 @@ const EventCreationPage = () => {
     const [capacity, setCapacity] = useState('');
     const [requiresPaymentProof, setRequiresPaymentProof] = useState(false);
     const [errors, setErrors] = useState({});
+
+    const [allYears, setAllYears] = useState([]);
 
     // Event Creation: Quest
     const [attendanceQuest, setAttendanceQuest] = useState({
@@ -94,6 +101,28 @@ const EventCreationPage = () => {
             backgroundColor: 'rgba(0, 0, 0, 0.03)',
             color: 'primary.dark',
         }
+    };
+
+    useEffect(() => {
+        const getFacultyID = async () => {
+            const adminData = await getItem("admin");
+            const parsedAdminData = JSON.parse(adminData);
+
+            setFacultyID((parsedAdminData.facultyID).toString());
+
+            const baseYears = [1, 2, 3, 4];
+            if (parsedAdminData.facultyID === 8) {
+                baseYears.push(5);
+            }
+
+            setAllYears(baseYears);
+        };
+
+        getFacultyID();
+    }, []);
+
+    const handleDeleteYear = (year) => {
+        setSelectedYears((prev) => prev.filter(y => y !== year));
     };
 
     const handleTabChange = (event, newValue) => {
@@ -221,7 +250,7 @@ const EventCreationPage = () => {
         setErrors(formErrors);
 
         if (Object.keys(formErrors).length === 0) {
-            setTabsEnabled([false, true]);
+            setTabsEnabled([true, true]);
             setActiveTab(1);
         }
     }
@@ -249,6 +278,8 @@ const EventCreationPage = () => {
                 locationLatitude: parseFloat((pinpoint.lat).toFixed(4)),
                 locationLongitude: parseFloat((pinpoint.lng).toFixed(4)),
                 organiserID: parsedAdminData.facultyID,
+                isFacultyRestrict,
+                isYearRestrict,
                 requiresCapacity,
                 paymentProofRequired: requiresPaymentProof,
                 lastAdded: Timestamp.now(),
@@ -259,9 +290,13 @@ const EventCreationPage = () => {
                 event.capacity = Number(capacity);
             }
 
+            if (event.isYearRestrict) {
+                event.yearsRestricted = selectedYears;
+            }
+
             const eventRef = await addDoc(collection(db, "event"), event);
 
-            // ✅ Validate inserted data after saving
+            // Validate inserted data after saving
             const insertedDoc = await getDoc(eventRef);
             const insertedData = insertedDoc.data();
 
@@ -333,6 +368,7 @@ const EventCreationPage = () => {
             description: 'Define your event basics',
             component: (
                 <DetailsCreation
+                    facultyID={facultyID}
                     name={name}
                     setName={setName}
                     description={description}
@@ -355,6 +391,14 @@ const EventCreationPage = () => {
                     setImageLoading={setImageLoading}
                     currentImageIndex={currentImageIndex}
                     setCurrentImageIndex={setCurrentImageIndex}
+                    selectedYears={selectedYears}
+                    setSelectedYears={setSelectedYears}
+                    allYears={allYears}
+                    handleDeleteYear={handleDeleteYear}
+                    isYearRestrict={isYearRestrict}
+                    setIsYearRestrict={setIsYearRestrict}
+                    isFacultyRestrict={isFacultyRestrict}
+                    setIsFacultyRestrict={setIsFacultyRestrict}
                     requiresCapacity={requiresCapacity}
                     setRequiresCapacity={setRequiresCapacity}
                     capacity={capacity}

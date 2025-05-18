@@ -39,7 +39,7 @@ const QuestCreation = ({
     }, []);
 
     return (
-        <Box>
+        <Box sx={{ px: 1.5 }}>
             <Paper
                 elevation={0}
                 sx={{
@@ -76,7 +76,7 @@ const QuestCreation = ({
             </Paper>
 
             <Grid container spacing={{ xs: 2 }}>
-                <Grid key="attendance">
+                <Grid key="attendance" size={{ xs: 12, sm: 6 }}>
                     <MetricCard
                         title={"Total Number of"}
                         subtitle={"Attendance Quest"}
@@ -85,7 +85,7 @@ const QuestCreation = ({
                         color={QUEST_COLOR["attendance"]}
                     />
                 </Grid>
-                <Grid key="earlyBird">
+                <Grid key="earlyBird" size={{ xs: 12, sm: 6 }}>
                     <MetricCard
                         title={"Total Number of"}
                         subtitle={"Early Bird Attendance Quest"}
@@ -94,7 +94,7 @@ const QuestCreation = ({
                         color={QUEST_COLOR["earlyBird"]}
                     />
                 </Grid>
-                <Grid key="networking">
+                <Grid key="networking" size={{ xs: 12, sm: 6 }}>
                     <MetricCard
                         title={"Total Number of"}
                         subtitle={"Networking Quest"}
@@ -103,7 +103,7 @@ const QuestCreation = ({
                         color={QUEST_COLOR["networking"]}
                     />
                 </Grid>
-                <Grid key="q&a">
+                <Grid key="q&a" size={{ xs: 12, sm: 6 }}>
                     <MetricCard
                         title={"Total Number of"}
                         subtitle={"Question & Answer Quest"}
@@ -112,7 +112,7 @@ const QuestCreation = ({
                         color={QUEST_COLOR["q&a"]}
                     />
                 </Grid>
-                <Grid key="feedback">
+                <Grid key="feedback" size={{ xs: 12, sm: 6 }}>
                     <MetricCard
                         title={"Total Number of"}
                         subtitle={"Feedback-Driven Quest"}

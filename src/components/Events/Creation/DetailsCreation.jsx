@@ -1,5 +1,5 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { alpha, Box, Button, Chip, CircularProgress, Fade, FormControl, FormHelperText, Grid, IconButton, MenuItem, Paper, Select, Switch, TextField, Tooltip, Typography, useTheme } from '@mui/material'
+import { useEffect, useMemo } from 'react';
+import { alpha, Box, Button, Chip, CircularProgress, Fade, FormControl, FormHelperText, Grid, IconButton, InputLabel, MenuItem, Paper, Select, Switch, TextField, Tooltip, Typography, useTheme } from '@mui/material'
 import { DateTimePicker, LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import dayjs from 'dayjs';
@@ -41,6 +41,7 @@ L.Icon.Default.mergeOptions({
 });
 
 const DetailsCreation = ({
+    facultyID,
     name,
     setName,
     description,
@@ -63,6 +64,14 @@ const DetailsCreation = ({
     setImageLoading,
     currentImageIndex,
     setCurrentImageIndex,
+    isFacultyRestrict,
+    setIsFacultyRestrict,
+    isYearRestrict,
+    setIsYearRestrict,
+    selectedYears,
+    setSelectedYears,
+    allYears,
+    handleDeleteYear,
     requiresCapacity,
     setRequiresCapacity,
     capacity,
@@ -79,8 +88,22 @@ const DetailsCreation = ({
     const theme = useTheme();
     const now = dayjs();
 
-    // Navigation
-    const navigate = useNavigate();
+    const FACULTY_MAPPING = {
+        "1": "FACA",
+        "2": "FBE",
+        "3": "FCSHD",
+        "4": "FCSIT",
+        "5": "FEB",
+        "6": "FELC",
+        "7": "FENG",
+        "8": "FMHS",
+        "9": "FRST",
+        "10": "FSSH",
+    };
+
+    useEffect(() => {
+        window.scrollTo(0, 0);
+    }, []);
 
     useEffect(() => {
         const currentErrors = { ...errors };
@@ -105,22 +128,7 @@ const DetailsCreation = ({
     const MapEvents = ({ onMapClick }) => {
         useMapEvents({
             click: (e) => {
-                const { lat, lng } = e.latlng;
-                const newErrors = { ...errors };
-
-                const minLat = 1.4581;
-                const maxLat = 1.4737;
-                const minLng = 110.4187;
-                const maxLng = 110.4557;
-
-                if (lat >= minLat && lat <= maxLat && lng >= minLng && lng <= maxLng) {
-                    onMapClick(e.latlng);
-                    newErrors.pinpoint = "";
-                } else {
-                    newErrors.pinpoint = "Please select a location within UNIMAS area.";
-                }
-
-                setErrors(newErrors);
+                onMapClick(e.latlng);
             }
         });
         return null;
@@ -180,17 +188,36 @@ const DetailsCreation = ({
     };
 
     const hasAllFieldsFilled = useMemo(() => {
-        const fieldsFilled =
-            name && description && category && startDateTime && endDateTime && registrationDate && location && pinpoint && images.length > 0;
+        const baseFieldsFilled =
+            !!name &&
+            !!description &&
+            !!category &&
+            !!startDateTime &&
+            !!endDateTime &&
+            !!registrationDate &&
+            !!location &&
+            !!pinpoint &&
+            images.length > 0;
 
-        if (requiresCapacity) {
-            const capacityValid = (requiresCapacity && !isNaN(capacity) && capacity > 0);
+        const capacityValid = !requiresCapacity || (!isNaN(capacity) && capacity > 0);
+        const yearValid = !isYearRestrict || (selectedYears.length > 0);
 
-            return fieldsFilled && capacityValid;
-        }
-
-        return fieldsFilled;
-    }, [name, description, category, startDateTime, endDateTime, registrationDate, location, pinpoint, images, requiresCapacity, capacity]);
+        return baseFieldsFilled && capacityValid && yearValid;
+    }, [
+        name,
+        description,
+        category,
+        startDateTime,
+        endDateTime,
+        registrationDate,
+        location,
+        pinpoint,
+        images,
+        requiresCapacity,
+        capacity,
+        isYearRestrict,
+        selectedYears,
+    ]);
 
     // Common props for all DateTimePickers
     const commonPickerProps = {
@@ -798,7 +825,7 @@ const DetailsCreation = ({
 
             <Box
                 sx={{
-                    maxWidth: "85%",
+                    maxWidth: "95%",
                     mx: "auto",
                     overflow: "hidden",
                     borderRadius: 3,
@@ -850,7 +877,7 @@ const DetailsCreation = ({
                 {/* Map Container */}
                 <Box
                     sx={{
-                        height: '250px',
+                        height: '500px',
                         position: 'relative',
                         '& .leaflet-container': {
                             height: '100%',
@@ -879,7 +906,7 @@ const DetailsCreation = ({
                             sx={{
                                 position: 'absolute',
                                 bottom: 10,
-                                left: '25%',
+                                left: 150,
                                 transform: 'translateX(-50%)',
                                 backgroundColor: 'rgba(255,255,255,0.9)',
                                 padding: '8px 16px',
@@ -976,124 +1003,282 @@ const DetailsCreation = ({
                 )}
             </Box>
 
-            <Grid sx={{ mb: 2.5 }}>
-                <Box sx={{ mb: 2 }}>
-                    <Typography variant="h6" sx={{
-                        fontSize: "16px",
-                        fontWeight: 600,
-                        display: 'flex',
-                        alignItems: 'center'
-                    }}>
-                        👥 Attendance Capacity <RequiredAsterisk />
-                    </Typography>
-                </Box>
-
-                <Box
-                    sx={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        p: 2,
-                        borderRadius: 2,
-                        bgcolor: alpha(theme.palette.background.default, 0.6),
-                        border: `1px solid ${alpha(theme.palette.divider, 0.1)}`
-                    }}
-                >
-                    <Switch
-                        checked={requiresCapacity}
-                        onChange={() => {
-                            if (!requiresCapacity) setCapacity('');
-                            setRequiresCapacity(!requiresCapacity)
+            <Box sx={{ mb: 1 }}>
+                <Box sx={{ mb: 3 }}>
+                    <Typography
+                        variant="h5"
+                        sx={{
+                            fontWeight: 700,
+                            fontSize: '20px',
+                            mb: 2,
+                            display: 'flex',
+                            alignItems: 'center',
                         }}
-                        color="primary"
-                    />
-                    <Box sx={{ ml: 2 }}>
-                        <Typography variant="subtitle1" fontWeight={500}>
-                            {requiresCapacity ? "Set Capacity Limit" : "Unlimited Capacity"}
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                            {requiresCapacity
-                                ? "Restrict maximum number of attendees"
-                                : "Allow unlimited attendees to register"
-                            }
-                        </Typography>
-                    </Box>
-                    <Tooltip title="Setting a capacity limit will prevent registration once the maximum number of attendees is reached." arrow>
-                        <InfoIcon sx={{ ml: 'auto', color: 'text.secondary' }} />
-                    </Tooltip>
-                </Box>
-
-                {requiresCapacity && (
-                    <Box sx={{ mt: 2 }}>
-                        <TextField
-                            fullWidth
-                            placeholder="Enter attendance capacity"
-                            value={capacity ? capacity : ''}
-                            onChange={(e) => setCapacity(e.target.value)}
-                            type="number"
-                            error={Boolean(errors.capacity)}
-                            helperText={errors.capacity}
-                            required
-                            variant="outlined"
-                            InputProps={{
-                                sx: {
-                                    borderRadius: 2,
-                                    fontSize: "13px",
-                                    '& input::-webkit-outer-spin-button, & input::-webkit-inner-spin-button': {
-                                        display: 'none'
-                                    },
-                                    '& input[type=number]': {
-                                        MozAppearance: 'textfield'
-                                    },
-                                }
-                            }}
-                        />
-                    </Box>
-                )}
-            </Grid>
-
-            <Grid>
-                <Box sx={{ mb: 2 }}>
-                    <Typography variant="h6" sx={{
-                        fontSize: "16px",
-                        fontWeight: 600,
-                        display: 'flex',
-                        alignItems: 'center'
-                    }}>
-                        🧾 Payment Proof Requirement <RequiredAsterisk />
+                    >
+                        🎯 Registration Restrictions
                     </Typography>
                 </Box>
 
-                <Box
-                    sx={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        p: 2,
-                        borderRadius: 2,
-                        bgcolor: alpha(theme.palette.background.default, 0.6),
-                        border: `1px solid ${alpha(theme.palette.divider, 0.1)}`
-                    }}
-                >
-                    <Switch
-                        checked={requiresPaymentProof}
-                        onChange={() => setRequiresPaymentProof(!requiresPaymentProof)}
-                        color="primary"
-                    />
-                    <Box sx={{ ml: 2 }}>
-                        <Typography variant="subtitle1" fontWeight={500} fontSize={15}>
-                            {requiresPaymentProof ? "Payment Verification Required" : "No Payment Verification"}
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary" fontSize={12}>
-                            {requiresPaymentProof
-                                ? "Students must upload payment proof (max 50KB)"
-                                : "No payment documentation needed for registration"
-                            }
-                        </Typography>
-                    </Box>
-                    <Tooltip title="When enabled, students will be prompted to upload payment receipts (JPEG or PNG format, maximum 50KB)" arrow>
-                        <InfoIcon sx={{ ml: 'auto', color: 'text.secondary' }} />
-                    </Tooltip>
+                <Box sx={{ border: `2px dotted ${alpha(theme.palette.divider, 0.4)}`, p: 4 }}>
+                    <Grid container spacing={2}>
+                        <Grid size={{ xs: 12, md: 6 }}>
+                            <Box sx={{ mb: 2 }}>
+                                <Typography variant="h6" sx={{
+                                    fontSize: "16px",
+                                    fontWeight: 600,
+                                    display: 'flex',
+                                    alignItems: 'center'
+                                }}>
+                                    👥 Attendance Capacity <RequiredAsterisk />
+                                </Typography>
+                            </Box>
+
+                            <Box
+                                sx={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    p: 2,
+                                    borderRadius: 2,
+                                    bgcolor: alpha(theme.palette.background.default, 0.6),
+                                    border: `1px solid ${alpha(theme.palette.divider, 0.1)}`
+                                }}
+                            >
+                                <Switch
+                                    checked={requiresCapacity}
+                                    onChange={() => {
+                                        if (!requiresCapacity) setCapacity('');
+                                        setRequiresCapacity(!requiresCapacity)
+                                    }}
+                                    color="primary"
+                                />
+                                <Box sx={{ ml: 2 }}>
+                                    <Typography variant="subtitle1" fontWeight={500}>
+                                        {requiresCapacity ? "Set Capacity Limit" : "Unlimited Capacity"}
+                                    </Typography>
+                                    <Typography variant="body2" color="text.secondary">
+                                        {requiresCapacity
+                                            ? "Restrict maximum number of attendees"
+                                            : "Allow unlimited attendees to register"
+                                        }
+                                    </Typography>
+                                </Box>
+                                <Tooltip title="Setting a capacity limit will prevent registration once the maximum number of attendees is reached." arrow>
+                                    <InfoIcon sx={{ ml: 'auto', color: 'text.secondary' }} />
+                                </Tooltip>
+                            </Box>
+
+                            {requiresCapacity && (
+                                <Box sx={{ mt: 2 }}>
+                                    <TextField
+                                        fullWidth
+                                        placeholder="Enter attendance capacity"
+                                        value={capacity ? capacity : ''}
+                                        onChange={(e) => setCapacity(e.target.value)}
+                                        type="number"
+                                        error={Boolean(errors.capacity)}
+                                        helperText={errors.capacity}
+                                        required
+                                        variant="outlined"
+                                        InputProps={{
+                                            sx: {
+                                                borderRadius: 2,
+                                                fontSize: "13px",
+                                                '& input::-webkit-outer-spin-button, & input::-webkit-inner-spin-button': {
+                                                    display: 'none'
+                                                },
+                                                '& input[type=number]': {
+                                                    MozAppearance: 'textfield'
+                                                },
+                                            }
+                                        }}
+                                    />
+                                </Box>
+                            )}
+                        </Grid>
+
+                        <Grid size={{ xs: 12, md: 6 }}>
+                            <Box sx={{ mb: 2 }}>
+                                <Typography
+                                    variant="h6"
+                                    sx={{
+                                        fontSize: "16px",
+                                        fontWeight: 600,
+                                        display: 'flex',
+                                        alignItems: 'center'
+                                    }}
+                                >
+                                    🎓 Year of Study Restriction <RequiredAsterisk />
+                                </Typography>
+                            </Box>
+
+                            <Box
+                                sx={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    p: 2,
+                                    borderRadius: 2,
+                                    bgcolor: alpha(theme.palette.background.default, 0.6),
+                                    border: `1px solid ${alpha(theme.palette.divider, 0.1)}`
+                                }}
+                            >
+                                <Switch
+                                    checked={isYearRestrict}
+                                    onChange={() => {
+                                        if (!isYearRestrict) setSelectedYears([]);
+                                        setIsYearRestrict(!isYearRestrict);
+                                    }}
+                                    color="primary"
+                                />
+                                <Box sx={{ ml: 2 }}>
+                                    <Typography variant="subtitle1" fontWeight={500} fontSize={15}>
+                                        {isYearRestrict ? "Year Restriction Enabled" : "No Year Restriction"}
+                                    </Typography>
+                                    <Typography variant="body2" color="text.secondary" fontSize={12}>
+                                        {isYearRestrict
+                                            ? "Only students in the selected years will be allowed to register"
+                                            : "Students from all years can participate"
+                                        }
+                                    </Typography>
+                                </Box>
+                                <Tooltip
+                                    title="Toggle this to restrict event participation to specific years of study"
+                                    arrow
+                                >
+                                    <InfoIcon sx={{ ml: 'auto', color: 'text.secondary' }} />
+                                </Tooltip>
+                            </Box>
+
+                            {isYearRestrict && (
+                                <Box sx={{ pt: 2 }}>
+                                    <FormControl fullWidth required>
+                                        <Select
+                                            multiple
+                                            displayEmpty
+                                            value={selectedYears}
+                                            onChange={(e) => {
+                                                const selected = e.target.value;
+                                                setSelectedYears(typeof selected === 'string' ? selected.split(',') : selected,);
+                                            }}
+                                            renderValue={(selected = []) => {
+                                                if (selected.length == 0) {
+                                                    return <div style={{ color: '#a9a9a9', fontSize: '13px' }}>Select year(s)</div>; // 👈 Placeholder text
+                                                }
+                                                return (
+                                                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                                                        {selected.map((value) => (
+                                                            <Chip key={value} label={`Year ${value}`} />
+                                                        ))}
+                                                    </Box>
+                                                );
+                                            }}
+                                            sx={{ minHeight: 56 }}
+                                        >
+                                            {allYears.map((year) => (
+                                                <MenuItem key={year} value={year}>
+                                                    Year {year}
+                                                </MenuItem>
+                                            ))}
+                                        </Select>
+                                    </FormControl>
+                                </Box>
+                            )}
+                        </Grid>
+
+                        <Grid size={{ xs: 12, md: 6 }}>
+                            <Box sx={{ mb: 2 }}>
+                                <Typography
+                                    variant="h6"
+                                    sx={{
+                                        fontSize: "16px",
+                                        fontWeight: 600,
+                                        display: 'flex',
+                                        alignItems: 'center'
+                                    }}
+                                >
+                                    🏫 Faculty Restriction <RequiredAsterisk />
+                                </Typography>
+                            </Box>
+
+                            <Box
+                                sx={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    p: 2,
+                                    borderRadius: 2,
+                                    bgcolor: alpha(theme.palette.background.default, 0.6),
+                                    border: `1px solid ${alpha(theme.palette.divider, 0.1)}`
+                                }}
+                            >
+                                <Switch
+                                    checked={isFacultyRestrict}
+                                    onChange={() => setIsFacultyRestrict(!isFacultyRestrict)}
+                                    color="primary"
+                                />
+                                <Box sx={{ ml: 2 }}>
+                                    <Typography variant="subtitle1" fontWeight={500} fontSize={15}>
+                                        {isFacultyRestrict ? "Faculty Restriction Enabled" : "No Faculty Restriction"}
+                                    </Typography>
+                                    <Typography variant="body2" color="text.secondary" fontSize={12}>
+                                        {isFacultyRestrict
+                                            ? `Only students from ${FACULTY_MAPPING[facultyID]} will be allowed to register`
+                                            : "Students from all faculties can participate"}
+                                    </Typography>
+                                </Box>
+                                <Tooltip
+                                    title={`Toggle this to restrict event participation to students from ${FACULTY_MAPPING[facultyID]}`}
+                                    arrow
+                                >
+                                    <InfoIcon sx={{ ml: 'auto', color: 'text.secondary' }} />
+                                </Tooltip>
+                            </Box>
+                        </Grid>
+
+                        <Grid size={{ xs: 12, md: 6 }}>
+                            <Box sx={{ mb: 2 }}>
+                                <Typography variant="h6" sx={{
+                                    fontSize: "16px",
+                                    fontWeight: 600,
+                                    display: 'flex',
+                                    alignItems: 'center'
+                                }}>
+                                    🧾 Payment Proof Requirement <RequiredAsterisk />
+                                </Typography>
+                            </Box>
+
+                            <Box
+                                sx={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    p: 2,
+                                    borderRadius: 2,
+                                    bgcolor: alpha(theme.palette.background.default, 0.6),
+                                    border: `1px solid ${alpha(theme.palette.divider, 0.1)}`
+                                }}
+                            >
+                                <Switch
+                                    checked={requiresPaymentProof}
+                                    onChange={() => setRequiresPaymentProof(!requiresPaymentProof)}
+                                    color="primary"
+                                />
+                                <Box sx={{ ml: 2 }}>
+                                    <Typography variant="subtitle1" fontWeight={500} fontSize={15}>
+                                        {requiresPaymentProof ? "Payment Verification Required" : "No Payment Verification"}
+                                    </Typography>
+                                    <Typography variant="body2" color="text.secondary" fontSize={12}>
+                                        {requiresPaymentProof
+                                            ? "Students must upload payment proof (max 50KB)"
+                                            : "No payment documentation needed for registration"
+                                        }
+                                    </Typography>
+                                </Box>
+                                <Tooltip title="When enabled, students will be prompted to upload payment receipts (JPEG or PNG format, maximum 50KB)" arrow>
+                                    <InfoIcon sx={{ ml: 'auto', color: 'text.secondary' }} />
+                                </Tooltip>
+                            </Box>
+                        </Grid>
+                    </Grid>
                 </Box>
-            </Grid>
+            </Box>
 
             {/* Action Buttons - Full width row */}
             <Box
@@ -1140,7 +1325,7 @@ const DetailsCreation = ({
                     Next
                 </Button>
             </Box>
-        </Box>
+        </Box >
     )
 }
 
