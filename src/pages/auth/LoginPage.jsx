@@ -14,7 +14,8 @@ import {
   Avatar,
   CssBaseline,
   Snackbar,
-  Alert
+  Alert,
+  CircularProgress
 } from '@mui/material';
 import {
   Visibility,
@@ -36,6 +37,7 @@ const LoginPage = () => {
   const [password, setPassword] = useState('');
   const [emailError, setEmailError] = useState('');
   const [passwordError, setPasswordError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
   const [invalidSnackbarOpen, setInvalidSnackbarOpen] = useState(false);
   const [errorSnackbarOpen, setErrorSnackbarOpen] = useState(false);
@@ -82,13 +84,14 @@ const LoginPage = () => {
     }
 
     if (isValid) {
-      // Handle login logic here
+      setIsLoading(true);
       try {
         const adminQuery = query(collection(db, "admin"), where("email", "==", email));
         const adminSnap = await getDocs(adminQuery);
 
         if (adminSnap.empty) {
           setInvalidSnackbarOpen(true);
+          setIsLoading(false);
           return;
         }
 
@@ -99,7 +102,9 @@ const LoginPage = () => {
         await signInWithEmailAndPassword(auth, email, password);
       } catch (error) {
         console.error("Something went wrong:", error);
-        setErrorSnackbarOpen(true);
+        setInvalidSnackbarOpen(true);
+      } finally {
+        setIsLoading(false);
       }
     }
   };
@@ -401,6 +406,7 @@ const LoginPage = () => {
                 fullWidth
                 variant="contained"
                 size="large"
+                disabled={isLoading}
                 sx={{
                   mt: 4,
                   mb: 2,
@@ -416,10 +422,25 @@ const LoginPage = () => {
                     backgroundColor: darkColor,
                     transform: 'scale(1.03)',
                     boxShadow: `0 6px 16px rgba(26, 83, 92, 0.4)`,
+                  },
+                  '&:disabled': {
+                    backgroundColor: '#e0e0e0',
+                    color: '#9e9e9e',
+                    transform: 'none',
+                    boxShadow: 'none'
                   }
                 }}
               >
-                Let's Go!
+                {isLoading ? (
+                  <CircularProgress
+                    size={24}
+                    sx={{
+                      color: 'white',
+                      mr: 1
+                    }}
+                  />
+                ) : null}
+                {isLoading ? 'Authenticating...' : "Let's Go!"}
               </Button>
             </Box>
 

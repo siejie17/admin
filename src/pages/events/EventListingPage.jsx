@@ -28,6 +28,7 @@ import EmptyList from '../../components/General/EmptyList';
 
 const EventListingPage = () => {
     const [events, setEvents] = useState([]);
+    const [eventsSize, setEventsSize] = useState(0);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [page, setPage] = useState(1);
@@ -102,6 +103,7 @@ const EventListingPage = () => {
             // Estimate total pages
             const countQuery = await getDocs(query(collection(db, "event"), where("organiserID", "==", parsedAdminData.facultyID)));
             const totalEvents = countQuery.size;
+            setEventsSize(totalEvents);
             setTotalPages(Math.ceil(totalEvents / eventsPerPage));
 
             setLoading(false);
@@ -192,7 +194,7 @@ const EventListingPage = () => {
 
                             <Tooltip title="Total events" arrow placement="top">
                                 <Chip
-                                    label={events.length}
+                                    label={eventsSize}
                                     size="small"
                                     color="primary"
                                     sx={{

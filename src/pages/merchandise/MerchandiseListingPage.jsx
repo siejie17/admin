@@ -27,6 +27,7 @@ import EmptyList from '../../components/General/EmptyList';
 
 const MerchandiseListingPage = () => {
     const [merchandises, setMerchandises] = useState([]);
+    const [merhandisesCount, setMerchandisesCount] = useState(0);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [page, setPage] = useState(1);
@@ -55,6 +56,7 @@ const MerchandiseListingPage = () => {
             // First set up a listener for the count to update totalPages dynamically
             const countUnsubscribe = onSnapshot(countQuery, (countSnapshot) => {
                 const totalMerchandises = countSnapshot.size;
+                setMerchandisesCount(totalMerchandises);
                 setTotalPages(Math.ceil(totalMerchandises / merchandisesPerPage));
             }, (error) => {
                 console.error("Error in count snapshot:", error);
@@ -246,7 +248,7 @@ const MerchandiseListingPage = () => {
 
                             <Tooltip title="Total merchandises managed by admin" arrow placement="top">
                                 <Chip
-                                    label={merchandises.length}
+                                    label={merhandisesCount}
                                     size="small"
                                     color="primary"
                                     sx={{

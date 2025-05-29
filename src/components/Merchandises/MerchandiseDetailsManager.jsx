@@ -24,7 +24,15 @@ const MerchandiseDetailsManager = ({ merchandiseID }) => {
     const [originalData, setOriginalData] = useState({});
     const [formData, setFormData] = useState({});
     const [size, setSize] = useState('');
-    const [errors, setErrors] = useState({ name: '', description: '' });
+    const [errors, setErrors] = useState({ 
+        name: '', 
+        description: '', 
+        diamondsToRedeem: '',
+        category: '',
+        collectionLocationName: '',
+        sizes: '',
+        images: ''
+    });
     const [isLoading, setIsLoading] = useState(true);
 
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -104,7 +112,63 @@ const MerchandiseDetailsManager = ({ merchandiseID }) => {
         });
     }, [originalData, formData]);
 
+    const validateFields = () => {
+        const newErrors = {};
+        let isValid = true;
+
+        // Validate name
+        if (!formData.name?.trim()) {
+            newErrors.name = 'Merchandise name cannot be empty';
+            isValid = false;
+        }
+
+        // Validate description
+        if (!formData.description?.trim()) {
+            newErrors.description = 'Description cannot be empty';
+            isValid = false;
+        }
+
+        // Validate diamonds to redeem
+        if (!formData.diamondsToRedeem || formData.diamondsToRedeem <= 0) {
+            newErrors.diamondsToRedeem = 'Diamonds required must be greater than 0';
+            isValid = false;
+        }
+
+        // Validate category
+        if (!formData.category) {
+            newErrors.category = 'Please select a category';
+            isValid = false;
+        }
+
+        // Validate collection location
+        if (!formData.collectionLocationName?.trim()) {
+            newErrors.collectionLocationName = 'Pickup location cannot be empty';
+            isValid = false;
+        }
+
+        // Validate sizes for clothing category
+        if (formData.category === 'Clothing' && (!formData.sizes || formData.sizes.length === 0)) {
+            newErrors.sizes = 'At least one size must be added for clothing items';
+            isValid = false;
+        }
+
+        // Validate images
+        if (!formData.images || formData.images.length === 0) {
+            newErrors.images = 'At least one image must be uploaded';
+            isValid = false;
+        }
+
+        setErrors(newErrors);
+        return isValid;
+    };
+
     const handleChange = (field, value) => {
+        // Clear error for the field being changed
+        setErrors(prev => ({
+            ...prev,
+            [field]: ''
+        }));
+
         if (field === "category") {
             if (value === "Clothing") {
                 setFormData(prev => ({
@@ -257,11 +321,20 @@ const MerchandiseDetailsManager = ({ merchandiseID }) => {
     const handleEditSubmit = async (e) => {
         e.preventDefault();
 
+        // Validate all fields before proceeding
+        if (!validateFields()) {
+            setSnackbarOpen(true);
+            setSnackbarContent({ 
+                msg: 'Please fill in all required fields correctly', 
+                type: 'error' 
+            });
+            return;
+        }
+
         try {
             const updates = {};
             changedFields.forEach(field => {
                 updates[field] = formData[field];
-                console.log(updates[field]);
             });
 
             const merchRef = doc(db, "merchandise", merchandiseID);

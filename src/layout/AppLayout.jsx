@@ -16,6 +16,7 @@ import {
     Button,
     Avatar,
     Tooltip,
+    CircularProgress
 } from "@mui/material";
 import {
     ChevronLeft as ChevronLeftIcon,
@@ -34,14 +35,17 @@ import Logo from '../assets/logo.png';
 import { signOut } from "firebase/auth";
 import { auth } from "../utils/firebaseConfig";
 import { getItem, removeItem } from '../utils/localStorage';
+import { useAuth } from '../contexts/AuthContext';
 
 const AppLayout = () => {
     const theme = useTheme();
     const location = useLocation();
     const navigate = useNavigate();
+    const { user } = useAuth();
 
     const [admin, setAdmin] = useState({});
     const [isLoading, setIsLoading] = useState(true);
+    const [isLoggingOut, setIsLoggingOut] = useState(false);
 
     // Responsive breakpoints
     const isExtraSmall = useMediaQuery('(max-width:600px)');
@@ -118,9 +122,22 @@ const AppLayout = () => {
     };
 
     const handleSignOut = async () => {
-        removeItem("admin");
-        await signOut(auth);
-        navigate("/login");
+        try {
+            setIsLoggingOut(true);
+            // First remove admin data from localStorage
+            removeItem("admin");
+            // Then sign out from Firebase
+            await signOut(auth);
+            // Finally navigate to login page
+            navigate("/login", { replace: true });
+        } catch (error) {
+            console.error("Error during logout:", error);
+            // If there's an error, still try to clear local data and redirect
+            removeItem("admin");
+            navigate("/login", { replace: true });
+        } finally {
+            setIsLoggingOut(false);
+        }
     }
 
     // Drawer content component to avoid duplication
@@ -298,7 +315,7 @@ const AppLayout = () => {
             <Box sx={{ flexGrow: 1 }} />
 
             {/* Profile Overview Section */}
-            {!isLoading && (
+            {!isLoading && !isLoggingOut && user && user.profilePicture && (
                 <Box
                     sx={{
                         p: { xs: 1, sm: 1.5 },
@@ -313,8 +330,8 @@ const AppLayout = () => {
                 >
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                         <Avatar
-                            src={`data:image/png;base64,${admin.profilePicture}`}
-                            alt={admin.adminName}
+                            src={`data:image/png;base64,${user.profilePicture}`}
+                            alt={user.adminName}
                             sx={{
                                 width: { xs: 24, sm: 30 },
                                 height: { xs: 24, sm: 30 },
@@ -332,7 +349,7 @@ const AppLayout = () => {
                                     textOverflow: 'ellipsis'
                                 }}
                             >
-                                {admin.adminName}
+                                {user.adminName}
                             </Typography>
                             <Typography
                                 variant="caption"
@@ -345,7 +362,7 @@ const AppLayout = () => {
                                     textOverflow: 'ellipsis'
                                 }}
                             >
-                                {admin.email}
+                                {user.email}
                             </Typography>
                         </Box>
                     </Box>
@@ -358,7 +375,8 @@ const AppLayout = () => {
                     variant="outlined"
                     color="error"
                     onClick={handleSignOut}
-                    startIcon={<LogoutIcon sx={{ mr: 1 }} />}
+                    disabled={isLoggingOut}
+                    startIcon={isLoggingOut ? <CircularProgress size={20} color="error" /> : <LogoutIcon sx={{ mr: 1 }} />}
                     fullWidth
                     sx={{
                         borderRadius: '12px',
@@ -372,10 +390,14 @@ const AppLayout = () => {
                         '&:hover': {
                             borderColor: alpha('#ff4d6d', 0.5),
                             bgcolor: alpha('#ff4d6d', 0.05),
+                        },
+                        '&:disabled': {
+                            borderColor: alpha('#ff4d6d', 0.1),
+                            color: alpha('#ff4d6d', 0.5),
                         }
                     }}
                 >
-                    Logout
+                    {isLoggingOut ? 'Logging out...' : 'Logout'}
                 </Button>
             </Box>
         </>

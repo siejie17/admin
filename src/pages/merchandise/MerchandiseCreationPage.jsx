@@ -131,18 +131,13 @@ const MerchandiseCreationPage = () => {
     };
 
     const handleRemoveImage = (index) => {
-        if (index !== 0 && images.length !== 1) {
-            const newImages = [...images];
-            newImages.splice(index, 1);
-            setImages(newImages);
-            setCurrentImageIndex((prev) => (prev > 0 ? prev - 1 : images.length - 1));
+        const newImages = [...images];
+        newImages.splice(index, 1);
+        setImages(newImages);
+        setCurrentImageIndex((prev) => (prev > 0 ? prev - 1 : images.length - 1));
 
-            if (newImages.length <= 4) {
-                setErrors({ ...errors, images: null });
-            }
-        } else {
-            const newError = "You cannot delete image when there is only one image.";
-            setErrors({ ...errors, images: newError });
+        if (newImages.length <= 4) {
+            setErrors({ ...errors, images: null });
         }
     };
 
