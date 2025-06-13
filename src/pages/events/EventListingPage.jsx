@@ -12,11 +12,16 @@ import {
     Tooltip,
     Stack,
     Fade,
+    TextField,
+    InputAdornment,
+    IconButton
 } from '@mui/material';
 import {
     Add as AddIcon,
     Event as EventIcon,
-    EventNote as EventNoteIcon
+    EventNote as EventNoteIcon,
+    Search as SearchIcon,
+    Clear as ClearIcon
 } from '@mui/icons-material';
 import { collection, getDocs, query, orderBy, limit, startAfter, where } from 'firebase/firestore';
 import { getItem } from '../../utils/localStorage';
@@ -28,6 +33,7 @@ import EmptyList from '../../components/General/EmptyList';
 
 const EventListingPage = () => {
     const [events, setEvents] = useState([]);
+    const [allEvents, setAllEvents] = useState([]);
     const [eventsSize, setEventsSize] = useState(0);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -35,6 +41,7 @@ const EventListingPage = () => {
     const [totalPages, setTotalPages] = useState(1);
     const [lastVisible, setLastVisible] = useState(null);
     const [hasMore, setHasMore] = useState(true);
+    const [searchQuery, setSearchQuery] = useState('');
 
     const navigate = useNavigate();
     const eventsPerPage = 6;
@@ -98,6 +105,7 @@ const EventListingPage = () => {
                 })
             );
 
+            setAllEvents(eventList);
             setEvents(eventList);
 
             // Estimate total pages
@@ -112,6 +120,30 @@ const EventListingPage = () => {
             setError("Failed to load events. Please try again later.");
             setLoading(false);
         }
+    };
+
+    // Add search filtering effect
+    useEffect(() => {
+        if (searchQuery.trim() === '') {
+            setEvents(allEvents);
+        } else {
+            const filtered = allEvents.filter(event => 
+                event.eventName.toLowerCase().includes(searchQuery.toLowerCase())
+            );
+            setEvents(filtered);
+        }
+    }, [searchQuery, allEvents]);
+
+    // Handle search input change
+    const handleSearchChange = (event) => {
+        setSearchQuery(event.target.value);
+        setPage(1); // Reset to first page when searching
+    };
+
+    // Clear search
+    const handleClearSearch = () => {
+        setSearchQuery('');
+        setPage(1);
     };
 
     // Fetch first page on component mount
@@ -140,7 +172,7 @@ const EventListingPage = () => {
             <Box
                 sx={{
                     display: 'flex',
-                    flexDirection: { xs: 'column', sm: 'row' },
+                    flexDirection: isExtraSmall ? 'column' : 'row',
                     alignItems: isExtraSmall ? 'flex-start' : 'center',
                     py: { xs: 1, sm: 2 },
                     px: { xs: 2, sm: 3 },
@@ -149,12 +181,13 @@ const EventListingPage = () => {
                     borderBottom: '1px solid rgba(0, 0, 0, 0.06)'
                 }}
             >
+                {/* Header with Title */}
                 <Box
                     sx={{
                         display: 'flex',
                         alignItems: 'center',
-                        width: { xs: '100%', sm: 'auto' },
-                        justifyContent: { xs: 'space-between', sm: 'flex-start' }
+                        flexGrow: 1,
+                        minWidth: 0,
                     }}
                 >
                     <Box sx={{ display: 'flex', alignItems: 'center' }}>
@@ -212,6 +245,51 @@ const EventListingPage = () => {
                     </Box>
                 </Box>
 
+                {/* Search Bar */}
+                <Box
+                    sx={{
+                        width: { xs: '100%', sm: '300px' },
+                        mx: { xs: 0, sm: 2 },
+                        mb: { xs: 2, sm: 0 }
+                    }}
+                >
+                    <TextField
+                        fullWidth
+                        size="small"
+                        placeholder="Search events..."
+                        value={searchQuery}
+                        onChange={handleSearchChange}
+                        InputProps={{
+                            startAdornment: (
+                                <InputAdornment position="start">
+                                    <SearchIcon sx={{ color: 'text.secondary' }} />
+                                </InputAdornment>
+                            ),
+                            endAdornment: searchQuery && (
+                                <InputAdornment position="end">
+                                    <IconButton
+                                        size="small"
+                                        onClick={handleClearSearch}
+                                        edge="end"
+                                    >
+                                        <ClearIcon fontSize="small" />
+                                    </IconButton>
+                                </InputAdornment>
+                            ),
+                            sx: {
+                                borderRadius: 2,
+                                backgroundColor: alpha(theme.palette.background.paper, 0.8),
+                                '&:hover': {
+                                    backgroundColor: alpha(theme.palette.background.paper, 0.9),
+                                },
+                                '&.Mui-focused': {
+                                    backgroundColor: theme.palette.background.paper,
+                                }
+                            }
+                        }}
+                    />
+                </Box>
+
                 {/* Action Buttons */}
                 <Stack
                     direction={isExtraSmall ? "column" : "row"}
@@ -254,7 +332,18 @@ const EventListingPage = () => {
             {loading ?
                 <Loader loadingText='Loading your events...' />
                 : events.length === 0 ?
-                    <EmptyList icon={<EventNoteIcon />} title="No Events Available" subtitle="There are currently no events managed by you." info="Events that you create will appear here. You can manage, edit, and track all your events from this dashboard." />
+                    <EmptyList 
+                        icon={<EventNoteIcon />} 
+                        title={searchQuery ? "No Matching Events" : "No Events Available"} 
+                        subtitle={searchQuery 
+                            ? `No events found matching "${searchQuery}"` 
+                            : "There are currently no events managed by you."
+                        } 
+                        info={searchQuery 
+                            ? "Try adjusting your search terms or browse all events." 
+                            : "Events that you create will appear here. You can manage, edit, and track all your events from this dashboard."
+                        }
+                    />
                     : (
                         <>
                             <Fade in={true}>
@@ -263,53 +352,56 @@ const EventListingPage = () => {
                                 </Box>
                             </Fade>
 
-                            <Box sx={{
-                                display: 'flex',
-                                justifyContent: 'flex-end',
-                                position: 'fixed',
-                                bottom: 30,
-                                right: 30,
-                                zIndex: 1000,
-                            }}>
-                                <Paper
-                                    elevation={3}
-                                    sx={{
-                                        py: 1,
-                                        px: 1.5,
-                                        borderRadius: 3,
-                                        backgroundColor: theme.palette.background.paper,
-                                        border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
-                                        backdropFilter: 'blur(8px)',
-                                        boxShadow: `0 4px 12px ${alpha(theme.palette.common.black, 0.08)}`, // Added shadow for floating effect
-                                    }}
-                                >
-                                    <Pagination
-                                        count={totalPages || 1}
-                                        page={page}
-                                        onChange={handlePageChange}
-                                        color="primary"
-                                        size={isMobile ? "small" : "medium"}
-                                        showFirstButton
-                                        showLastButton
+                            {/* Only show pagination if there are results and no active search */}
+                            {!searchQuery && (
+                                <Box sx={{
+                                    display: 'flex',
+                                    justifyContent: 'flex-end',
+                                    position: 'fixed',
+                                    bottom: 30,
+                                    right: 30,
+                                    zIndex: 1000,
+                                }}>
+                                    <Paper
+                                        elevation={3}
                                         sx={{
-                                            '& .MuiPaginationItem-root': {
-                                                color: 'black',
-                                                borderRadius: 1.5,
-                                                mx: { xs: 0.2, sm: 0.5 },
-                                                fontWeight: 500,
-                                                fontSize: { xs: '0.875rem', sm: '0.9rem' }
-                                            },
-                                            '& .Mui-selected': {
-                                                fontWeight: 700,
-                                                backgroundColor: alpha(theme.palette.primary.main, 0.1),
-                                                '&:hover': {
-                                                    backgroundColor: alpha(theme.palette.primary.main, 0.2),
-                                                }
-                                            }
+                                            py: 1,
+                                            px: 1.5,
+                                            borderRadius: 3,
+                                            backgroundColor: theme.palette.background.paper,
+                                            border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+                                            backdropFilter: 'blur(8px)',
+                                            boxShadow: `0 4px 12px ${alpha(theme.palette.common.black, 0.08)}`,
                                         }}
-                                    />
-                                </Paper>
-                            </Box>
+                                    >
+                                        <Pagination
+                                            count={totalPages || 1}
+                                            page={page}
+                                            onChange={handlePageChange}
+                                            color="primary"
+                                            size={isMobile ? "small" : "medium"}
+                                            showFirstButton
+                                            showLastButton
+                                            sx={{
+                                                '& .MuiPaginationItem-root': {
+                                                    color: 'black',
+                                                    borderRadius: 1.5,
+                                                    mx: { xs: 0.2, sm: 0.5 },
+                                                    fontWeight: 500,
+                                                    fontSize: { xs: '0.875rem', sm: '0.9rem' }
+                                                },
+                                                '& .Mui-selected': {
+                                                    fontWeight: 700,
+                                                    backgroundColor: alpha(theme.palette.primary.main, 0.1),
+                                                    '&:hover': {
+                                                        backgroundColor: alpha(theme.palette.primary.main, 0.2),
+                                                    }
+                                                }
+                                            }}
+                                        />
+                                    </Paper>
+                                </Box>
+                            )}
                         </>
                     )}
         </Box>

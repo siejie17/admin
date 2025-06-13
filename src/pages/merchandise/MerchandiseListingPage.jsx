@@ -11,9 +11,12 @@ import {
     Fade,
     alpha,
     Tooltip,
-    Stack
+    Stack,
+    TextField,
+    InputAdornment,
+    IconButton
 } from '@mui/material';
-import { Add as AddIcon, Redeem as RedeemIcon, Storefront as StorefrontIcon } from '@mui/icons-material';
+import { Add as AddIcon, Redeem as RedeemIcon, Storefront as StorefrontIcon, Search as SearchIcon, Clear as ClearIcon } from '@mui/icons-material';
 
 import { useNavigate } from 'react-router-dom';
 import { collection, query, orderBy, limit, startAfter, where, onSnapshot } from 'firebase/firestore';
@@ -27,6 +30,7 @@ import EmptyList from '../../components/General/EmptyList';
 
 const MerchandiseListingPage = () => {
     const [merchandises, setMerchandises] = useState([]);
+    const [allMerchandises, setAllMerchandises] = useState([]);
     const [merhandisesCount, setMerchandisesCount] = useState(0);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -34,6 +38,7 @@ const MerchandiseListingPage = () => {
     const [totalPages, setTotalPages] = useState(1);
     const [lastVisible, setLastVisible] = useState(null);
     const [hasMore, setHasMore] = useState(true);
+    const [searchQuery, setSearchQuery] = useState('');
 
     const navigate = useNavigate();
     const merchandisesPerPage = 6;
@@ -90,6 +95,7 @@ const MerchandiseListingPage = () => {
                 if (snapshot.empty) {
                     setHasMore(false);
                     setMerchandises([]);
+                    setAllMerchandises([]);
                 } else {
                     // Get the last visible document for pagination
                     const lastDoc = snapshot.docs[snapshot.docs.length - 1];
@@ -100,6 +106,8 @@ const MerchandiseListingPage = () => {
                         ...doc.data()
                     }));
 
+                    setAllMerchandises(merchList);
+                    // Initial filtering will be handled by the useEffect
                     setMerchandises(merchList);
                     setHasMore(snapshot.docs.length >= merchandisesPerPage);
                 }
@@ -139,6 +147,18 @@ const MerchandiseListingPage = () => {
         }
     }, []);
 
+    // Add this new useEffect to handle search filtering
+    useEffect(() => {
+        if (searchQuery.trim() === '') {
+            setMerchandises(allMerchandises);
+        } else {
+            const filtered = allMerchandises.filter(merch => 
+                merch.name.toLowerCase().includes(searchQuery.toLowerCase())
+            );
+            setMerchandises(filtered);
+        }
+    }, [searchQuery, allMerchandises]);
+
     // Handle page change
     const handlePageChange = (event, value) => {
         setPage(value);
@@ -172,6 +192,18 @@ const MerchandiseListingPage = () => {
             unsubscribes.countUnsubscribe();
             unsubscribes.dataUnsubscribe();
         }
+    };
+
+    // Handle search input change
+    const handleSearchChange = (event) => {
+        setSearchQuery(event.target.value);
+        setPage(1); // Reset to first page when searching
+    };
+
+    // Clear search
+    const handleClearSearch = () => {
+        setSearchQuery('');
+        setPage(1);
     };
 
     return (
@@ -265,6 +297,51 @@ const MerchandiseListingPage = () => {
                     </Box>
                 </Box>
 
+                {/* Search Bar */}
+                <Box
+                    sx={{
+                        width: { xs: '100%', sm: '300px' },
+                        mx: { xs: 0, sm: 2 },
+                        mb: { xs: 2, sm: 0 }
+                    }}
+                >
+                    <TextField
+                        fullWidth
+                        size="small"
+                        placeholder="Search merchandises..."
+                        value={searchQuery}
+                        onChange={handleSearchChange}
+                        InputProps={{
+                            startAdornment: (
+                                <InputAdornment position="start">
+                                    <SearchIcon sx={{ color: 'text.secondary' }} />
+                                </InputAdornment>
+                            ),
+                            endAdornment: searchQuery && (
+                                <InputAdornment position="end">
+                                    <IconButton
+                                        size="small"
+                                        onClick={handleClearSearch}
+                                        edge="end"
+                                    >
+                                        <ClearIcon fontSize="small" />
+                                    </IconButton>
+                                </InputAdornment>
+                            ),
+                            sx: {
+                                borderRadius: 2,
+                                backgroundColor: alpha(theme.palette.background.paper, 0.8),
+                                '&:hover': {
+                                    backgroundColor: alpha(theme.palette.background.paper, 0.9),
+                                },
+                                '&.Mui-focused': {
+                                    backgroundColor: theme.palette.background.paper,
+                                }
+                            }
+                        }}
+                    />
+                </Box>
+
                 {/* Action Buttons */}
                 <Stack
                     direction={isExtraSmall ? "column" : "row"}
@@ -308,7 +385,18 @@ const MerchandiseListingPage = () => {
             {/* Content Area */}
             {loading ? <Loader loadingText='Loading merchandises...' />
                 : merchandises.length === 0 ? (
-                    <EmptyList icon={<RedeemIcon />} title="No Merchandises Available" subtitle="There are currently no merchandises managed by you." info="Merchandises that you create will appear here. You can manage, edit, and track all your merchandises from this dashboard." />
+                    <EmptyList 
+                        icon={<RedeemIcon />} 
+                        title={searchQuery ? "No Matching Merchandises" : "No Merchandises Available"} 
+                        subtitle={searchQuery 
+                            ? `No merchandises found matching "${searchQuery}"` 
+                            : "There are currently no merchandises managed by you."
+                        } 
+                        info={searchQuery 
+                            ? "Try adjusting your search terms or browse all merchandises." 
+                            : "Merchandises that you create will appear here. You can manage, edit, and track all your merchandises from this dashboard."
+                        }
+                    />
                 ) : (
                     <>
                         <Fade in={true}>
@@ -317,53 +405,56 @@ const MerchandiseListingPage = () => {
                             </Box>
                         </Fade>
 
-                        <Box sx={{
-                            display: 'flex',
-                            justifyContent: 'flex-end', // Changed from 'center' to 'flex-end' to align to the right
-                            position: 'fixed', // Make it fixed positioned
-                            bottom: 40, // Distance from the bottom
-                            right: 40, // Distance from the right
-                            zIndex: 1000, // Ensure it stays on top of other content
-                        }}>
-                            <Paper
-                                elevation={3} // Increased elevation for better floating appearance
-                                sx={{
-                                    py: 1,
-                                    px: 1.5,
-                                    borderRadius: 3,
-                                    backgroundColor: theme.palette.background.paper,
-                                    border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
-                                    backdropFilter: 'blur(8px)',
-                                    boxShadow: `0 4px 12px ${alpha(theme.palette.common.black, 0.08)}`, // Added shadow for floating effect
-                                }}
-                            >
-                                <Pagination
-                                    count={totalPages || 1}
-                                    page={page}
-                                    onChange={handlePageChange}
-                                    color="primary"
-                                    size={isMobile ? "small" : "medium"}
-                                    showFirstButton
-                                    showLastButton
+                        {/* Only show pagination if there are results and no active search */}
+                        {!searchQuery && (
+                            <Box sx={{
+                                display: 'flex',
+                                justifyContent: 'flex-end',
+                                position: 'fixed',
+                                bottom: 40,
+                                right: 40,
+                                zIndex: 1000,
+                            }}>
+                                <Paper
+                                    elevation={3}
                                     sx={{
-                                        '& .MuiPaginationItem-root': {
-                                            color: 'black',
-                                            borderRadius: 1.5,
-                                            mx: { xs: 0.2, sm: 0.5 },
-                                            fontWeight: 500,
-                                            fontSize: { xs: '0.875rem', sm: '0.9rem' }
-                                        },
-                                        '& .Mui-selected': {
-                                            fontWeight: 700,
-                                            backgroundColor: alpha(theme.palette.primary.main, 0.1),
-                                            '&:hover': {
-                                                backgroundColor: alpha(theme.palette.primary.main, 0.2),
-                                            }
-                                        }
+                                        py: 1,
+                                        px: 1.5,
+                                        borderRadius: 3,
+                                        backgroundColor: theme.palette.background.paper,
+                                        border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+                                        backdropFilter: 'blur(8px)',
+                                        boxShadow: `0 4px 12px ${alpha(theme.palette.common.black, 0.08)}`,
                                     }}
-                                />
-                            </Paper>
-                        </Box>
+                                >
+                                    <Pagination
+                                        count={totalPages || 1}
+                                        page={page}
+                                        onChange={handlePageChange}
+                                        color="primary"
+                                        size={isMobile ? "small" : "medium"}
+                                        showFirstButton
+                                        showLastButton
+                                        sx={{
+                                            '& .MuiPaginationItem-root': {
+                                                color: 'black',
+                                                borderRadius: 1.5,
+                                                mx: { xs: 0.2, sm: 0.5 },
+                                                fontWeight: 500,
+                                                fontSize: { xs: '0.875rem', sm: '0.9rem' }
+                                            },
+                                            '& .Mui-selected': {
+                                                fontWeight: 700,
+                                                backgroundColor: alpha(theme.palette.primary.main, 0.1),
+                                                '&:hover': {
+                                                    backgroundColor: alpha(theme.palette.primary.main, 0.2),
+                                                }
+                                            }
+                                        }}
+                                    />
+                                </Paper>
+                            </Box>
+                        )}
                     </>
                 )}
         </Box>

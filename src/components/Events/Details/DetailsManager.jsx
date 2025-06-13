@@ -215,6 +215,7 @@ const DetailsManager = ({ eventID }) => {
             if (!eventSnap.exists()) return;
 
             const eventData = eventSnap.data();
+            const { lastAdded, ...restEventData } = eventData;
             const imagesQuery = query(collection(db, "eventImages"), where("eventID", "==", eventID));
 
             unsubscribeEventImages = onSnapshot(imagesQuery, (imagesSnap) => {
@@ -223,7 +224,7 @@ const DetailsManager = ({ eventID }) => {
                 );
 
                 const completedEventData = {
-                    ...eventData,
+                    ...restEventData,
                     category: CATEGORY_MAPPING[eventData.category],
                     eventStartDateTime: dayjs(eventData.eventStartDateTime.toDate?.() ?? new Date(eventData.eventStartDateTime.seconds * 1000)),
                     eventEndDateTime: dayjs(eventData.eventEndDateTime.toDate?.() ?? new Date(eventData.eventEndDateTime.seconds * 1000)),
@@ -276,6 +277,7 @@ const DetailsManager = ({ eventID }) => {
         if (!originalData || !formData) return false;
 
         return Object.keys(formData).some(key => {
+            // Handle arrays
             if (Array.isArray(formData[key])) {
                 const originalArray = originalData[key] || [];
                 const formArray = formData[key];
@@ -284,9 +286,6 @@ const DetailsManager = ({ eventID }) => {
                     // Compare as unordered sets (sorted)
                     const sortedOriginal = [...originalArray].sort();
                     const sortedForm = [...formArray].sort();
-
-                    if (sortedOriginal.length !== sortedForm.length) return true;
-
                     return !sortedForm.every((item, index) => item === sortedOriginal[index]);
                 }
 
@@ -295,14 +294,17 @@ const DetailsManager = ({ eventID }) => {
                 return !formArray.every((item, index) => item === originalArray[index]);
             }
 
+            // Handle numbers
             if (key === "capacity") {
                 return Number(formData[key]) !== Number(originalData[key]);
             }
 
+            // Handle dates
             if (formData[key] instanceof Date || dayjs.isDayjs(formData[key])) {
-                return dayjs(formData[key]).valueOf() !== dayjs(originalData[key]).valueOf();
+                return !dayjs(formData[key]).isSame(dayjs(originalData[key]));
             }
 
+            // Handle booleans and strings
             return formData[key] !== originalData[key];
         });
     }, [originalData, formData]);
@@ -329,7 +331,7 @@ const DetailsManager = ({ eventID }) => {
     }, [originalData, formData]);
 
     const handleChange = (field, value) => {
-        if (field === "yearsRestrcited") {
+        if (field === "yearsRestricted") {
             setFormData(prev => ({
                 ...prev,
                 yearsRestricted: value
@@ -402,7 +404,9 @@ const DetailsManager = ({ eventID }) => {
                     images: [...prev.images, ...newImages]
                 }));
 
-                changedFields.includes('images');
+                if (!changedFields.includes('images')) {
+                    changedFields.push('images');
+                }
             }
         } catch (error) {
             console.error('Compression or preview error:', error);
@@ -427,7 +431,9 @@ const DetailsManager = ({ eventID }) => {
                 setCurrentImageIndex(Math.max(0, updatedImages.length - 1));
             }
 
-            changedFields.includes('images');
+            if (!changedFields.includes('images')) {
+                changedFields.push('images');
+            }
         } else {
             const newError = "You cannot delete image when there is only one image.";
             setFormErrors({ ...formErrors, images: newError });
@@ -465,6 +471,10 @@ const DetailsManager = ({ eventID }) => {
                 updatedImages[index] = base64Data;
                 return { ...prev, images: updatedImages };
             });
+
+            if (!changedFields.includes('images')) {
+                changedFields.push('images');
+            }
         } catch (error) {
             console.error('Image replace error:', error);
             setFormErrors(prev => ({ ...prev, images: 'Failed to replace image' }));
@@ -538,7 +548,14 @@ const DetailsManager = ({ eventID }) => {
                     }
                 }
 
-                setOriginalData(JSON.parse(JSON.stringify(formData)));
+                // Update originalData with the new form data
+                const newOriginalData = {
+                    ...formData,
+                    eventStartDateTime: dayjs(formData.eventStartDateTime),
+                    eventEndDateTime: dayjs(formData.eventEndDateTime),
+                    registrationClosingDate: dayjs(formData.registrationClosingDate)
+                };
+                setOriginalData(newOriginalData);
 
                 setSnackbarOpen(true);
                 setSnackbarContent({

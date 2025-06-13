@@ -64,8 +64,9 @@ const MerchandiseDetailsManager = ({ merchandiseID }) => {
             const unsubscribeMerch = onSnapshot(merchRef, (merchSnap) => {
                 if (merchSnap.exists()) {
                     const merchData = merchSnap.data();
-                    setOriginalData(merchData);
-                    setFormData(merchData);
+                    const { createdAt, ...restMerchData } = merchData;
+                    setOriginalData(restMerchData);
+                    setFormData(restMerchData);
                 } else {
                     console.log("No such merchandise document!");
                 }
@@ -111,6 +112,10 @@ const MerchandiseDetailsManager = ({ merchandiseID }) => {
             return formData[key] !== originalData[key];
         });
     }, [originalData, formData]);
+
+    useEffect(() => {
+        console.log(changedFields);
+    }, [changedFields]);
 
     const validateFields = () => {
         const newErrors = {};
@@ -245,10 +250,6 @@ const MerchandiseDetailsManager = ({ merchandiseID }) => {
                 }));
             }
 
-            if (!changedFields.includes("images")) {
-                changedFields.push("images");
-            }
-
             setErrors(prev => ({ ...prev, images: null }));
 
         } catch (error) {
@@ -306,10 +307,6 @@ const MerchandiseDetailsManager = ({ merchandiseID }) => {
                 images: replaceImage
             }));
 
-            if (!changedFields.includes("images")) {
-                changedFields.push("images");
-            }
-
             setErrors(prev => ({ ...prev, images: null }));
 
         } catch (error) {
@@ -351,7 +348,12 @@ const MerchandiseDetailsManager = ({ merchandiseID }) => {
                 });
             }
 
-            setOriginalData(JSON.parse(JSON.stringify(formData)));
+            // Update originalData with the new form data
+            const newOriginalData = {
+                ...formData,
+                diamondsToRedeem: Number(formData.diamondsToRedeem)
+            };
+            setOriginalData(newOriginalData);
 
             setSnackbarOpen(true);
             setSnackbarContent({ msg: 'Your merchandise updates were saved!', type: 'success' });
