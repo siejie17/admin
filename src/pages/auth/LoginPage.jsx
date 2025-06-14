@@ -93,11 +93,27 @@ const LoginPage = () => {
 
     if (isValid) {
       setIsLoading(true);
-      // Simulate API call
-      setTimeout(() => {
-        setIsLoading(false);
+      try {
+        const adminQuery = query(collection(db, "admin"), where("email", "==", email));
+        const adminSnap = await getDocs(adminQuery);
+
+        if (adminSnap.empty) {
+          setInvalidSnackbarOpen(true);
+          setIsLoading(false);
+          return;
+        }
+
+        const adminData = adminSnap.docs[0].data();
+
+        await setItem("admin", JSON.stringify(adminData));
+
+        await signInWithEmailAndPassword(auth, email, password);
+      } catch (error) {
+        console.error("Something went wrong:", error);
         setInvalidSnackbarOpen(true);
-      }, 2000);
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
 
