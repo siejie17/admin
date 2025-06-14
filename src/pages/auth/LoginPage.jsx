@@ -30,6 +30,10 @@ import {
   Security
 } from '@mui/icons-material';
 import { Link as RouterLink } from 'react-router-dom';
+import { collection, getDocs, query, where } from 'firebase/firestore';
+import { auth, db } from '../../utils/firebaseConfig';
+import { signInWithEmailAndPassword } from 'firebase/auth';
+import { setItem } from '../../utils/localStorage';
 
 import logo from '../../assets/logo.png';
 
