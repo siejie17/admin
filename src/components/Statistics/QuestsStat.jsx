@@ -18,6 +18,15 @@ const QuestsStat = ({ averageQuestSatisfactionRating }) => {
 
     const theme = useTheme();
 
+    // Define quest types for consistent rendering
+    const QUEST_TYPES = [
+        'attendance',
+        'earlyBird',
+        'q&a',
+        'networking',
+        'feedback'
+    ];
+
     useEffect(() => {
         const fetchQuestStats = async () => {
             const adminData = await getItem("admin");
@@ -220,9 +229,12 @@ const QuestsStat = ({ averageQuestSatisfactionRating }) => {
                 columns={12}
                 sx={{ mb: (theme) => theme.spacing(1) }}
             >
-                {Object.entries(questCompletionStats).map(([questType, stats]) => (
+                {QUEST_TYPES.map((questType) => (
                     <Grid key={questType} size={{ xs: 12, sm: 6, lg: 3 }}>
-                        <QuestCompletionStatusStat questType={questType} stats={stats} />
+                        <QuestCompletionStatusStat 
+                            questType={questType} 
+                            stats={questCompletionStats[questType] || { completed: 0, notCompleted: 0 }} 
+                        />
                     </Grid>
                 ))}
             </Grid>

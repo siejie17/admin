@@ -93,16 +93,15 @@ const LeaderboardPage = () => {
                             const entriesRef = query(collection(leaderboardDocRef, "leaderboardEntries"), orderBy("points", "desc"));
 
                             unsubscribeEntriesRef.current = onSnapshot(entriesRef, (entriesSnapshot) => {
-                                const tempLeaderboard = [];
-
-                                let processedCount = 0;
-                                const totalEntries = entriesSnapshot.size;
-
-                                if (totalEntries === 0) {
+                                if (entriesSnapshot.empty) {
                                     setLeaderboardList([]);
                                     setIsLoading(false);
                                     return;
                                 }
+
+                                const tempLeaderboard = [];
+                                let processedCount = 0;
+                                const totalEntries = entriesSnapshot.size;
 
                                 entriesSnapshot.forEach((entryDoc) => {
                                     const entryData = entryDoc.data();
@@ -144,12 +143,19 @@ const LeaderboardPage = () => {
                             setIsLoading(false);
                         }
                     });
+                } else {
+                    setLeaderboardList([]);
+                    setCurrentMonthYear('');
+                    setRefreshDateTime('');
                     setIsLoading(false);
                 }
             });
 
         } catch (error) {
             console.error("Error in fetchLeaderboardList:", error);
+            setLeaderboardList([]);
+            setCurrentMonthYear('');
+            setRefreshDateTime('');
             setIsLoading(false);
         }
     };

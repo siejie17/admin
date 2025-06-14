@@ -1,6 +1,7 @@
 import React from 'react';
 import { Box, Paper, styled, Typography, useTheme } from '@mui/material';
 import { PieChart, useDrawingArea } from '@mui/x-charts';
+import AssignmentIcon from '@mui/icons-material/Assignment';
 
 const StyledText = styled('text', {
     shouldForwardProp: (prop) => prop !== 'variant',
@@ -60,6 +61,97 @@ const QuestCompletionStatusStat = ({ questType, stats }) => {
         "q&a": "Question & Answer",
         networking: "Networking",
         feedback: "Feedback"
+    }
+
+    // Check if there are no completion statistics
+    const hasNoData = !stats || (stats.completed === 0 && stats.notCompleted === 0);
+
+    if (hasNoData) {
+        return (
+            <Paper
+                elevation={2}
+                sx={{
+                    p: 1.5,
+                    borderRadius: 3,
+                    background: 'linear-gradient(135deg, #ffffff, #f7f7f7)',
+                    maxWidth: 320,
+                    mx: 'auto',
+                    boxShadow: '0 6px 12px rgba(0,0,0,0.05)',
+                    transition: 'transform 0.2s ease-in-out',
+                    '&:hover': {
+                        transform: 'translateY(-4px)',
+                        boxShadow: '0 8px 16px rgba(0,0,0,0.1)',
+                    }
+                }}
+            >
+                <Typography
+                    variant="subtitle1"
+                    align="center"
+                    fontWeight="bold"
+                    sx={{ 
+                        mb: 1,
+                        color: 'black',
+                        textShadow: '1px 1px 2px rgba(0,0,0,0.1)'
+                    }}
+                >
+                    {QUEST_TYPE_MAPPING[questType]}
+                </Typography>
+
+                <Box sx={{ 
+                    position: 'relative', 
+                    height: 200, 
+                    width: '100%', 
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    gap: 1
+                }}>
+                    <AssignmentIcon 
+                        sx={{ 
+                            fontSize: 50,
+                            color: 'black',
+                            opacity: 0.8,
+                            animation: 'pulse 2s infinite',
+                            '@keyframes pulse': {
+                                '0%': {
+                                    transform: 'scale(1)',
+                                    opacity: 0.8,
+                                },
+                                '50%': {
+                                    transform: 'scale(1.1)',
+                                    opacity: 0.6,
+                                },
+                                '100%': {
+                                    transform: 'scale(1)',
+                                    opacity: 0.8,
+                                },
+                            },
+                        }}
+                    />
+                    <Typography 
+                        variant="body1" 
+                        sx={{ 
+                            color: theme.palette.text.secondary,
+                            textAlign: 'center',
+                            fontWeight: 500
+                        }}
+                    >
+                        No completion data
+                    </Typography>
+                    <Typography 
+                        variant="body2" 
+                        sx={{ 
+                            color: theme.palette.text.secondary,
+                            textAlign: 'center',
+                            opacity: 0.7
+                        }}
+                    >
+                        Complete quests to see statistics
+                    </Typography>
+                </Box>
+            </Paper>
+        );
     }
 
     const data = [

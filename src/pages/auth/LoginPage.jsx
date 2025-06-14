@@ -477,7 +477,7 @@ const LoginPage = () => {
                             },
                           },
                           '& .MuiInputLabel-root.Mui-focused': {
-                            color: primaryColor,
+                            // color: primaryColor,
                             fontWeight: 600
                           },
                           '& .MuiFormLabel-asterisk': {

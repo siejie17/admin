@@ -41,7 +41,7 @@ const AppLayout = () => {
     const theme = useTheme();
     const location = useLocation();
     const navigate = useNavigate();
-    const { user } = useAuth();
+    const { user, setUser } = useAuth();
 
     const [admin, setAdmin] = useState({});
     const [isLoading, setIsLoading] = useState(true);
@@ -124,16 +124,25 @@ const AppLayout = () => {
     const handleSignOut = async () => {
         try {
             setIsLoggingOut(true);
-            // First remove admin data from localStorage
-            removeItem("admin");
-            // Then sign out from Firebase
+            
+            // First sign out from Firebase
             await signOut(auth);
+            
+            // Then remove admin data from localStorage
+            removeItem("admin");
+            
+            // Clear any existing state
+            setAdmin({});
+            setUser(null);
+            
             // Finally navigate to login page
             navigate("/login", { replace: true });
         } catch (error) {
             console.error("Error during logout:", error);
-            // If there's an error, still try to clear local data and redirect
+            // If there's an error, still try to clear everything
             removeItem("admin");
+            setAdmin({});
+            setUser(null);
             navigate("/login", { replace: true });
         } finally {
             setIsLoggingOut(false);
