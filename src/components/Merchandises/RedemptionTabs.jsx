@@ -163,7 +163,7 @@ const RedemptionTabs = ({ merchandiseID }) => {
                     }}
                 >
                     <Tab
-                        label="Uncollect"
+                        label="Uncollected"
                         sx={{
                             textTransform: 'none',
                             fontWeight: 500,

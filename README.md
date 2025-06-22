@@ -1,12 +1,42 @@
-# React + Vite
+# UniEXP Admin Panel
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+This project is a React + Vite application for managing UniEXP events, merchandise, and more.
 
-Currently, two official plugins are available:
+## Getting Started
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+Follow these steps to set up the project on your local machine:
 
-## Expanding the ESLint configuration
+### 1. Clone the repository
 
-If you are developing a production application, we recommend using TypeScript and enable type-aware lint rules. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+```bash
+git clone https://github.com/siejie17/admin.git
+cd admin
+```
+
+### 2. Install dependencies
+
+Make sure you have [Node.js](https://nodejs.org/) installed (recommended version: 16 or higher).
+
+```bash
+npm install
+```
+
+### 3. Start the development server
+
+```bash
+npm run dev
+```
+
+The app will be available at [http://localhost:5173](http://localhost:5173) by default.
+
+## Additional Notes
+
+- If you need to configure Firebase or other services, check the files in `src/utils/` and update them with your own credentials.
+- For production builds, use:
+  ```bash
+  npm run build
+  ```
+- To preview the production build locally:
+  ```bash
+  npm run preview
+  ```
