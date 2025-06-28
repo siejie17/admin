@@ -85,6 +85,8 @@ const EventListingPage = () => {
                 setHasMore(false);
                 setLoading(false);
                 return;
+            } else {
+                console.log("Fetched events:", snapshot.docs.length);
             }
 
             // Get the last visible document for pagination

@@ -15,13 +15,16 @@ const firebaseConfig = {
 // Initialize Firebase app
 const app = initializeApp(firebaseConfig);
 
-// Initialize Firebase services
-const auth = initializeAuth(app);
+// Initialize Firebase services with persistence
+const auth = initializeAuth(app, {
+  persistence: browserLocalPersistence
+});
+
+// Ensure persistence is set (backup)
 setPersistence(auth, browserLocalPersistence)
   .catch((error) => {
     console.error("Auth persistence error:", error);
   });
-
 
 const db = getFirestore(app);
 
