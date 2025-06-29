@@ -65,6 +65,7 @@ const DetailsManager = ({ eventID }) => {
     const theme = useTheme();
 
     const [facultyID, setFacultyID] = useState("");
+    const [yearOptions, setYearOptions] = useState([1,2,3,4]);
 
     const [originalData, setOriginalData] = useState({});
     const [formData, setFormData] = useState({
@@ -266,8 +267,13 @@ const DetailsManager = ({ eventID }) => {
         const getFacultyID = async () => {
             const adminData = await getItem("admin");
             const parsedAdminData = JSON.parse(adminData);
-
-            setFacultyID((parsedAdminData.facultyID).toString());
+            const facultyIDValue = (parsedAdminData.facultyID).toString();
+            setFacultyID(facultyIDValue);
+            if (facultyIDValue === "8") {
+                setYearOptions([1,2,3,4,5]);
+            } else {
+                setYearOptions([1,2,3,4]);
+            }
         }
 
         getFacultyID();
@@ -286,7 +292,10 @@ const DetailsManager = ({ eventID }) => {
                     // Compare as unordered sets (sorted)
                     const sortedOriginal = [...originalArray].sort();
                     const sortedForm = [...formArray].sort();
-                    return !sortedForm.every((item, index) => item === sortedOriginal[index]);
+                    return (
+                        sortedForm.length !== sortedOriginal.length ||
+                        !sortedForm.every((item, index) => item === sortedOriginal[index])
+                    );
                 }
 
                 // Default array comparison (order-sensitive)
@@ -1538,7 +1547,7 @@ const DetailsManager = ({ eventID }) => {
                                                 }}
                                                 sx={{ minHeight: 56 }}
                                             >
-                                                {[1, 2, 3, 4, 5].map((year) => (
+                                                {yearOptions.map((year) => (
                                                     <MenuItem key={year} value={year}>
                                                         Year {year}
                                                     </MenuItem>
