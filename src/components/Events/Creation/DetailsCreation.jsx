@@ -252,7 +252,7 @@ const DetailsCreation = ({
 
                 <Box sx={{ width: '100%', mb: 1 }}>
                     <Box sx={{ width: '100%', position: 'relative' }}>
-                        {(images.length > 0 || imageLoading) && (
+                        {images.length > 0 && (
                             <Paper
                                 elevation={2}
                                 sx={{
@@ -271,30 +271,17 @@ const DetailsCreation = ({
                                         component="img"
                                         src={`data:image/jpeg;base64,${images[currentImageIndex].preview}`}
                                         alt={`Event Poster ${currentImageIndex + 1}`}
-                                        onLoad={() => {
-                                            setImageLoading(false)
-                                        }}
                                         sx={{
                                             maxWidth: '100%',
                                             maxHeight: images.length === 1 ? '100%' : '90%',
                                             objectFit: 'contain',
                                             borderRadius: '10px',
-                                            opacity: 1, // Apply opacity for loading
+                                            opacity: imageLoading ? 0.6 : 1, // Apply opacity for loading
                                             transition: 'opacity 0.3s ease'
                                         }}
                                     />
                                 )}
 
-                                {imageLoading && (
-                                    <CircularProgress
-                                        size={40}
-                                        sx={{
-                                            position: 'absolute',
-                                            color: 'primary.main',
-                                            zIndex: 2
-                                        }}
-                                    />
-                                )}
 
 
                                 {images.length > 0 && (
@@ -358,15 +345,24 @@ const DetailsCreation = ({
                                             <IconButton
                                                 size="small"
                                                 component="label"
+                                                disabled={imageLoading}
                                                 sx={{
                                                     bgcolor: 'info.main',
                                                     color: 'white',
                                                     '&:hover': {
                                                         bgcolor: 'info.dark'
+                                                    },
+                                                    '&:disabled': {
+                                                        bgcolor: '#e0e0e0',
+                                                        color: '#9e9e9e'
                                                     }
                                                 }}
                                             >
-                                                <EditIcon fontSize="small" />
+                                                {imageLoading ? (
+                                                    <CircularProgress size={16} color="inherit" />
+                                                ) : (
+                                                    <EditIcon fontSize="small" />
+                                                )}
                                                 <input
                                                     type="file"
                                                     accept="image/*"
@@ -434,23 +430,31 @@ const DetailsCreation = ({
                     <Button
                         variant="contained"
                         component="label"
-                        startIcon={<ImageIcon />}
+                        startIcon={imageLoading ? <CircularProgress size={16} color="inherit" /> : <ImageIcon />}
                         sx={{
                             width: '100%',
                             mb: 1.5,
                             borderRadius: 3,
                             py: 1.5,
                             px: 4,
-                            background: 'linear-gradient(90deg, #3a7bd5, #3a6073)',
-                            boxShadow: '0 4px 10px rgba(58, 123, 213, 0.2)',
+                            background: imageLoading 
+                                ? 'linear-gradient(90deg, #ffe0b2, #ffcc80)' 
+                                : 'linear-gradient(90deg, #3a7bd5, #3a6073)',
+                            boxShadow: imageLoading 
+                                ? '0 4px 10px rgba(255, 193, 7, 0.18)' 
+                                : '0 4px 10px rgba(58, 123, 213, 0.2)',
                             transition: 'all 0.3s ease',
                             fontWeight: 500,
                             textTransform: 'none',
                             fontSize: '0.875rem',
                             '&:hover': {
-                                background: 'linear-gradient(90deg, #3a7bd5, #4a7b93)',
-                                transform: 'translateY(-1px)',
-                                boxShadow: '0 8px 15px rgba(58, 123, 213, 0.3)',
+                                background: imageLoading 
+                                    ? 'linear-gradient(90deg, #ffe0b2, #ffcc80)' 
+                                    : 'linear-gradient(90deg, #3a7bd5, #4a7b93)',
+                                transform: imageLoading ? 'none' : 'translateY(-1px)',
+                                boxShadow: imageLoading 
+                                    ? '0 4px 10px rgba(255, 193, 7, 0.18)' 
+                                    : '0 8px 15px rgba(58, 123, 213, 0.3)',
                             },
                             '&:disabled': {
                                 background: '#e0e0e0',
@@ -458,10 +462,10 @@ const DetailsCreation = ({
                                 boxShadow: 'none',
                             }
                         }}
-                        disabled={images.length >= 4}
+                        disabled={images.length >= 4 || imageLoading}
                         color="primary"
                     >
-                        {images.length > 0 ? 'Add Another Poster' : 'Upload Event Poster'}
+                        {imageLoading ? 'Processing Image...' : (images.length > 0 ? 'Add Another Poster' : 'Upload Event Poster')}
                         <input
                             type="file"
                             accept="image/*"

@@ -50,7 +50,7 @@ const EventCreationPage = () => {
     const [attendanceQuest, setAttendanceQuest] = useState({
         questName: "Go! Go! Go! Attend the event, warrior!",
         questType: 'attendance',
-        description: "To complete this quest, make sure you attend the event in person. Scan the event’s QR code using the in-app scanner while being within 150 meters of the event location. Your quest will only be marked as complete once your check-in is successful.",
+        description: "To complete this quest, make sure you attend the event in person. Scan the event's QR code using the in-app scanner while being within 150 meters of the event location. Your quest will only be marked as complete once your check-in is successful.",
         diamondsRewards: 50,
         pointsRewards: 150,
     });
@@ -60,7 +60,7 @@ const EventCreationPage = () => {
     const [feedbackQuest, setFeedbackQuest] = useState({
         questName: "Your Voice Matters!",
         questType: "feedback",
-        description: "Thanks for joining the event! Now it's your turn to help us improve. Complete a short feedback form about your experience, the gamification elements, and any suggestions you have. Every insight helps us create better, more exciting events — and yes, you’ll earn rewards for it too!",
+        description: "Thanks for joining the event! Now it's your turn to help us improve. Complete a short feedback form about your experience, the gamification elements, and any suggestions you have. Every insight helps us create better, more exciting events — and yes, you'll earn rewards for it too!",
         diamondsRewards: 50,
         pointsRewards: 150,
     });
@@ -149,11 +149,12 @@ const EventCreationPage = () => {
         const newImages = [];
 
         try {
+            setImageLoading(true); // Set loading at the start
+            
             for (const file of files) {
                 const compressedFile = await imageCompression(file, options);
 
                 const base64Data = await new Promise((resolve, reject) => {
-                    setImageLoading(true);
                     const reader = new FileReader();
                     reader.onload = () => {
                         const fullBase64 = reader.result;
@@ -176,6 +177,8 @@ const EventCreationPage = () => {
         } catch (error) {
             console.error('Compression or preview error:', error);
             setErrors(prev => ({ ...prev, images: 'Failed to process image(s)' }));
+        } finally {
+            setImageLoading(false); // Always set loading to false when done
         }
     };
 
@@ -201,33 +204,38 @@ const EventCreationPage = () => {
         };
 
         try {
+            setImageLoading(true); // Set loading at the start
+            
             // Compress the image
             const compressedFile = await imageCompression(file, options);
 
             // Convert the compressed file to base64
-            const reader = new FileReader();
-            reader.onload = (event) => {
-                const fullBase64 = event.target.result;
-                const base64Data = fullBase64.split(',')[1];
-
-                // Create a new images array and update the image at the provided index
-                const newImages = [...images];
-                newImages[index] = {
-                    file: compressedFile,  // Store the compressed file
-                    preview: base64Data,   // Store the base64 string
-                    name: compressedFile.name,  // Update with the compressed file name
-                    loading: true,         // Set loading flag to true
+            const base64Data = await new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    const fullBase64 = event.target.result;
+                    const base64 = fullBase64.split(',')[1];
+                    resolve(base64);
                 };
+                reader.onerror = reject;
+                reader.readAsDataURL(compressedFile);
+            });
 
-                setImages(newImages);  // Update state with the new image array
-                setErrors({ ...errors, images: null });  // Clear error state
+            // Create a new images array and update the image at the provided index
+            const newImages = [...images];
+            newImages[index] = {
+                file: compressedFile,  // Store the compressed file
+                preview: base64Data,   // Store the base64 string
+                name: compressedFile.name,  // Update with the compressed file name
             };
 
-            // Read the compressed file as base64
-            reader.readAsDataURL(compressedFile);
+            setImages(newImages);  // Update state with the new image array
+            setErrors({ ...errors, images: null });  // Clear error state
         } catch (error) {
             console.error('Compression or preview error:', error);
             setErrors({ ...errors, images: 'Failed to process image' });  // Set error state
+        } finally {
+            setImageLoading(false); // Always set loading to false when done
         }
     };
 

@@ -19,6 +19,7 @@ import {
     Card,
     Paper,
     Zoom,
+    CircularProgress,
 } from '@mui/material';
 import {
     Add as AddIcon,
@@ -54,6 +55,7 @@ const MerchandiseCreationPage = () => {
     const [sizes, setSizes] = useState([]);
     const [images, setImages] = useState([]);
     const [errors, setErrors] = useState({});
+    const [imageLoading, setImageLoading] = useState(false);
 
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
     const [hoveredIndex, setHoveredIndex] = useState(null);
@@ -100,6 +102,8 @@ const MerchandiseCreationPage = () => {
         const newImages = [];
 
         try {
+            setImageLoading(true); // Set loading at the start
+            
             for (const file of files) {
                 const compressedFile = await imageCompression(file, options);
 
@@ -127,6 +131,8 @@ const MerchandiseCreationPage = () => {
         } catch (error) {
             console.error('Image compression or reading failed:', error);
             setErrors(prev => ({ ...prev, images: 'Failed to process image(s)' }));
+        } finally {
+            setImageLoading(false); // Always set loading to false when done
         }
     };
 
@@ -521,23 +527,31 @@ const MerchandiseCreationPage = () => {
                         <Button
                             variant="contained"
                             component="label"
-                            startIcon={<ImageIcon />}
+                            startIcon={imageLoading ? <CircularProgress size={16} color="inherit" /> : <ImageIcon />}
                             sx={{
                                 width: '100%',
                                 mb: 1.5,
                                 borderRadius: 3,
                                 py: 1.5,
                                 px: 4,
-                                background: 'linear-gradient(90deg, #3a7bd5, #3a6073)',
-                                boxShadow: '0 4px 10px rgba(58, 123, 213, 0.2)',
+                                background: imageLoading 
+                                    ? 'linear-gradient(90deg, #ffe0b2, #ffcc80)' 
+                                    : 'linear-gradient(90deg, #3a7bd5, #3a6073)',
+                                boxShadow: imageLoading 
+                                    ? '0 4px 10px rgba(255, 193, 7, 0.18)' 
+                                    : '0 4px 10px rgba(58, 123, 213, 0.2)',
                                 transition: 'all 0.3s ease',
                                 fontWeight: 500,
                                 textTransform: 'none',
                                 fontSize: '0.875rem',
                                 '&:hover': {
-                                    background: 'linear-gradient(90deg, #3a7bd5, #4a7b93)',
-                                    transform: 'translateY(-1px)',
-                                    boxShadow: '0 8px 15px rgba(58, 123, 213, 0.3)',
+                                    background: imageLoading 
+                                        ? 'linear-gradient(90deg, #ffe0b2, #ffcc80)' 
+                                        : 'linear-gradient(90deg, #3a7bd5, #4a7b93)',
+                                    transform: imageLoading ? 'none' : 'translateY(-1px)',
+                                    boxShadow: imageLoading 
+                                        ? '0 4px 10px rgba(255, 193, 7, 0.18)' 
+                                        : '0 8px 15px rgba(58, 123, 213, 0.3)',
                                 },
                                 '&:disabled': {
                                     background: '#e0e0e0',
@@ -545,10 +559,10 @@ const MerchandiseCreationPage = () => {
                                     boxShadow: 'none',
                                 }
                             }}
-                            disabled={images.length >= 4}
+                            disabled={images.length >= 4 || imageLoading}
                             color="primary"
                         >
-                            {images.length > 0 ? 'Add Another Image' : 'Upload Image'}
+                            {imageLoading ? 'Processing Image...' : (images.length > 0 ? 'Add Another Image' : 'Upload Image')}
                             <input
                                 type="file"
                                 accept="image/*"
