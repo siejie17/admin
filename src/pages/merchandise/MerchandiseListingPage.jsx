@@ -47,22 +47,33 @@ const MerchandiseListingPage = () => {
     const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
     const isExtraSmall = useMediaQuery(theme.breakpoints.down('xs'));
 
-    const fetchMerchandises = async (isFirstPage = false) => {
+    const fetchMerchandises = async (isFirstPage = false, searchTerm = '') => {
         try {
             const adminData = await getItem("admin");
             const parsedAdminData = JSON.parse(adminData);
 
+            // Base query with admin filter
+            const baseQuery = [
+                where("adminID", "==", parsedAdminData.facultyID)
+            ];
+
             // Get total count for pagination
             const countQuery = query(
                 collection(db, "merchandise"),
-                where("adminID", "==", parsedAdminData.facultyID)
+                ...baseQuery
             );
 
             // First set up a listener for the count to update totalPages dynamically
             const countUnsubscribe = onSnapshot(countQuery, (countSnapshot) => {
                 const totalMerchandises = countSnapshot.size;
                 setMerchandisesCount(totalMerchandises);
-                setTotalPages(Math.ceil(totalMerchandises / merchandisesPerPage));
+                
+                // Update pagination based on search or normal browsing
+                if (searchTerm.trim() !== '') {
+                    setTotalPages(1); // For search results, show all on one page
+                } else {
+                    setTotalPages(Math.ceil(totalMerchandises / merchandisesPerPage));
+                }
             }, (error) => {
                 console.error("Error in count snapshot:", error);
                 setError("Failed to get merchandise count.");
@@ -70,25 +81,35 @@ const MerchandiseListingPage = () => {
 
             let merchandisesQuery;
 
-            if (isFirstPage) {
+            // If searching, get all merchandise for this admin (no pagination)
+            if (searchTerm.trim() !== '') {
                 merchandisesQuery = query(
                     collection(db, "merchandise"),
-                    where("adminID", "==", parsedAdminData.facultyID),
-                    orderBy("name", "asc"),
-                    limit(merchandisesPerPage)
-                );
-            } else if (lastVisible) {
-                merchandisesQuery = query(
-                    collection(db, "merchandise"),
-                    where("adminID", "==", parsedAdminData.facultyID),
-                    orderBy("name", "asc"),
-                    startAfter(lastVisible),
-                    limit(merchandisesPerPage)
+                    ...baseQuery,
+                    orderBy("name", "asc")
                 );
             } else {
-                // Return if we're not on the first page and don't have a last document
-                setLoading(false);
-                return { countUnsubscribe, dataUnsubscribe: () => { } };
+                // Normal pagination for non-search
+                if (isFirstPage) {
+                    merchandisesQuery = query(
+                        collection(db, "merchandise"),
+                        ...baseQuery,
+                        orderBy("name", "asc"),
+                        limit(merchandisesPerPage)
+                    );
+                } else if (lastVisible) {
+                    merchandisesQuery = query(
+                        collection(db, "merchandise"),
+                        ...baseQuery,
+                        orderBy("name", "asc"),
+                        startAfter(lastVisible),
+                        limit(merchandisesPerPage)
+                    );
+                } else {
+                    // Return if we're not on the first page and don't have a last document
+                    setLoading(false);
+                    return { countUnsubscribe, dataUnsubscribe: () => { } };
+                }
             }
 
             const dataUnsubscribe = onSnapshot(merchandisesQuery, (snapshot) => {
@@ -97,19 +118,34 @@ const MerchandiseListingPage = () => {
                     setMerchandises([]);
                     setAllMerchandises([]);
                 } else {
-                    // Get the last visible document for pagination
-                    const lastDoc = snapshot.docs[snapshot.docs.length - 1];
-                    setLastVisible(lastDoc);
+                    // Get the last visible document for pagination (only if not searching)
+                    if (searchTerm.trim() === '') {
+                        const lastDoc = snapshot.docs[snapshot.docs.length - 1];
+                        setLastVisible(lastDoc);
+                    }
 
                     const merchList = snapshot.docs.map((doc) => ({
                         id: doc.id,
                         ...doc.data()
                     }));
 
-                    setAllMerchandises(merchList);
-                    // Initial filtering will be handled by the useEffect
-                    setMerchandises(merchList);
-                    setHasMore(snapshot.docs.length >= merchandisesPerPage);
+                    // Filter by search term if provided
+                    let filteredMerchandises = merchList;
+                    if (searchTerm.trim() !== '') {
+                        filteredMerchandises = merchList.filter(merch => 
+                            merch.name.toLowerCase().includes(searchTerm.toLowerCase())
+                        );
+                    }
+
+                    setAllMerchandises(filteredMerchandises);
+                    setMerchandises(filteredMerchandises);
+                    
+                    // Update hasMore based on search or normal browsing
+                    if (searchTerm.trim() !== '') {
+                        setHasMore(false); // For search results, no pagination
+                    } else {
+                        setHasMore(snapshot.docs.length >= merchandisesPerPage);
+                    }
                 }
 
                 setLoading(false);
@@ -150,14 +186,13 @@ const MerchandiseListingPage = () => {
     // Add this new useEffect to handle search filtering
     useEffect(() => {
         if (searchQuery.trim() === '') {
-            setMerchandises(allMerchandises);
+            // If search is cleared, fetch first page normally
+            fetchMerchandises(true);
         } else {
-            const filtered = allMerchandises.filter(merch => 
-                merch.name.toLowerCase().includes(searchQuery.toLowerCase())
-            );
-            setMerchandises(filtered);
+            // If searching, fetch all merchandise and filter
+            fetchMerchandises(true, searchQuery);
         }
-    }, [searchQuery, allMerchandises]);
+    }, [searchQuery]);
 
     // Handle page change
     const handlePageChange = (event, value) => {
@@ -166,7 +201,8 @@ const MerchandiseListingPage = () => {
         let unsubscribes = { countUnsubscribe: () => { }, dataUnsubscribe: () => { } };
 
         if (value === 1) {
-            fetchMerchandises(true)
+            // If going to first page, use search term if available
+            fetchMerchandises(true, searchQuery)
                 .then(result => {
                     unsubscribes = result;
                 })
@@ -176,15 +212,18 @@ const MerchandiseListingPage = () => {
                     setLoading(false);
                 });
         } else {
-            fetchMerchandises(false)
-                .then(result => {
-                    unsubscribes = result;
-                })
-                .catch(error => {
-                    console.error("Error in listener setup:", error);
-                    setError("Failed to initialize merchandise listeners.");
-                    setLoading(false);
-                });
+            // For other pages, only work if not searching
+            if (searchQuery.trim() === '') {
+                fetchMerchandises(false)
+                    .then(result => {
+                        unsubscribes = result;
+                    })
+                    .catch(error => {
+                        console.error("Error in listener setup:", error);
+                        setError("Failed to initialize merchandise listeners.");
+                        setLoading(false);
+                    });
+            }
         }
         window.scrollTo({ top: 0, behavior: 'smooth' });
 

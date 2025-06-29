@@ -51,32 +51,46 @@ const EventListingPage = () => {
     const isExtraSmall = useMediaQuery(theme.breakpoints.down('xs'));
 
     // Load events from Firestore
-    const fetchEvents = async (isFirstPage = false) => {
+    const fetchEvents = async (isFirstPage = false, searchTerm = '') => {
         try {
             let eventsQuery;
 
             const adminData = await getItem("admin");
             const parsedAdminData = JSON.parse(adminData);
 
-            if (isFirstPage) {
+            // Base query with faculty filter
+            const baseQuery = [
+                where("organiserID", "==", parsedAdminData.facultyID)
+            ];
+
+            // If searching, get all events for this faculty (no pagination)
+            if (searchTerm.trim() !== '') {
                 eventsQuery = query(
                     collection(db, "event"),
-                    where("organiserID", "==", parsedAdminData.facultyID),
-                    orderBy("eventStartDateTime", "desc"),
-                    limit(eventsPerPage)
-                );
-            } else if (lastVisible) {
-                eventsQuery = query(
-                    collection(db, "event"),
-                    where("organiserID", "==", parsedAdminData.facultyID),
-                    orderBy("eventStartDateTime", "desc"),
-                    startAfter(lastVisible),
-                    limit(eventsPerPage)
+                    ...baseQuery,
+                    orderBy("eventStartDateTime", "desc")
                 );
             } else {
-                // Return if we're not on the first page and don't have a last document
-                setLoading(false);
-                return;
+                // Normal pagination for non-search
+                if (isFirstPage) {
+                    eventsQuery = query(
+                        collection(db, "event"),
+                        ...baseQuery,
+                        orderBy("eventStartDateTime", "desc"),
+                        limit(eventsPerPage)
+                    );
+                } else if (lastVisible) {
+                    eventsQuery = query(
+                        collection(db, "event"),
+                        ...baseQuery,
+                        orderBy("eventStartDateTime", "desc"),
+                        startAfter(lastVisible),
+                        limit(eventsPerPage)
+                    );
+                } else {
+                    setLoading(false);
+                    return;
+                }
             }
 
             const snapshot = await getDocs(eventsQuery);
@@ -85,13 +99,13 @@ const EventListingPage = () => {
                 setHasMore(false);
                 setLoading(false);
                 return;
-            } else {
-                console.log("Fetched events:", snapshot.docs.length);
             }
 
-            // Get the last visible document for pagination
-            const lastDoc = snapshot.docs[snapshot.docs.length - 1];
-            setLastVisible(lastDoc);
+            // Get the last visible document for pagination (only if not searching)
+            if (searchTerm.trim() === '') {
+                const lastDoc = snapshot.docs[snapshot.docs.length - 1];
+                setLastVisible(lastDoc);
+            }
 
             // Convert Firestore documents to objects
             const eventList = await Promise.all(
@@ -107,14 +121,30 @@ const EventListingPage = () => {
                 })
             );
 
-            setAllEvents(eventList);
-            setEvents(eventList);
+            // Filter by search term if provided
+            let filteredEvents = eventList;
+            if (searchTerm.trim() !== '') {
+                filteredEvents = eventList.filter(event => 
+                    event.eventName.toLowerCase().includes(searchTerm.toLowerCase())
+                );
+            }
 
-            // Estimate total pages
-            const countQuery = await getDocs(query(collection(db, "event"), where("organiserID", "==", parsedAdminData.facultyID)));
-            const totalEvents = countQuery.size;
-            setEventsSize(totalEvents);
-            setTotalPages(Math.ceil(totalEvents / eventsPerPage));
+            setAllEvents(filteredEvents);
+            setEvents(filteredEvents);
+
+            // Update pagination info
+            if (searchTerm.trim() !== '') {
+                // For search results, show all matching events
+                setEventsSize(filteredEvents.length);
+                setTotalPages(1);
+                setHasMore(false);
+            } else {
+                // For normal browsing, estimate total pages
+                const countQuery = await getDocs(query(collection(db, "event"), where("organiserID", "==", parsedAdminData.facultyID)));
+                const totalEvents = countQuery.size;
+                setEventsSize(totalEvents);
+                setTotalPages(Math.ceil(totalEvents / eventsPerPage));
+            }
 
             setLoading(false);
         } catch (error) {
@@ -127,14 +157,13 @@ const EventListingPage = () => {
     // Add search filtering effect
     useEffect(() => {
         if (searchQuery.trim() === '') {
-            setEvents(allEvents);
+            // If search is cleared, fetch first page normally
+            fetchEvents(true);
         } else {
-            const filtered = allEvents.filter(event => 
-                event.eventName.toLowerCase().includes(searchQuery.toLowerCase())
-            );
-            setEvents(filtered);
+            // If searching, fetch all events and filter
+            fetchEvents(true, searchQuery);
         }
-    }, [searchQuery, allEvents]);
+    }, [searchQuery]);
 
     // Handle search input change
     const handleSearchChange = (event) => {
@@ -157,9 +186,13 @@ const EventListingPage = () => {
     const handlePageChange = (event, value) => {
         setPage(value);
         if (value === 1) {
-            fetchEvents(true);
+            // If going to first page, use search term if available
+            fetchEvents(true, searchQuery);
         } else {
-            fetchEvents(false);
+            // For other pages, only work if not searching
+            if (searchQuery.trim() === '') {
+                fetchEvents(false);
+            }
         }
         window.scrollTo({ top: 0, behavior: 'smooth' });
     };
