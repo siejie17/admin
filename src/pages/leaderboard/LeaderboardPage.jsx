@@ -127,6 +127,7 @@ const LeaderboardPage = () => {
 
                                         processedCount++;
                                         if (processedCount === totalEntries) {
+                                            tempLeaderboard.sort((a, b) => b.points - a.points);
                                             tempLeaderboard.forEach((entry, idx) => {
                                                 entry.rank = idx + 1;
                                             });
